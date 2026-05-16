@@ -1,30 +1,15 @@
 # Loan Tracker
 
-Personal mortgage & home-repair loan tracker for Stelios — powered by MMEX data and a budget-driven lump-sum formula.
+Personal mortgage & general loan tracker — powered by user data and a budget-driven lump-sum formula.
 
 ## What it does
 
 `loan-tracker.html` is a single self-contained HTML file you open in any browser. It has three tabs:
 
 - **Dashboard** — combined balance, interest saved vs no-extras baseline, plan payoff dates, and a Chart.js balance trajectory for both loans
-- **Mortgage tab** — full MMEX transaction history + projected future payments driven by your monthly budget
-- **Repairs tab** — same for the Alpha Repairs loan
+- **Mortgage tab** — full transaction history + projected future payments driven by your monthly budget
 
 No server, no install. All state (confirmed actuals, saved budgets) lives in the browser's `localStorage`.
-
----
-
-## Loans
-
-| | Alpha Mortgage | Alpha Repairs |
-|---|---|---|
-| Original | €95,000 (Jul 2024) | €20,000 in 2 tranches (Sep + Nov 2024) |
-| Balance (May 2026) | €88,314.11 | €18,619.01 |
-| Rate | 4.52% fixed + 0.12% levy = **4.64% nominal** | same |
-| Monthly rate used | 4.52% / 12 = **0.3767%** | same |
-| Original term end | Jul 2049 | Sep 2049 |
-| Plan payoff | **Dec 2037** | **Aug 2037** |
-| Years saved | ~11.5 | ~12 |
 
 ---
 
