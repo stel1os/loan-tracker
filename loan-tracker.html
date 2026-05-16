@@ -122,14 +122,9 @@ table.txn tr:hover td{background:#fafbff}
     </div>
   </div>
   <div class="chart-card">
-    <div class="chart-title">Balance History &middot; Budget Plan &middot; Baseline (no extras)</div>
-    <div class="chart-note">Solid = actual MMEX &middot; Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
+    <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
+    <div class="chart-note">Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
     <canvas id="balanceChart" height="220"></canvas>
-  </div>
-  <div class="txn-section">
-    <div class="txn-title">Loan &mdash; Transaction History</div>
-    <p class="txn-note"><strong>Installment</strong> = full payment (reduces balance). <strong>Interest</strong> = bank debit (increases balance). <strong>Net principal</strong> = installment &minus; interest.</p>
-    <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th>Type</th><th class="num">Installment</th><th class="num">Interest</th><th class="num">Net Principal</th><th class="num">Balance</th><th>Note</th></tr></thead><tbody id="m-tbody"></tbody></table></div>
   </div>
   <div class="txn-section">
     <div class="txn-title">Loan &mdash; Projected Payments</div>
@@ -356,69 +351,6 @@ function ymFmt(t){const p=(t.dispDate||t.date).slice(0,7).split('-');return p[0]
 const fmtE=n=>'€'+Math.round(n).toLocaleString('el-GR');
 const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-/* ─────────────────────────────────────────
-   Transaction history (MMEX actuals — unchanged)
-───────────────────────────────────────── */
-const M_TXN=[
-  {date:'2024-07-31',code:'draw',inst:0,int:0,note:'Loan disbursement'},
-  {date:'2024-08-30',code:'inst',inst:532.16,int:357.83,note:''},
-  {date:'2024-09-30',code:'inst',inst:532.14,int:357.17,note:''},
-  {date:'2024-10-30',code:'inst',inst:532.14,int:356.53,note:''},
-  {date:'2024-11-30',code:'inst',inst:532.12,int:355.86,note:'Installment paid Dec 2 (weekend slip)'},
-  {date:'2024-12-30',code:'inst',inst:532.10,int:355.20,note:''},
-  {date:'2025-01-30',code:'inst',inst:532.08,int:354.53,note:''},
-  {date:'2025-02-28',code:'inst',inst:532.06,int:353.86,note:''},
-  {date:'2025-03-28',code:'inst',inst:532.05,int:353.19,note:''},
-  {date:'2025-04-30',code:'inst',inst:532.03,int:352.52,note:''},
-  {date:'2025-05-30',code:'inst',inst:532.01,int:351.84,note:''},
-  {date:'2025-06-28',code:'inst',inst:531.99,int:351.16,note:''},
-  {date:'2025-07-28',code:'inst',inst:531.96,int:350.47,note:''},
-  {date:'2025-08-30',code:'inst',inst:531.96,int:349.80,note:''},
-  {date:'2025-09-08',code:'extra',inst:700.00,int:0,note:'Lump sum'},
-  {date:'2025-09-30',code:'inst',inst:528.62,int:347.17,note:''},
-  {date:'2025-10-30',code:'inst',inst:527.91,int:345.79,note:''},
-  {date:'2025-11-30',code:'inst',inst:527.89,int:345.10,note:''},
-  {date:'2025-12-23',code:'extra',inst:712.00,int:0,note:'Lump sum'},
-  {date:'2025-12-31',code:'inst',inst:525.72,int:343.69,note:''},
-  {date:'2026-01-30',code:'inst',inst:523.73,int:341.04,note:''},
-  {date:'2026-02-28',code:'inst',inst:523.72,int:340.36,note:''},
-  {date:'2026-03-27',code:'extra',inst:1500.00,int:0,note:'Lump sum'},
-  {date:'2026-03-30',code:'inst',inst:519.90,int:338.92,note:''},
-  {date:'2026-04-30',code:'inst',inst:514.97,int:333.34,note:''},
-];
-
-function buildTable(tbodyId,txns,initDraw){
-  const tbody=document.getElementById(tbodyId);
-  let bal=0,totI=0,totInt=0,n=0;
-  const f2=v=>v===0?'&mdash;':v.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const fb=v=>v.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  txns.forEach(t=>{
-    n++;
-    const isDraw=t.code==='draw',isExtra=t.code==='extra';
-    let dAmt=0;
-    if(isDraw)dAmt=t.note.includes('10,000')?10000:initDraw;
-    const prev=bal;
-    if(isDraw)bal+=dAmt;
-    if(t.int>0)bal+=t.int;
-    if(t.inst>0){bal-=t.inst;totI+=t.inst;}
-    if(bal<0)bal=0;
-    if(!isDraw)totInt+=t.int;
-    const net=t.inst-t.int;
-    const cls=isDraw?'tr-draw':isExtra?'tr-extra':'';
-    const pill=isDraw?'<span class="pill pill-draw">Draw</span>':isExtra?'<span class="pill pill-extra">Extra</span>':'<span class="pill pill-inst">Installment</span>';
-    const netS=isDraw?'&mdash;':`<span style="color:${net>0?'#16a34a':'#dc2626'}">${f2(Math.abs(net))}</span>`;
-    const delta=bal-prev;
-    const arrow=isDraw?'<span class="bal-up">draw</span>':delta<=0?`<span class="bal-down">&#9660; ${f2(Math.abs(delta))}</span>`:`<span class="bal-up">&#9650; ${f2(delta)}</span>`;
-    tbody.innerHTML+=`<tr class="${cls}"><td style="color:#bbb;font-size:.7rem">${n}</td><td>${ymFmt(t)}</td><td>${pill}</td><td class="num">${f2(t.inst)}</td><td class="num" style="color:#c2410c">${f2(t.int)}</td><td class="num">${netS}</td><td><span class="bal-owed">${fb(bal)}</span> ${arrow}</td><td style="font-size:.73rem;color:#666">${t.note}</td></tr>`;
-  });
-  tbody.innerHTML+=`<tr class="totals-row"><td colspan="3">TOTAL</td><td class="num">${fb(totI)}</td><td class="num" style="color:#c2410c">${fb(totInt)}</td><td class="num green">${fb(totI-totInt)}</td><td class="bal-owed">${fb(bal)}</td><td></td></tr>`;
-}
-buildTable('m-tbody',M_TXN,95000);
-
-/* ─────────────────────────────────────────
-   Historical balance map (MMEX actuals)
-───────────────────────────────────────── */
-const M_HIST={'2024-07':95000,'2024-08':94825.67,'2024-09':94650.70,'2024-10':94475.09,'2024-11':94299.23,'2024-12':94121.93,'2025-01':93944.38,'2025-02':93766.18,'2025-03':93587.32,'2025-04':93407.81,'2025-05':93227.64,'2025-06':93046.81,'2025-07':92865.32,'2025-08':92683.16,'2025-09':91801.71,'2025-10':91619.59,'2025-11':91436.80,'2025-12':90542.77,'2026-01':90360.08,'2026-02':90176.72,'2026-03':88495.74,'2026-04':88314.11};
 
 /* ─────────────────────────────────────────
    Projection engine
@@ -457,7 +389,7 @@ function computePlanStats(mRows,mS){
   document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
   document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
-  document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · data from MMEX · '+MN[mS.startMonth-1]+' '+mS.startYear;
+  document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
   document.getElementById('app-footer').textContent='Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy · Lumps 3×/year (Apr, Aug, Dec) · Budget drives lump formula dynamically';
   return{mBase};
 }
@@ -474,7 +406,6 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   let mBSmon=mS.startMonth+1,mBSyr=mS.startYear;if(mBSmon>12){mBSmon=1;mBSyr++;}
   const mBSkey=mBSyr+'-'+String(mBSmon).padStart(2,'0');
   const labels=buildLabels();
-  const mH=labels.map(l=>M_HIST[l]??null);
   const mP=labels.map(l=>{if(l===mStartKey)return mS.balance;const v=mPlanMap[l];return(v!=null&&v>0)?v:null;});
   const mBS=labels.indexOf(mBSkey);
   const mBD=labels.map((_,i)=>{const x=i-mBS;return x>=0&&x<mBase.length&&mBase[x]>0?mBase[x]:null;});
@@ -482,7 +413,6 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const fxPlugin={id:'fx',afterDraw(c){const i=c.data.labels.indexOf('2039-07');if(i<0)return;const x=c.scales.x.getPixelForValue(i),ya=c.scales.y,ctx=c.ctx;ctx.save();ctx.beginPath();ctx.moveTo(x,ya.top);ctx.lineTo(x,ya.bottom);ctx.strokeStyle='#9333ea';ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#9333ea';ctx.font='600 10px sans-serif';ctx.textAlign='center';ctx.fillText('Fixed rate ends',x,ya.top+12);ctx.fillText('Jul 2039',x,ya.top+24);ctx.restore();}};
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
-    {label:'Loan (actual)',data:mH,borderColor:'#2563eb',backgroundColor:'#2563eb',tension:.3,pointRadius:2,borderWidth:2.5,fill:false},
     {label:'Loan (plan)',data:mP,borderColor:'#2563eb',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
     {label:'Loan (no extras)',data:mBD,borderColor:'rgba(37,99,235,.28)',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
     {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#1d4ed8',pointRadius:5,pointHoverRadius:7,showLine:false},
