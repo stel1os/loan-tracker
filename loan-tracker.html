@@ -496,8 +496,6 @@ function actKey(idx){return 'confirmed_'+idx+'_act';}
 function getActuals(idx){try{return JSON.parse(localStorage.getItem(actKey(idx))||'{}');}catch(e){return{};}}
 function saveActual(idx,key,data){const a=getActuals(idx);a[key]=data;localStorage.setItem(actKey(idx),JSON.stringify(a));}
 
-function todayYM(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
-
 /* renders the unified δοσολόγιο from mSchedule */
 function renderProj(tbodyId,loanIdx){
   const tbody=document.getElementById(tbodyId);
