@@ -123,7 +123,7 @@ table.txn tr:hover td{background:#fafbff}
   </div>
   <div class="chart-card">
     <div class="chart-title">Balance History &middot; Budget Plan &middot; Baseline (no extras)</div>
-    <div class="chart-note">Solid = actual MMEX &middot; Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
+    <div class="chart-note">Solid = actual &middot; Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
     <canvas id="balanceChart" height="220"></canvas>
   </div>
   <div class="txn-section">
@@ -357,7 +357,7 @@ const fmtE=n=>'€'+Math.round(n).toLocaleString('el-GR');
 const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
 /* ─────────────────────────────────────────
-   Transaction history (MMEX actuals — unchanged)
+   Transaction history
 ───────────────────────────────────────── */
 const M_TXN=[
   {date:'2024-07-31',code:'draw',inst:0,int:0,note:'Loan disbursement'},
@@ -416,7 +416,7 @@ function buildTable(tbodyId,txns,initDraw){
 buildTable('m-tbody',M_TXN,95000);
 
 /* ─────────────────────────────────────────
-   Historical balance map (MMEX actuals)
+   Historical balance map
 ───────────────────────────────────────── */
 const M_HIST={'2024-07':95000,'2024-08':94825.67,'2024-09':94650.70,'2024-10':94475.09,'2024-11':94299.23,'2024-12':94121.93,'2025-01':93944.38,'2025-02':93766.18,'2025-03':93587.32,'2025-04':93407.81,'2025-05':93227.64,'2025-06':93046.81,'2025-07':92865.32,'2025-08':92683.16,'2025-09':91801.71,'2025-10':91619.59,'2025-11':91436.80,'2025-12':90542.77,'2026-01':90360.08,'2026-02':90176.72,'2026-03':88495.74,'2026-04':88314.11};
 
@@ -457,7 +457,7 @@ function computePlanStats(mRows,mS){
   document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
   document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
-  document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · data from MMEX · '+MN[mS.startMonth-1]+' '+mS.startYear;
+  document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
   document.getElementById('app-footer').textContent='Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy · Lumps 3×/year (Apr, Aug, Dec) · Budget drives lump formula dynamically';
   return{mBase};
 }
