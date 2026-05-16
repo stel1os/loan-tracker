@@ -447,15 +447,31 @@ function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=a
    exposes a parallel per-month array of δοσολόγιο rows:
    {month,principal,interest,inst,lump,autoLump,bal} */
 let mSchedule=[];
-function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps){
+function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps,actuals){
   const rows=[];const sched=[];let prev=startBal;
   const recent=[...histLastInsts];
   manLumps=manLumps||{};
+  actuals=actuals||{};
   let[y,mo]=startMonthStr.split('-').map(Number);
   while(prev>0.5){
     const month=y+'-'+String(mo).padStart(2,'0');
     const remainM=(endYear-y)*12+(endMon-mo);
     if(remainM<=0)break;
+    const act=actuals[month+'_inst'];
+    if(act&&act.saved){
+      // Confirmed actual: use saved figures verbatim; balance flows downstream
+      const aLump=act.lump||0,aInt=+(+act.int).toFixed(2),aInst=+(+act.inst).toFixed(2);
+      const aPrin=act.principal!=null?+(+act.principal).toFixed(2):+(aInst-aInt).toFixed(2);
+      const aBal=+(+act.bal).toFixed(2);
+      if(aLump>0)rows.push({month,type:'extra',inst:aLump,int:0,bal:Math.max(0,prev-aLump)});
+      rows.push({month,type:'inst',inst:aInst,int:aInt,bal:aBal});
+      sched.push({month,principal:aPrin,interest:aInt,inst:aInst,lump:aLump,autoLump:false,bal:aBal,confirmed:true});
+      recent.push(aInst);
+      if(recent.length>4)recent.shift();
+      prev=aBal;
+      mo++;if(mo>12){mo=1;y++;}
+      continue;
+    }
     let lump=0,autoLump=false;
     if(mo===4||mo===8||mo===12){
       const sum4=recent.slice(-4).reduce((a,b)=>a+b,0);
@@ -473,7 +489,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
     const principal=+(inst-interest).toFixed(2);
     if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
     rows.push({month,type:'inst',inst,int:interest,bal:endBal});
-    sched.push({month,principal,interest,inst,lump,autoLump,bal:endBal});
+    sched.push({month,principal,interest,inst,lump,autoLump,bal:endBal,confirmed:false});
     recent.push(inst);
     if(recent.length>4)recent.shift();
     prev=endBal;
@@ -487,35 +503,28 @@ function actKey(idx){return 'confirmed_'+idx+'_act';}
 function getActuals(idx){try{return JSON.parse(localStorage.getItem(actKey(idx))||'{}');}catch(e){return{};}}
 function saveActual(idx,key,data){const a=getActuals(idx);a[key]=data;localStorage.setItem(actKey(idx),JSON.stringify(a));}
 
-function todayYM(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
-
 /* renders the unified δοσολόγιο from mSchedule */
 function renderProj(tbodyId,loanIdx){
   const tbody=document.getElementById(tbodyId);
-  const actuals=getActuals(loanIdx);
-  const tYM=todayYM();
   tbody.innerHTML='';
   let n=0,prevYr='';let html='';
   mSchedule.forEach((row,idx)=>{
     n++;
-    const key=row.month+'_inst';
-    const act=actuals[key];
-    const locked=act&&act.saved;
-    const isPast=row.month<tYM;
-    const principal=locked?act.principal:row.principal;
-    const interest=locked?act.int:row.interest;
-    const inst=locked?act.inst:row.inst;
-    const lump=locked?(act.lump||0):row.lump;
-    const bal=locked?act.bal:row.bal;
+    const locked=!!row.confirmed;
+    const principal=row.principal;
+    const interest=row.interest;
+    const inst=row.inst;
+    const lump=row.lump;
+    const bal=row.bal;
     const yr=row.month.slice(0,4);
     if(yr!==prevYr){html+=`<tr class="tr-sep"><td colspan="7">${yr}</td></tr>`;prevYr=yr;}
     const rowCls=locked?'tr-confirmed':row.autoLump?'tr-lump':'';
     const numCol=locked
       ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
-      :`<td style="color:#bbb;font-size:.7rem">${n}</td>`;
+      :`<td style="color:#bbb;font-size:.7rem">${n} <span class="lock-ic" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})" style="color:#2563eb">&#10003;</span></td>`;
     let lumpCell;
     if(lump>0){lumpCell=`<td class="num" style="color:#15803d" id="pl-${loanIdx}-${idx}">${f2x(lump)}</td>`;}
-    else if(!isPast){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
+    else if(!locked){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
     else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
     html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
       ${numCol}
@@ -529,14 +538,16 @@ function renderProj(tbodyId,loanIdx){
   tbody.innerHTML=html;
 }
 
-/* unlock a confirmed row → inline edit (principal / interest / installment) */
+/* unlock / mark-as-paid → inline edit (principal / interest / installment / lump)
+   Pre-fills with the row's current figures (projected for new rows, or the
+   previously-saved actuals for an already-confirmed row). */
 function unlockRow(loanIdx,idx){
   const row=mSchedule[idx];if(!row)return;
-  const a=getActuals(loanIdx)[row.month+'_inst']||{};
-  const p=a.principal??row.principal,it=a.int??row.interest,ins=a.inst??row.inst;
+  const p=row.principal,it=row.interest,ins=row.inst,lm=row.lump||0;
   document.getElementById(`pp-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="ap-${loanIdx}-${idx}" type="number" value="${(+p).toFixed(2)}" step="0.01">`;
   document.getElementById(`pn-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="an-${loanIdx}-${idx}" type="number" value="${(+it).toFixed(2)}" step="0.01">`;
-  document.getElementById(`pi-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="ai-${loanIdx}-${idx}" type="number" value="${(+ins).toFixed(2)}" step="0.01"> <button class="btn-save" onclick="confirmActual(${loanIdx},${idx},'${row.month}')">Save</button><button class="btn-cancel" onclick="renderProj('m-proj-tbody',${loanIdx})">Cancel</button>`;
+  document.getElementById(`pi-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="ai-${loanIdx}-${idx}" type="number" value="${(+ins).toFixed(2)}" step="0.01">`;
+  document.getElementById(`pl-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="al-${loanIdx}-${idx}" type="number" value="${lm?(+lm).toFixed(2):''}" placeholder="0.00" step="0.01"> <button class="btn-save" onclick="confirmActual(${loanIdx},${idx},'${row.month}')">Save</button><button class="btn-cancel" onclick="refreshLoan()">Cancel</button>`;
 }
 
 /* future row: inline manual lump sum entry */
@@ -551,12 +562,19 @@ function saveLumpEntry(loanIdx,idx,month){
 }
 
 function confirmActual(loanIdx,idx,month){
-  const row=mSchedule[idx];
   const principal=parseFloat(document.getElementById(`ap-${loanIdx}-${idx}`).value)||0;
   const interest=parseFloat(document.getElementById(`an-${loanIdx}-${idx}`).value)||0;
   const inst=parseFloat(document.getElementById(`ai-${loanIdx}-${idx}`).value)||0;
-  saveActual(loanIdx,month+'_inst',{principal,int:interest,inst,lump:row?row.lump:0,bal:row?row.bal:0,saved:true});
-  renderProj('m-proj-tbody',loanIdx);
+  const lump=parseFloat(document.getElementById(`al-${loanIdx}-${idx}`).value)||0;
+  // Balance carried forward = (opening − lump) + interest − installment.
+  // Opening balance for this month = previous row's closing balance,
+  // or the loan's opening balance for the very first row.
+  const prevBal=idx>0?mSchedule[idx-1].bal:(_mS?_mS.balance:0);
+  const bal=+Math.max(0,(prevBal-lump)+interest-inst).toFixed(2);
+  saveActual(loanIdx,month+'_inst',{principal,int:interest,inst,lump,bal,saved:true});
+  // Re-run the projection so every subsequent row recalculates from the
+  // confirmed actual balance flowing downstream.
+  refreshLoan();
 }
 
 /* ─────────────────────────────────────────
@@ -591,7 +609,7 @@ function refreshLoan(){
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
-  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments,getManLumps(0));
+  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments,getManLumps(0),getActuals(0));
   renderProj('m-proj-tbody',0);
   rebuildChart();
 }
@@ -618,7 +636,7 @@ function initApp(){
   const mB=parseFloat(localStorage.getItem('lt_budget_0'))||820;
   document.getElementById('loan-budget').value=mB;
 
-  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments,getManLumps(0));
+  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments,getManLumps(0),getActuals(0));
 
   renderProj('m-proj-tbody',0);
   rebuildChart();
