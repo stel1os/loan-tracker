@@ -49,9 +49,9 @@ All state lives in `localStorage`. Open `loan-tracker.html` in any browser — t
 ## Critical Technical Notes
 
 ### File size limit
-The HTML file is ~33 KB. The Write tool truncates at ~44 KB.
-**If the file grows beyond ~40 KB, use bash `cat >>` in chunks — never the Write or Edit tool directly.**
-Check size before editing: `wc -c loan-tracker.html`
+The HTML file is ~56 KB (as of v1.0, post loan-setup). The Write tool truncates at ~44 KB.
+**The file is already over the Write tool limit. Always use bash `cat >>` in chunks — never the Write or Edit tool directly.**
+Check size before editing: `(Get-Item loan-tracker.html).Length` (PowerShell) or `wc -c loan-tracker.html`
 
 ### localStorage keys
 - `loanBudget` — mortgage monthly budget
