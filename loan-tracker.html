@@ -463,7 +463,7 @@ function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=a
 
 /* genProj returns inst/extra rows (chart + stats) AND mSchedule
    exposes a parallel per-month array of δοσολόγιο rows:
-   {month,principal,interest,inst,lump,autoLump,bal} */
+   {month,principal,interest,inst,lump,autoLump,manualLump,bal} */
 let mSchedule=[];
 function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps,lumpMonth,actuals){
   const rows=[];const sched=[];let prev=startBal;
