@@ -62,7 +62,10 @@ Check size before editing: `wc -c loan-tracker.html`
 These will be refactored in v1.0 when loan setup becomes user-configurable.
 
 ### Formatting quirks
-- `fmtE()` uses the literal `€` character via `textContent`, not `innerHTML` — do not change to `&#8364;`
+- `fmtE()` uses the literal `€` character via `textContent`, not `innerHTML` — do not change to `&#8364;`.
+  This rule applies to `fmtE()` / `textContent` assignments only.
+  HTML entities **do not render on `<canvas>`**, so Chart.js callbacks (e.g. Y-axis tick formatter)
+  must use the literal `'€'` character — that is correct and intentional, not a violation of this rule.
 - Greek locale (`el-GR`) throughout: thousands separator `.`, decimal `,`
 - This will become user-selectable in v1.0
 

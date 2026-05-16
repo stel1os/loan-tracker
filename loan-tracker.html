@@ -37,14 +37,6 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
 .chart-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
 .chart-title{font-size:.88rem;font-weight:700;margin-bottom:4px;color:#333}
 .chart-note{font-size:.72rem;color:#999;margin-bottom:12px}
-.extras-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
-.extras-card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.extras-title{font-size:.82rem;font-weight:700;margin-bottom:10px}
-.extra-item{display:flex;justify-content:space-between;font-size:.78rem;padding:5px 0;border-bottom:1px solid #f5f5f5}
-.extra-item:last-child{border-bottom:none}
-.extra-date{color:#666}.extra-amount{font-weight:700;color:#16a34a}
-.extra-upcoming{color:#2563eb;font-weight:600}
-.sec-div{font-size:.68rem;color:#aaa;text-transform:uppercase;letter-spacing:.06em;padding:6px 0 3px;font-weight:600}
 .txn-section{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
 .txn-title{font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f0f0f0}
 .txn-note{font-size:.78rem;color:#666;margin-bottom:14px;line-height:1.5}
@@ -72,11 +64,53 @@ table.txn tr:hover td{background:#fafbff}
 .budget-bar input{width:75px;padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:.82rem;font-family:inherit}
 .budget-bar span{color:#0369a1;font-size:.76rem}
 .footer{font-size:.72rem;color:#aaa;text-align:center;margin-top:8px}
+/* Header */
+.hdr-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px}
+.btn-settings{background:none;border:1px solid #d1d5db;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:.8rem;color:#555;display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.btn-settings:hover{background:#f0f0f0;border-color:#aaa}
+/* First-run banner */
+.first-run-banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:.82rem;color:#92400e;display:none}
+.first-run-banner.show{display:block}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px 30px;width:min(700px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.modal-sub{font-size:.78rem;color:#666;margin-bottom:20px}
+.setup-tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid #e0e0e0}
+.setup-tab{padding:6px 16px;font-size:.8rem;font-weight:600;border:none;background:none;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px}
+.setup-tab.active{color:#2563eb;border-bottom-color:#2563eb}
+.setup-panel{display:none}.setup-panel.active{display:block}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;margin-bottom:18px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-label{font-size:.72rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
+.form-input{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.85rem;font-family:inherit;width:100%}
+.form-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
+.form-input.err{border-color:#dc2626;box-shadow:0 0 0 2px rgba(220,38,38,.12)}
+.form-select{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.85rem;font-family:inherit;width:100%;background:#fff}
+.form-hint{font-size:.68rem;color:#999;margin-top:1px}
+.form-err{font-size:.7rem;color:#dc2626;margin-top:2px;display:none}
+.form-err.show{display:block}
+.seeds-label{font-size:.72rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.seeds-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #eee;padding-top:16px;margin-top:4px}
+.btn-primary{background:#2563eb;color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
+.btn-primary:hover{background:#1d4ed8}
+.btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
+.btn-secondary:hover{background:#e5e7eb}
 </style>
 </head>
 <body>
-<h1>Loan Tracker</h1>
-<p class="subtitle">Alpha Mortgage + Alpha Repairs &middot; data from MMEX &middot; May 2026</p>
+<div class="hdr-row">
+  <div>
+    <h1>Loan Tracker</h1>
+    <p class="subtitle" id="app-subtitle">Loading&hellip;</p>
+  </div>
+  <button class="btn-settings" onclick="openSetup(false)">&#9881; Setup</button>
+</div>
+<div class="first-run-banner" id="first-run-banner">
+  No loan data found &mdash; please configure your loans to get started.
+</div>
 <div class="tab-bar">
   <button class="tab-btn active" onclick="showTab('dashboard',this)">Dashboard</button>
   <button class="tab-btn" onclick="showTab('mortgage-txn',this)">Mortgage</button>
@@ -84,43 +118,43 @@ table.txn tr:hover td{background:#fafbff}
 </div>
 <div id="tab-dashboard" class="tab-panel active">
   <div class="summary-row">
-    <div class="card"><div class="card-label">Total Debt</div><div class="card-value red">&#8364;106,933</div><div class="card-sub">&#8364;88,314 mortgage + &#8364;18,619 repairs</div></div>
-    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value green" id="card-payoff">...</div><div class="card-sub" id="card-payoff-sub">Loading...</div></div>
-    <div class="card"><div class="card-label">Interest Saved vs No Extras</div><div class="card-value green" id="card-saved">...</div><div class="card-sub" id="card-saved-sub">Loading...</div></div>
+    <div class="card"><div class="card-label">Total Debt</div><div class="card-value red" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value green" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Interest Saved vs No Extras</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
   </div>
   <div class="two-col">
     <div class="loan-card">
-      <div class="loan-title">Alpha Mortgage <span class="badge badge-blue">4.52% &middot; 300M</span></div>
+      <div class="loan-title">Alpha Mortgage <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
       <div class="stat-grid">
-        <div><div class="stat-label">Balance</div><div class="stat-val red">&#8364;88,314</div></div>
-        <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">...</div></div>
+        <div><div class="stat-label">Balance</div><div class="stat-val red" id="m-bal-stat">&#8230;</div></div>
+        <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">&#8230;</div></div>
         <div><div class="stat-label">Time Saved</div><div class="stat-val green">~11.5 yrs</div></div>
-        <div><div class="stat-label">Next Lump</div><div class="stat-val" id="m-next-lump" style="color:#2563eb">...</div></div>
+        <div><div class="stat-label">Next Lump</div><div class="stat-val" id="m-next-lump" style="color:#2563eb">&#8230;</div></div>
       </div>
       <div class="progress-track"><div class="progress-fill" style="width:7%;background:linear-gradient(90deg,#2563eb,#93c5fd)"></div></div>
       <div style="font-size:.72rem;color:#aaa;margin-top:4px;">&#8364;6,686 principal reduced &middot; &#8364;7,335 interest &middot; &#8364;2,912 extras so far</div>
       <div class="plan-box">
-        <div class="plan-row"><span>Plan remaining interest</span><strong id="m-plan-int">...</strong></div>
-        <div class="plan-row"><span>No-extras interest</span><strong id="m-base-int">...</strong></div>
-        <div class="plan-row"><span>Interest saved</span><strong class="green" id="m-int-saved">...</strong></div>
-        <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">...</strong></div>
+        <div class="plan-row"><span>Plan remaining interest</span><strong id="m-plan-int">&#8230;</strong></div>
+        <div class="plan-row"><span>No-extras interest</span><strong id="m-base-int">&#8230;</strong></div>
+        <div class="plan-row"><span>Interest saved</span><strong class="green" id="m-int-saved">&#8230;</strong></div>
+        <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">&#8230;</strong></div>
       </div>
     </div>
     <div class="loan-card">
-      <div class="loan-title">Alpha Repairs <span class="badge badge-amber">4.52% &middot; 2 tranches</span></div>
+      <div class="loan-title">Alpha Repairs <span class="badge badge-amber" id="r-badge">&#8230;</span></div>
       <div class="stat-grid">
-        <div><div class="stat-label">Balance</div><div class="stat-val red">&#8364;18,619</div></div>
-        <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="r-payoff">...</div></div>
+        <div><div class="stat-label">Balance</div><div class="stat-val red" id="r-bal-stat">&#8230;</div></div>
+        <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="r-payoff">&#8230;</div></div>
         <div><div class="stat-label">Time Saved</div><div class="stat-val green">~12 yrs</div></div>
-        <div><div class="stat-label">Next Lump</div><div class="stat-val" id="r-next-lump" style="color:#ea580c">...</div></div>
+        <div><div class="stat-label">Next Lump</div><div class="stat-val" id="r-next-lump" style="color:#ea580c">&#8230;</div></div>
       </div>
       <div class="progress-track"><div class="progress-fill" style="width:6.9%;background:linear-gradient(90deg,#ea580c,#fdba74)"></div></div>
       <div style="font-size:.72rem;color:#aaa;margin-top:4px;">&#8364;1,381 principal reduced &middot; &#8364;1,373 interest &middot; &#8364;678 extras so far</div>
       <div class="plan-box">
-        <div class="plan-row"><span>Plan remaining interest</span><strong id="r-plan-int">...</strong></div>
-        <div class="plan-row"><span>No-extras interest</span><strong id="r-base-int">...</strong></div>
-        <div class="plan-row"><span>Interest saved</span><strong class="green" id="r-int-saved">...</strong></div>
-        <div class="plan-row"><span>Future lumps total</span><strong id="r-lumps-total">...</strong></div>
+        <div class="plan-row"><span>Plan remaining interest</span><strong id="r-plan-int">&#8230;</strong></div>
+        <div class="plan-row"><span>No-extras interest</span><strong id="r-base-int">&#8230;</strong></div>
+        <div class="plan-row"><span>Interest saved</span><strong class="green" id="r-int-saved">&#8230;</strong></div>
+        <div class="plan-row"><span>Future lumps total</span><strong id="r-lumps-total">&#8230;</strong></div>
       </div>
     </div>
   </div>
@@ -129,7 +163,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="chart-note">Solid = actual MMEX &middot; Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
     <canvas id="balanceChart" height="220"></canvas>
   </div>
-  <p class="footer">Rate 4.52% fixed + 0.12% levy &middot; Data from MMEX &middot; Lumps 3x/year (Apr, Aug, Dec) &middot; Budget drives lump formula dynamically</p>
+  <p class="footer" id="app-footer">Loading&hellip;</p>
 </div>
 <div id="tab-mortgage-txn" class="tab-panel">
   <div class="txn-section">
@@ -163,10 +197,285 @@ table.txn tr:hover td{background:#fafbff}
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th>Type</th><th class="num">Installment</th><th class="num">Interest</th><th class="num">Net Principal</th><th class="num">Balance</th><th>Note</th><th style="text-align:center">Paid?</th></tr></thead><tbody id="r-proj-tbody"></tbody></table></div>
   </div>
 </div>
+
+<!-- Setup / Settings Modal -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal">
+    <div class="modal-title">Loan Setup</div>
+    <div class="modal-sub">Configure your loan details. Saved locally in your browser and used for all projections.</div>
+    <div class="setup-tabs">
+      <button class="setup-tab active" id="stab-mort" onclick="switchSetupTab('mort',this)">Mortgage</button>
+      <button class="setup-tab" id="stab-rep" onclick="switchSetupTab('rep',this)">Repairs Loan</button>
+    </div>
+
+    <!-- Mortgage -->
+    <div class="setup-panel active" id="setup-panel-mort">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="s-mort-bal">Opening Balance (&#8364;) *</label>
+          <input class="form-input" id="s-mort-bal" type="number" step="0.01" min="0" placeholder="e.g. 88314.11">
+          <div class="form-hint">Balance at start of projection</div>
+          <div class="form-err" id="err-mort-bal">Required &mdash; must be &gt; 0</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-mort-months">Remaining Term (months) *</label>
+          <input class="form-input" id="s-mort-months" type="number" step="1" min="1" placeholder="e.g. 278">
+          <div class="form-err" id="err-mort-months">Required &mdash; must be &ge; 1</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-mort-rate">Annual Interest Rate (%) *</label>
+          <input class="form-input" id="s-mort-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.52">
+          <div class="form-hint">Base nominal rate, before levy</div>
+          <div class="form-err" id="err-mort-rate">Required &mdash; must be &gt; 0</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-mort-levy">Additional Levy (%)</label>
+          <input class="form-input" id="s-mort-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.12">
+          <div class="form-hint">Bank risk levy on top of base rate (leave 0 if none)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-mort-rtype">Rate Type</label>
+          <select class="form-select" id="s-mort-rtype">
+            <option value="fixed">Fixed</option>
+            <option value="variable">Variable</option>
+          </select>
+          <div class="form-hint">Rate-change logic coming in a future release</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Projection Start (month/year) *</label>
+          <div style="display:flex;gap:6px">
+            <select class="form-select" id="s-mort-startmon" style="flex:1">
+              <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+              <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+            <input class="form-input" id="s-mort-startyear" type="number" step="1" min="2020" max="2099" placeholder="Year" style="width:85px">
+          </div>
+          <div class="form-err" id="err-mort-start">Year is required</div>
+        </div>
+      </div>
+      <div style="margin-bottom:18px">
+        <div class="seeds-label">Last 4 Known Installments (&#8364;) &mdash; seeds the lump-sum formula *</div>
+        <div style="font-size:.68rem;color:#999;margin-bottom:8px">Enter oldest to most recent. At least one must be non-zero.</div>
+        <div class="seeds-row">
+          <div class="form-group"><label class="form-label" for="s-mort-s1">Oldest</label><input class="form-input" id="s-mort-s1" type="number" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label" for="s-mort-s2">&nbsp;</label><input class="form-input" id="s-mort-s2" type="number" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label" for="s-mort-s3">&nbsp;</label><input class="form-input" id="s-mort-s3" type="number" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label" for="s-mort-s4">Most recent</label><input class="form-input" id="s-mort-s4" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        </div>
+        <div class="form-err" id="err-mort-seeds">At least one seed installment must be non-zero</div>
+      </div>
+    </div>
+
+    <!-- Repairs -->
+    <div class="setup-panel" id="setup-panel-rep">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="s-rep-bal">Opening Balance (&#8364;) *</label>
+          <input class="form-input" id="s-rep-bal" type="number" step="0.01" min="0" placeholder="e.g. 18619.01">
+          <div class="form-hint">Balance at start of projection</div>
+          <div class="form-err" id="err-rep-bal">Required &mdash; must be &gt; 0</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-rep-months">Remaining Term (months) *</label>
+          <input class="form-input" id="s-rep-months" type="number" step="1" min="1" placeholder="e.g. 277">
+          <div class="form-err" id="err-rep-months">Required &mdash; must be &ge; 1</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-rep-rate">Annual Interest Rate (%) *</label>
+          <input class="form-input" id="s-rep-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.52">
+          <div class="form-hint">Base nominal rate, before levy</div>
+          <div class="form-err" id="err-rep-rate">Required &mdash; must be &gt; 0</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-rep-levy">Additional Levy (%)</label>
+          <input class="form-input" id="s-rep-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.12">
+          <div class="form-hint">Bank risk levy on top of base rate (leave 0 if none)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="s-rep-rtype">Rate Type</label>
+          <select class="form-select" id="s-rep-rtype">
+            <option value="fixed">Fixed</option>
+            <option value="variable">Variable</option>
+          </select>
+          <div class="form-hint">Rate-change logic coming in a future release</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Projection Start (month/year) *</label>
+          <div style="display:flex;gap:6px">
+            <select class="form-select" id="s-rep-startmon" style="flex:1">
+              <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+              <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+            <input class="form-input" id="s-rep-startyear" type="number" step="1" min="2020" max="2099" placeholder="Year" style="width:85px">
+          </div>
+          <div class="form-err" id="err-rep-start">Year is required</div>
+        </div>
+      </div>
+      <div style="margin-bottom:18px">
+        <div class="seeds-label">Last 4 Known Installments (&#8364;) &mdash; seeds the lump-sum formula *</div>
+        <div style="font-size:.68rem;color:#999;margin-bottom:8px">Enter oldest to most recent. At least one must be non-zero.</div>
+        <div class="seeds-row">
+          <div class="form-group"><label class="form-label" for="s-rep-s1">Oldest</label><input class="form-input" id="s-rep-s1" type="number" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label" for="s-rep-s2">&nbsp;</label><input class="form-input" id="s-rep-s2" type="number" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label" for="s-rep-s3">&nbsp;</label><input class="form-input" id="s-rep-s3" type="number" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label" for="s-rep-s4">Most recent</label><input class="form-input" id="s-rep-s4" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        </div>
+        <div class="form-err" id="err-rep-seeds">At least one seed installment must be non-zero</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="setup-cancel-btn" onclick="closeSetup()">Cancel</button>
+      <button class="btn-primary" onclick="saveSetup()">Save &amp; Apply</button>
+    </div>
+  </div>
+</div>
+
 <script>
-function showTab(id,btn){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');if(btn)btn.classList.add('active');}
+/* ─────────────────────────────────────────
+   Tab navigation
+───────────────────────────────────────── */
+function showTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+
+/* ─────────────────────────────────────────
+   Setup modal helpers
+───────────────────────────────────────── */
+function switchSetupTab(which,btn){
+  document.querySelectorAll('.setup-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.setup-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('setup-panel-'+which).classList.add('active');
+}
+
+/* ─────────────────────────────────────────
+   localStorage schema
+   ─────────────────────────────────────────
+   Keys: lt_loan_mort  /  lt_loan_rep
+   Shape (both loans):
+   {
+     balance:          number,   // opening balance for projection (€)
+     months:           number,   // remaining term in months
+     annualRate:       number,   // base annual rate as % (e.g. 4.52)
+     levy:             number,   // additional levy as % (e.g. 0.12)
+     rateType:         'fixed'|'variable',
+     startMonth:       number,   // 1–12
+     startYear:        number,   // e.g. 2026
+     seedInstallments: [n,n,n,n] // last 4 known installments, oldest→newest
+   }
+
+   Untouched keys (existing):
+     mort_budget      — mortgage monthly budget
+     rep_budget       — repairs monthly budget
+     mort_act / rep_act — confirmed actual rows
+───────────────────────────────────────── */
+const LS_MORT='lt_loan_mort';
+const LS_REP='lt_loan_rep';
+
+function loadLoanSetup(key){try{return JSON.parse(localStorage.getItem(key));}catch(e){return null;}}
+function saveLoanSetup(key,obj){localStorage.setItem(key,JSON.stringify(obj));}
+
+function populateForm(pfx,data){
+  if(!data)return;
+  document.getElementById('s-'+pfx+'-bal').value=data.balance??'';
+  document.getElementById('s-'+pfx+'-months').value=data.months??'';
+  document.getElementById('s-'+pfx+'-rate').value=data.annualRate??'';
+  document.getElementById('s-'+pfx+'-levy').value=data.levy??'';
+  document.getElementById('s-'+pfx+'-rtype').value=data.rateType??'fixed';
+  document.getElementById('s-'+pfx+'-startmon').value=data.startMonth??'5';
+  document.getElementById('s-'+pfx+'-startyear').value=data.startYear??'';
+  const seeds=data.seedInstallments||[0,0,0,0];
+  ['s1','s2','s3','s4'].forEach((f,i)=>{document.getElementById('s-'+pfx+'-'+f).value=seeds[i]??'';});
+}
+
+function openSetup(firstRun){
+  populateForm('mort',loadLoanSetup(LS_MORT));
+  populateForm('rep',loadLoanSetup(LS_REP));
+  clearErrors();
+  document.getElementById('setup-cancel-btn').style.display=firstRun?'none':'';
+  // Always start on Mortgage tab
+  document.getElementById('stab-mort').click();
+  document.getElementById('setup-modal').classList.add('open');
+}
+
+function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+function clearErrors(){
+  document.querySelectorAll('.form-err').forEach(e=>e.classList.remove('show'));
+  document.querySelectorAll('.form-input').forEach(e=>e.classList.remove('err'));
+  document.querySelectorAll('.setup-tab').forEach(t=>t.style.color='');
+}
+
+function setErr(errId,inputId){
+  document.getElementById(errId).classList.add('show');
+  if(inputId)document.getElementById(inputId).classList.add('err');
+}
+
+function readForm(pfx){
+  const bal=parseFloat(document.getElementById('s-'+pfx+'-bal').value);
+  const months=parseInt(document.getElementById('s-'+pfx+'-months').value,10);
+  const rate=parseFloat(document.getElementById('s-'+pfx+'-rate').value);
+  const levy=parseFloat(document.getElementById('s-'+pfx+'-levy').value)||0;
+  const rtype=document.getElementById('s-'+pfx+'-rtype').value;
+  const smon=parseInt(document.getElementById('s-'+pfx+'-startmon').value,10);
+  const syr=parseInt(document.getElementById('s-'+pfx+'-startyear').value,10);
+  const seeds=['s1','s2','s3','s4'].map(f=>parseFloat(document.getElementById('s-'+pfx+'-'+f).value)||0);
+  return{bal,months,rate,levy,rtype,smon,syr,seeds};
+}
+
+function validateForm(pfx,v){
+  let ok=true;
+  if(!v.bal||isNaN(v.bal)||v.bal<=0){setErr('err-'+pfx+'-bal','s-'+pfx+'-bal');ok=false;}
+  if(!v.months||isNaN(v.months)||v.months<1){setErr('err-'+pfx+'-months','s-'+pfx+'-months');ok=false;}
+  if(!v.rate||isNaN(v.rate)||v.rate<=0){setErr('err-'+pfx+'-rate','s-'+pfx+'-rate');ok=false;}
+  if(!v.syr||isNaN(v.syr)){setErr('err-'+pfx+'-start','s-'+pfx+'-startyear');ok=false;}
+  if(v.seeds.every(s=>s===0)){document.getElementById('err-'+pfx+'-seeds').classList.add('show');ok=false;}
+  return ok;
+}
+
+function saveSetup(){
+  clearErrors();
+  const mv=readForm('mort'),rv=readForm('rep');
+  const mOk=validateForm('mort',mv),rOk=validateForm('rep',rv);
+  if(!mOk||!rOk){
+    // Both tabs are validated above — error classes are set on both panels regardless of which is active.
+    // Mark tab buttons that have errors so the user knows to fix the other tab too.
+    document.getElementById('stab-mort').style.color=mOk?'':' #dc2626';
+    document.getElementById('stab-rep').style.color=rOk?'':'#dc2626';
+    // Navigate to the first tab with errors
+    if(!mOk)document.getElementById('stab-mort').click();
+    else document.getElementById('stab-rep').click();
+    return;
+  }
+  // Clear any tab-level error colouring on success
+  document.getElementById('stab-mort').style.color='';
+  document.getElementById('stab-rep').style.color='';
+  saveLoanSetup(LS_MORT,{balance:mv.bal,months:mv.months,annualRate:mv.rate,levy:mv.levy,rateType:mv.rtype,startMonth:mv.smon,startYear:mv.syr,seedInstallments:mv.seeds});
+  saveLoanSetup(LS_REP,{balance:rv.bal,months:rv.months,annualRate:rv.rate,levy:rv.levy,rateType:rv.rtype,startMonth:rv.smon,startYear:rv.syr,seedInstallments:rv.seeds});
+  closeSetup();
+  document.getElementById('first-run-banner').classList.remove('show');
+  initApp();
+}
+
+/* ─────────────────────────────────────────
+   Utilities
+───────────────────────────────────────── */
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function ymFmt(t){const p=(t.dispDate||t.date).slice(0,7).split('-');return p[0]+' '+MN[+p[1]-1];}
+const fmtE=n=>'€'+Math.round(n).toLocaleString('el-GR');
+const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ─────────────────────────────────────────
+   Transaction history (MMEX actuals — unchanged)
+───────────────────────────────────────── */
 const M_TXN=[
   {date:'2024-07-31',code:'draw',inst:0,int:0,note:'Loan disbursement'},
   {date:'2024-08-30',code:'inst',inst:532.16,int:357.83,note:''},
@@ -220,6 +529,7 @@ const R_TXN=[
   {date:'2026-04-03',code:'inst',inst:109.80,int:71.86,note:''},
   {date:'2026-05-03',code:'inst',inst:108.36,int:70.28,note:'Installment paid May 4 (weekday slip)'},
 ];
+
 function buildTable(tbodyId,txns,initDraw){
   const tbody=document.getElementById(tbodyId);
   let bal=0,totI=0,totInt=0,n=0;
@@ -235,7 +545,7 @@ function buildTable(tbodyId,txns,initDraw){
     if(t.int>0)bal+=t.int;
     if(t.inst>0){bal-=t.inst;totI+=t.inst;}
     if(bal<0)bal=0;
-    if(!isDraw){totInt+=t.int;}
+    if(!isDraw)totInt+=t.int;
     const net=t.inst-t.int;
     const cls=isDraw?'tr-draw':isExtra?'tr-extra':'';
     const pill=isDraw?'<span class="pill pill-draw">Draw</span>':isExtra?'<span class="pill pill-extra">Extra</span>':'<span class="pill pill-inst">Installment</span>';
@@ -248,20 +558,32 @@ function buildTable(tbodyId,txns,initDraw){
 }
 buildTable('m-tbody',M_TXN,95000);
 buildTable('r-tbody',R_TXN,10000);
-const MORT_BAL=88314.11,REP_BAL=18619.01,RATE=0.003767,MORT_MONTHS=278,REP_MONTHS=277;
+
+/* ─────────────────────────────────────────
+   Historical balance maps (MMEX actuals)
+───────────────────────────────────────── */
 const M_HIST={'2024-07':95000,'2024-08':94825.67,'2024-09':94650.70,'2024-10':94475.09,'2024-11':94299.23,'2024-12':94121.93,'2025-01':93944.38,'2025-02':93766.18,'2025-03':93587.32,'2025-04':93407.81,'2025-05':93227.64,'2025-06':93046.81,'2025-07':92865.32,'2025-08':92683.16,'2025-09':91801.71,'2025-10':91619.59,'2025-11':91436.80,'2025-12':90542.77,'2026-01':90360.08,'2026-02':90176.72,'2026-03':88495.74,'2026-04':88314.11};
 const R_HIST={'2024-09':10000,'2024-10':9981.64,'2024-11':19944.72,'2024-12':19881.17,'2025-01':19806.05,'2025-02':19693.71,'2025-03':19619.01,'2025-04':19532.04,'2025-05':19457.48,'2025-06':19383.06,'2025-07':19308.78,'2025-08':19234.64,'2025-09':19160.64,'2025-10':19086.79,'2025-11':19012.09,'2025-12':18761.80,'2026-01':18723.27,'2026-02':18684.59,'2026-03':18112.59,'2026-04':18041.59,'2026-05':18619.01};
+
+/* ─────────────────────────────────────────
+   Projection engine
+───────────────────────────────────────── */
 function calcPmt(b,r,m){return b*r/(1-Math.pow(1+r,-m));}
-function amortizeSimple(bal,rate,months){const pmt=calcPmt(bal,rate,months);const out=[];let b=bal;for(let m=0;m<months&&b>0.01;m++){const i=b*rate;b=Math.max(0,b-(pmt-i));out.push(+b.toFixed(2));}return out;}
-const fmtE=n=>'€'+Math.round(n).toLocaleString('el-GR');
-const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function amortizeSimple(bal,rate,months){
+  const pmt=calcPmt(bal,rate,months);const out=[];let b=bal;
+  for(let m=0;m<months&&b>0.01;m++){const i=b*rate;b=Math.max(0,b-(pmt-i));out.push(+b.toFixed(2));}
+  return out;
+}
 function rowsToPlanMap(rows){const map={};rows.filter(r=>r.type==='inst').forEach(r=>{map[r.month]=r.bal;});return map;}
 function rowsToLumpMap(rows){const map={};rows.filter(r=>r.type==='extra').forEach(r=>{map[r.month]=r.inst;});return map;}
-function computePlanStats(mRows,rRows){
-  const mBase=amortizeSimple(MORT_BAL,RATE,MORT_MONTHS);
-  const rBase=amortizeSimple(REP_BAL,RATE,REP_MONTHS);
-  let mBI=0,b=MORT_BAL;mBase.forEach(v=>{mBI+=b*RATE;b=v;});
-  let rBI=0;b=REP_BAL;rBase.forEach(v=>{rBI+=b*RATE;b=v;});
+
+function computePlanStats(mRows,rRows,mS,rS){
+  const MORT_RATE=(mS.annualRate+mS.levy)/100/12;
+  const REP_RATE=(rS.annualRate+rS.levy)/100/12;
+  const mBase=amortizeSimple(mS.balance,MORT_RATE,mS.months);
+  const rBase=amortizeSimple(rS.balance,REP_RATE,rS.months);
+  let mBI=0,b=mS.balance;mBase.forEach(v=>{mBI+=b*MORT_RATE;b=v;});
+  let rBI=0;b=rS.balance;rBase.forEach(v=>{rBI+=b*REP_RATE;b=v;});
   const mPI=mRows.filter(r=>r.type==='inst').reduce((s,r)=>s+r.int,0);
   const rPI=rRows.filter(r=>r.type==='inst').reduce((s,r)=>s+r.int,0);
   const mLT=mRows.filter(r=>r.type==='extra').reduce((s,r)=>s+r.inst,0);
@@ -269,11 +591,10 @@ function computePlanStats(mRows,rRows){
   const mLN=mRows.filter(r=>r.type==='extra').length;
   const rLN=rRows.filter(r=>r.type==='extra').length;
   const mSv=mBI-mPI,rSv=rBI-rPI,tot=mSv+rSv;
-  // payoff months
-  const mInstRows=mRows.filter(r=>r.type==='inst');
-  const rInstRows=rRows.filter(r=>r.type==='inst');
-  const mPayoff=mInstRows.length?mInstRows[mInstRows.length-1].month:'---';
-  const rPayoff=rInstRows.length?rInstRows[rInstRows.length-1].month:'---';
+  const mInst=mRows.filter(r=>r.type==='inst');
+  const rInst=rRows.filter(r=>r.type==='inst');
+  const mPayoff=mInst.length?mInst[mInst.length-1].month:'---';
+  const rPayoff=rInst.length?rInst[rInst.length-1].month:'---';
   const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
   document.getElementById('m-plan-int').textContent=fmtE(mPI);
   document.getElementById('m-base-int').textContent=fmtE(mBI);
@@ -291,17 +612,40 @@ function computePlanStats(mRows,rRows){
   document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' mortgage + '+fmtE(rSv)+' repairs vs no extras';
   document.getElementById('card-payoff').textContent=fmtMon(mPayoff);
   document.getElementById('card-payoff-sub').textContent='Mortgage '+fmtMon(mPayoff)+' · Repairs '+fmtMon(rPayoff);
+  // Dashboard cards from setup data
+  const totalDebt=mS.balance+rS.balance;
+  document.getElementById('card-total-debt').textContent=fmtE(totalDebt);
+  document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' mortgage + '+fmtE(rS.balance)+' repairs';
+  document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
+  document.getElementById('r-bal-stat').textContent=fmtE(rS.balance);
+  document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
+  document.getElementById('r-badge').textContent=(rS.annualRate+rS.levy).toFixed(2)+'% · '+rS.months+'M';
+  document.getElementById('app-subtitle').textContent='Alpha Mortgage + Alpha Repairs · data from MMEX · '+MN[mS.startMonth-1]+' '+mS.startYear;
+  document.getElementById('app-footer').textContent='Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy · Lumps 3×/year (Apr, Aug, Dec) · Budget drives lump formula dynamically';
   return{mBase,rBase};
 }
+
 let chart=null;
-function buildLabels(){const l=[];for(let y=2024;y<=2049;y++){const s=y===2024?7:1,e=y===2049?7:12;for(let m=s;m<=e;m++)l.push(`${y}-${String(m).padStart(2,'0')}`);}return l;}
-function buildChart(mBase,rBase,mPlanMap,rPlanMap,mLumpsMap,rLumpsMap){
+function buildLabels(){
+  const l=[];
+  for(let y=2024;y<=2049;y++){const s=y===2024?7:1,e=y===2049?7:12;for(let m=s;m<=e;m++)l.push(`${y}-${String(m).padStart(2,'0')}`);}
+  return l;
+}
+
+function buildChart(mBase,rBase,mPlanMap,rPlanMap,mLumpsMap,rLumpsMap,mS,rS){
+  const mStartKey=mS.startYear+'-'+String(mS.startMonth).padStart(2,'0');
+  const rStartKey=rS.startYear+'-'+String(rS.startMonth).padStart(2,'0');
+  // Baseline starts from month after projection start
+  let mBSmon=mS.startMonth+1,mBSyr=mS.startYear;if(mBSmon>12){mBSmon=1;mBSyr++;}
+  let rBSmon=rS.startMonth+1,rBSyr=rS.startYear;if(rBSmon>12){rBSmon=1;rBSyr++;}
+  const mBSkey=mBSyr+'-'+String(mBSmon).padStart(2,'0');
+  const rBSkey=rBSyr+'-'+String(rBSmon).padStart(2,'0');
   const labels=buildLabels();
   const mH=labels.map(l=>M_HIST[l]??null);
   const rH=labels.map(l=>R_HIST[l]??null);
-  const mP=labels.map(l=>{if(l==='2026-04')return MORT_BAL;const v=mPlanMap[l];return(v!=null&&v>0)?v:null;});
-  const rP=labels.map(l=>{if(l==='2026-05')return REP_BAL;const v=rPlanMap[l];return(v!=null&&v>0)?v:null;});
-  const mBS=labels.indexOf('2026-05'),rBS=labels.indexOf('2026-06');
+  const mP=labels.map(l=>{if(l===mStartKey)return mS.balance;const v=mPlanMap[l];return(v!=null&&v>0)?v:null;});
+  const rP=labels.map(l=>{if(l===rStartKey)return rS.balance;const v=rPlanMap[l];return(v!=null&&v>0)?v:null;});
+  const mBS=labels.indexOf(mBSkey),rBS=labels.indexOf(rBSkey);
   const mBD=labels.map((_,i)=>{const x=i-mBS;return x>=0&&x<mBase.length&&mBase[x]>0?mBase[x]:null;});
   const rBD=labels.map((_,i)=>{const x=i-rBS;return x>=0&&x<rBase.length&&rBase[x]>0?rBase[x]:null;});
   const mLD=labels.map(l=>(l in mLumpsMap)&&(mPlanMap[l]!=null)?mPlanMap[l]:null);
@@ -317,12 +661,13 @@ function buildChart(mBase,rBase,mPlanMap,rPlanMap,mLumpsMap,rLumpsMap){
     {label:'Repairs (no extras)',data:rBD,borderColor:'rgba(234,88,12,.28)',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
     {label:'M lump',data:mLD,borderColor:'transparent',backgroundColor:'#1d4ed8',pointRadius:5,pointHoverRadius:7,showLine:false},
     {label:'R lump',data:rLD,borderColor:'transparent',backgroundColor:'#c2410c',pointRadius:5,pointHoverRadius:7,showLine:false},
-  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;const lumps=c.dataset.label.includes('M')?mLumpsMap:rLumpsMap;return 'Lump: '+fmtE(lumps[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'&#8364;'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;const lumps=c.dataset.label.includes('M')?mLumpsMap:rLumpsMap;return 'Lump: '+fmtE(lumps[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
-function genProj(budget,startBal,startMonth,rate,endYear,endMon,histLastInsts){
+
+function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts){
   const rows=[];let prev=startBal;
   const recent=[...histLastInsts];
-  let[y,mo]=startMonth.split('-').map(Number);
+  let[y,mo]=startMonthStr.split('-').map(Number);
   while(prev>0.5){
     const month=y+'-'+String(mo).padStart(2,'0');
     const remainM=(endYear-y)*12+(endMon-mo);
@@ -345,8 +690,10 @@ function genProj(budget,startBal,startMonth,rate,endYear,endMon,histLastInsts){
   }
   return rows;
 }
+
 function getActuals(k){try{return JSON.parse(localStorage.getItem(k+'_act')||'{}');}catch(e){return{};}}
 function saveActual(k,key,data){const a=getActuals(k);a[key]=data;localStorage.setItem(k+'_act',JSON.stringify(a));}
+
 function renderProj(tbodyId,loanKey,rows){
   const tbody=document.getElementById(tbodyId);
   const actuals=getActuals(loanKey);
@@ -379,6 +726,7 @@ function renderProj(tbodyId,loanKey,rows){
       ${lastCol}</tr>`;
   });
 }
+
 function toggleEdit(loanKey,idx,month,type,projInst,projInt,projBal){
   const chk=document.getElementById(`chk-${loanKey}-${idx}`);
   if(chk.checked){
@@ -387,6 +735,7 @@ function toggleEdit(loanKey,idx,month,type,projInst,projInt,projBal){
     document.getElementById(`pnote-${loanKey}-${idx}`).innerHTML=`<button class="btn-save" onclick="confirmActual('${loanKey}',${idx},'${month}','${type}',${projBal})">Save</button><button class="btn-cancel" onclick="cancelEdit('${loanKey}',${idx},${projInst},${projInt})">Cancel</button>`;
   }else{cancelEdit(loanKey,idx,projInst,projInt);}
 }
+
 function cancelEdit(loanKey,idx,projInst,projInt){
   const chk=document.getElementById(`chk-${loanKey}-${idx}`);
   if(chk)chk.checked=false;
@@ -394,42 +743,112 @@ function cancelEdit(loanKey,idx,projInst,projInt){
   document.getElementById(`pn-${loanKey}-${idx}`).innerHTML=f2x(projInt);
   document.getElementById(`pnote-${loanKey}-${idx}`).innerHTML='';
 }
+
 function confirmActual(loanKey,idx,month,type,projBal){
   const inst=parseFloat(document.getElementById(`ai-${loanKey}-${idx}`).value)||0;
   const interest=parseFloat(document.getElementById(`an-${loanKey}-${idx}`).value)||0;
   saveActual(loanKey,month+'_'+type,{inst,int:interest,bal:projBal,saved:true});
   renderProj(loanKey==='mort'?'m-proj-tbody':'r-proj-tbody',loanKey,loanKey==='mort'?mProjRows:rProjRows);
 }
+
+/* ─────────────────────────────────────────
+   Module-level state
+───────────────────────────────────────── */
+let mProjRows=[],rProjRows=[];
+let _mS=null,_rS=null; // active loan setups (for budget refresh)
+
 function rebuildChart(){
   const mp=rowsToPlanMap(mProjRows),rp=rowsToPlanMap(rProjRows);
   const ml=rowsToLumpMap(mProjRows),rl=rowsToLumpMap(rProjRows);
-  const{mBase,rBase}=computePlanStats(mProjRows,rProjRows);
-  buildChart(mBase,rBase,mp,rp,ml,rl);
+  const{mBase,rBase}=computePlanStats(mProjRows,rProjRows,_mS,_rS);
+  buildChart(mBase,rBase,mp,rp,ml,rl,_mS,_rS);
 }
+
+function projEndMonth(s){
+  // startMonth is the balance-as-of date; first projected month is startMonth+1.
+  // End guard = startMonth + months + 1 so that the last projected installment
+  // falls at startMonth + months (i.e. months installments starting from startMonth+1).
+  let ey=s.startYear,em=s.startMonth+s.months+1;
+  while(em>12){em-=12;ey++;}
+  return{ey,em};
+}
+
+function projFirstMonth(s){
+  // First projected month is the month AFTER the balance-as-of date.
+  let y=s.startYear,m=s.startMonth+1;
+  if(m>12){m=1;y++;}
+  return y+'-'+String(m).padStart(2,'0');
+}
+
 function refreshMort(){
+  if(!_mS||!_rS)return;
   const budget=parseFloat(document.getElementById('mort-budget').value)||820;
   localStorage.setItem('mort_budget',budget);
-  mProjRows=genProj(budget,MORT_BAL,'2026-05',RATE,2049,7,[523.73,523.72,519.90,514.97]);
+  const rate=(_mS.annualRate+_mS.levy)/100/12;
+  const startKey=projFirstMonth(_mS);
+  const{ey,em}=projEndMonth(_mS);
+  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments);
   renderProj('m-proj-tbody','mort',mProjRows);
   rebuildChart();
 }
+
 function refreshRep(){
+  if(!_mS||!_rS)return;
   const budget=parseFloat(document.getElementById('rep-budget').value)||180;
   localStorage.setItem('rep_budget',budget);
-  rProjRows=genProj(budget,REP_BAL,'2026-06',RATE,2049,9,[111.26,111.26,109.80,108.36]);
+  const rate=(_rS.annualRate+_rS.levy)/100/12;
+  const startKey=projFirstMonth(_rS);
+  const{ey,em}=projEndMonth(_rS);
+  rProjRows=genProj(budget,_rS.balance,startKey,rate,ey,em,_rS.seedInstallments);
   renderProj('r-proj-tbody','rep',rProjRows);
   rebuildChart();
 }
-let mProjRows=[],rProjRows=[];
-const mB=parseFloat(localStorage.getItem('mort_budget'))||820;
-const rB=parseFloat(localStorage.getItem('rep_budget'))||180;
-document.getElementById('mort-budget').value=mB;
-document.getElementById('rep-budget').value=rB;
-mProjRows=genProj(mB,MORT_BAL,'2026-05',RATE,2049,7,[523.73,523.72,519.90,514.97]);
-rProjRows=genProj(rB,REP_BAL,'2026-06',RATE,2049,9,[111.26,111.26,109.80,108.36]);
-renderProj('m-proj-tbody','mort',mProjRows);
-renderProj('r-proj-tbody','rep',rProjRows);
-rebuildChart();
+
+/* ─────────────────────────────────────────
+   App init — reads from localStorage (#1)
+   No hardcoded constants — all from setup
+───────────────────────────────────────── */
+function initApp(){
+  const mS=loadLoanSetup(LS_MORT);
+  const rS=loadLoanSetup(LS_REP);
+
+  if(!mS||!rS){
+    // First run: show banner and force setup
+    document.getElementById('first-run-banner').classList.add('show');
+    openSetup(true);
+    return;
+  }
+
+  _mS=mS;_rS=rS;
+
+  // Compute monthly rates from annual% + levy%
+  const MORT_RATE=(mS.annualRate+mS.levy)/100/12;
+  const REP_RATE=(rS.annualRate+rS.levy)/100/12;
+
+  // Projection start keys — first month AFTER the balance-as-of date
+  const mStartKey=projFirstMonth(mS);
+  const rStartKey=projFirstMonth(rS);
+
+  // Projection end months derived from setup
+  const{ey:mEy,em:mEm}=projEndMonth(mS);
+  const{ey:rEy,em:rEm}=projEndMonth(rS);
+
+  // Budget — preserved keys (mort_budget / rep_budget)
+  const mB=parseFloat(localStorage.getItem('mort_budget'))||820;
+  const rB=parseFloat(localStorage.getItem('rep_budget'))||180;
+  document.getElementById('mort-budget').value=mB;
+  document.getElementById('rep-budget').value=rB;
+
+  // Generate projections
+  mProjRows=genProj(mB,mS.balance,mStartKey,MORT_RATE,mEy,mEm,mS.seedInstallments);
+  rProjRows=genProj(rB,rS.balance,rStartKey,REP_RATE,rEy,rEm,rS.seedInstallments);
+
+  renderProj('m-proj-tbody','mort',mProjRows);
+  renderProj('r-proj-tbody','rep',rProjRows);
+  rebuildChart();
+}
+
+initApp();
 </script>
 </body>
 </html>
