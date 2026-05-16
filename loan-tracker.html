@@ -47,6 +47,8 @@ table.txn tr:hover td{background:#fafbff}
 .lock-ic{cursor:pointer;font-size:.85rem}
 .lump-add{cursor:pointer;color:#2563eb;font-weight:700;font-size:.95rem;border:1px dashed #93c5fd;border-radius:4px;padding:0 6px;background:#eff6ff}
 .lump-add:hover{background:#dbeafe}
+.lump-set{color:#15803d;border-color:#86efac;background:#f0fdf4;border-style:solid}
+.lump-set:hover{background:#dcfce7}
 .num{font-family:'SF Mono',monospace;text-align:right}
 .bal-owed{font-weight:700;color:#dc2626;font-family:'SF Mono',monospace;text-align:right}
 .totals-row td{font-weight:700;border-top:2px solid #d0d0d0!important;background:#f8f9fb!important}
@@ -461,7 +463,7 @@ function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=a
 
 /* genProj returns inst/extra rows (chart + stats) AND mSchedule
    exposes a parallel per-month array of δοσολόγιο rows:
-   {month,principal,interest,inst,lump,autoLump,bal} */
+   {month,principal,interest,inst,lump,autoLump,manualLump,bal} */
 let mSchedule=[];
 function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps,lumpMonth,actuals){
   const rows=[];const sched=[];let prev=startBal;
@@ -498,6 +500,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
     const man=manLumps[month]||0;
     if(man>0)lump+=man;
     lump=Math.min(lump,prev);
+    const manualLump=Math.max(0,Math.min(man,prev));
     // lump sum applied BEFORE installment of the month
     const balPost=Math.max(0,prev-lump);
     const interest=+(balPost*rate).toFixed(2);
@@ -506,7 +509,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
     const principal=+(inst-interest).toFixed(2);
     if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
     rows.push({month,type:'inst',inst,int:interest,bal:endBal});
-    sched.push({month,principal,interest,inst,lump,autoLump,bal:endBal,confirmed:false});
+    sched.push({month,principal,interest,inst,lump,autoLump,manualLump,bal:endBal,confirmed:false});
     recent.push(inst);
     if(recent.length>12)recent.shift();
     prev=endBal;
@@ -540,7 +543,12 @@ function renderProj(tbodyId,loanIdx){
       ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
       :`<td style="color:#bbb;font-size:.7rem">${n} <span class="lock-ic" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})" style="color:#2563eb">&#10003;</span></td>`;
     let lumpCell;
-    if(lump>0){lumpCell=`<td class="num" style="color:#15803d" id="pl-${loanIdx}-${idx}">${f2x(lump)}</td>`;}
+    const manL=locked?0:(row.manualLump||0);
+    if(lump>0&&!locked){
+      const t=manL>0?`Manual lump €${f2x(manL)} (click to edit)`:'Add manual lump sum';
+      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add${manL>0?' lump-set':''}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
+    }
+    else if(lump>0){lumpCell=`<td class="num" style="color:#15803d" id="pl-${loanIdx}-${idx}">${f2x(lump)}</td>`;}
     else if(!locked){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
     else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
     html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
@@ -570,7 +578,8 @@ function unlockRow(loanIdx,idx){
 /* future row: inline manual lump sum entry */
 function addLump(loanIdx,idx,month){
   const cur=getManLumps(loanIdx)[month]||0;
-  document.getElementById(`pl-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="al-${loanIdx}-${idx}" type="number" value="${cur||''}" placeholder="0.00" step="0.01"> <button class="btn-save" onclick="saveLumpEntry(${loanIdx},${idx},'${month}')">Save</button><button class="btn-cancel" onclick="renderProj('m-proj-tbody',${loanIdx})">Cancel</button>`;
+  document.getElementById(`pl-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="al-${loanIdx}-${idx}" type="number" value="${cur||''}" placeholder="0.00" step="0.01" onkeydown="if(event.key==='Enter'){saveLumpEntry(${loanIdx},${idx},'${month}')}else if(event.key==='Escape'){renderProj('m-proj-tbody',${loanIdx})}"> <button class="btn-save" onclick="saveLumpEntry(${loanIdx},${idx},'${month}')">Save</button><button class="btn-cancel" onclick="renderProj('m-proj-tbody',${loanIdx})">Cancel</button>`;
+  const inp=document.getElementById(`al-${loanIdx}-${idx}`);if(inp)inp.focus();
 }
 function saveLumpEntry(loanIdx,idx,month){
   const amt=parseFloat(document.getElementById(`al-${loanIdx}-${idx}`).value)||0;
