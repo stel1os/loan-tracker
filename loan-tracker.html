@@ -408,9 +408,16 @@ function computePlanStats(mRows,mS){
 }
 
 let chart=null;
-function buildLabels(){
+function buildLabels(mS){
   const l=[];
-  for(let y=2024;y<=2049;y++){const s=y===2024?7:1,e=y===2049?7:12;for(let m=s;m<=e;m++)l.push(`${y}-${String(m).padStart(2,'0')}`);}
+  const sy=mS.startYear,sm=mS.startMonth;
+  const{ey,em}=projEndMonth(mS);
+  // extend one month past payoff for a clean trailing zero
+  let ey2=ey,em2=em+1;if(em2>12){em2-=12;ey2++;}
+  for(let y=sy;y<=ey2;y++){
+    const ms=y===sy?sm:1,me=y===ey2?em2:12;
+    for(let m=ms;m<=me;m++)l.push(`${y}-${String(m).padStart(2,'0')}`);
+  }
   return l;
 }
 
@@ -418,7 +425,7 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const mStartKey=mS.startYear+'-'+String(mS.startMonth).padStart(2,'0');
   let mBSmon=mS.startMonth+1,mBSyr=mS.startYear;if(mBSmon>12){mBSmon=1;mBSyr++;}
   const mBSkey=mBSyr+'-'+String(mBSmon).padStart(2,'0');
-  const labels=buildLabels();
+  const labels=buildLabels(mS);
   const mP=labels.map(l=>{if(l===mStartKey)return mS.balance;const v=mPlanMap[l];return(v!=null&&v>0)?v:null;});
   const mBS=labels.indexOf(mBSkey);
   const mBD=labels.map((_,i)=>{const x=i-mBS;return x>=0&&x<mBase.length&&mBase[x]>0?mBase[x]:null;});
