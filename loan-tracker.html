@@ -85,6 +85,10 @@ table.txn tr:hover td{background:#fafbff}
 .btn-primary:hover{background:#1d4ed8}
 .btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
 .btn-secondary:hover{background:#e5e7eb}
+.btn-danger{background:#dc2626;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
+.btn-danger:hover{background:#b91c1c}
+.btn-link-reset{background:none;border:none;padding:0;cursor:pointer;font-size:.75rem;color:#9ca3af;text-decoration:underline}
+.btn-link-reset:hover{color:#dc2626}
 </style>
 </head>
 <body>
@@ -93,7 +97,7 @@ table.txn tr:hover td{background:#fafbff}
     <h1>Loan Tracker</h1>
     <p class="subtitle" id="app-subtitle">Loading&hellip;</p>
   </div>
-  <button class="btn-settings" onclick="openSetup(false)">&#9881; Setup</button>
+  <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
 </div>
 <div class="first-run-banner" id="first-run-banner">
   No loan data found &mdash; please configure your loan to get started.
@@ -141,12 +145,13 @@ table.txn tr:hover td{background:#fafbff}
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th>Type</th><th class="num">Installment</th><th class="num">Interest</th><th class="num">Net Principal</th><th class="num">Balance</th><th>Note</th><th style="text-align:center">Paid?</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>
+  <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
 </div>
 
-<!-- Setup / Settings Modal -->
+<!-- Edit / Settings Modal -->
 <div class="modal-overlay" id="setup-modal">
   <div class="modal">
-    <div class="modal-title">Loan Setup</div>
+    <div class="modal-title">Loan Edit</div>
     <div class="modal-sub">Configure your loan details. Saved locally in your browser and used for all projections.</div>
 
     <div class="form-grid">
@@ -207,6 +212,7 @@ table.txn tr:hover td{background:#fafbff}
     </div>
 
     <div class="modal-actions">
+      <button class="btn-danger" onclick="resetApp()" style="margin-right:auto">Reset all data</button>
       <button class="btn-secondary" id="setup-cancel-btn" onclick="closeSetup()">Cancel</button>
       <button class="btn-primary" onclick="saveSetup()">Save &amp; Apply</button>
     </div>
@@ -298,6 +304,13 @@ function openSetup(firstRun){
 }
 
 function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+function resetApp(){
+  Object.keys(localStorage)
+    .filter(k=>k.startsWith('lt_')||k.startsWith('confirmed_'))
+    .forEach(k=>localStorage.removeItem(k));
+  openSetup(true);
+}
 
 function clearErrors(){
   document.querySelectorAll('.form-err').forEach(e=>e.classList.remove('show'));
