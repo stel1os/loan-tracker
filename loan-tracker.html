@@ -411,6 +411,7 @@ function closeSetup(){document.getElementById('setup-modal').classList.remove('o
 function clearErrors(){
   document.querySelectorAll('.form-err').forEach(e=>e.classList.remove('show'));
   document.querySelectorAll('.form-input').forEach(e=>e.classList.remove('err'));
+  document.querySelectorAll('.setup-tab').forEach(t=>t.style.color='');
 }
 
 function setErr(errId,inputId){
@@ -445,11 +446,18 @@ function saveSetup(){
   const mv=readForm('mort'),rv=readForm('rep');
   const mOk=validateForm('mort',mv),rOk=validateForm('rep',rv);
   if(!mOk||!rOk){
-    // Show first tab with errors
+    // Both tabs are validated above — error classes are set on both panels regardless of which is active.
+    // Mark tab buttons that have errors so the user knows to fix the other tab too.
+    document.getElementById('stab-mort').style.color=mOk?'':' #dc2626';
+    document.getElementById('stab-rep').style.color=rOk?'':'#dc2626';
+    // Navigate to the first tab with errors
     if(!mOk)document.getElementById('stab-mort').click();
     else document.getElementById('stab-rep').click();
     return;
   }
+  // Clear any tab-level error colouring on success
+  document.getElementById('stab-mort').style.color='';
+  document.getElementById('stab-rep').style.color='';
   saveLoanSetup(LS_MORT,{balance:mv.bal,months:mv.months,annualRate:mv.rate,levy:mv.levy,rateType:mv.rtype,startMonth:mv.smon,startYear:mv.syr,seedInstallments:mv.seeds});
   saveLoanSetup(LS_REP,{balance:rv.bal,months:rv.months,annualRate:rv.rate,levy:rv.levy,rateType:rv.rtype,startMonth:rv.smon,startYear:rv.syr,seedInstallments:rv.seeds});
   closeSetup();
@@ -757,10 +765,19 @@ function rebuildChart(){
 }
 
 function projEndMonth(s){
-  // Returns {ey,em} — end month = startMonth + months (normalized)
-  let ey=s.startYear,em=s.startMonth+s.months;
+  // startMonth is the balance-as-of date; first projected month is startMonth+1.
+  // End guard = startMonth + months + 1 so that the last projected installment
+  // falls at startMonth + months (i.e. months installments starting from startMonth+1).
+  let ey=s.startYear,em=s.startMonth+s.months+1;
   while(em>12){em-=12;ey++;}
   return{ey,em};
+}
+
+function projFirstMonth(s){
+  // First projected month is the month AFTER the balance-as-of date.
+  let y=s.startYear,m=s.startMonth+1;
+  if(m>12){m=1;y++;}
+  return y+'-'+String(m).padStart(2,'0');
 }
 
 function refreshMort(){
@@ -768,7 +785,7 @@ function refreshMort(){
   const budget=parseFloat(document.getElementById('mort-budget').value)||820;
   localStorage.setItem('mort_budget',budget);
   const rate=(_mS.annualRate+_mS.levy)/100/12;
-  const startKey=_mS.startYear+'-'+String(_mS.startMonth).padStart(2,'0');
+  const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
   mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments);
   renderProj('m-proj-tbody','mort',mProjRows);
@@ -780,7 +797,7 @@ function refreshRep(){
   const budget=parseFloat(document.getElementById('rep-budget').value)||180;
   localStorage.setItem('rep_budget',budget);
   const rate=(_rS.annualRate+_rS.levy)/100/12;
-  const startKey=_rS.startYear+'-'+String(_rS.startMonth).padStart(2,'0');
+  const startKey=projFirstMonth(_rS);
   const{ey,em}=projEndMonth(_rS);
   rProjRows=genProj(budget,_rS.balance,startKey,rate,ey,em,_rS.seedInstallments);
   renderProj('r-proj-tbody','rep',rProjRows);
@@ -808,9 +825,9 @@ function initApp(){
   const MORT_RATE=(mS.annualRate+mS.levy)/100/12;
   const REP_RATE=(rS.annualRate+rS.levy)/100/12;
 
-  // Projection start keys
-  const mStartKey=mS.startYear+'-'+String(mS.startMonth).padStart(2,'0');
-  const rStartKey=rS.startYear+'-'+String(rS.startMonth).padStart(2,'0');
+  // Projection start keys — first month AFTER the balance-as-of date
+  const mStartKey=projFirstMonth(mS);
+  const rStartKey=projFirstMonth(rS);
 
   // Projection end months derived from setup
   const{ey:mEy,em:mEm}=projEndMonth(mS);
