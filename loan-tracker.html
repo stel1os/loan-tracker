@@ -134,7 +134,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="budget-bar">
       <label for="loan-budget"><strong>Monthly budget:</strong></label>
       <input type="number" id="loan-budget" value="820" step="10" min="0" onchange="refreshLoan()"> &euro;
-      <span>&rarr; Accumulates 4&times;budget &minus; last-4-installments, paid as lump Apr / Aug / Dec</span>
+      <span>&rarr; Accumulates 12&times;budget &minus; last-12-installments, paid once a year as a lump sum</span>
     </div>
     <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off payment. Highlighted rows have an auto scheduled lump sum.</div>
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Installment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
@@ -193,6 +193,16 @@ table.txn tr:hover td{background:#fafbff}
         </div>
         <div class="form-err" id="err-loan-start">Year is required</div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Lump Sum Month</label>
+        <select class="form-select" id="s-loan-lumpmon">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <div class="form-hint">Annual lump sum fires once per year in this month</div>
+      </div>
     </div>
     <div style="margin-bottom:18px">
       <div class="seeds-label">Last 4 Known Installments (&#8364;) &mdash; seeds the lump-sum formula *</div>
@@ -236,12 +246,16 @@ table.txn tr:hover td{background:#fafbff}
      rateType:         'fixed'|'variable',
      startMonth:       number,   // 1–12
      startYear:        number,   // e.g. 2026
+     lumpMonth:        number,   // 1–12, month annual lump fires (default 8)
      seedInstallments: [n,n,n,n] // last 4 known installments, oldest→newest
    }
 
    Per-loan keys (index-prefixed for future multi-loan):
      lt_budget_0          — monthly budget for loan 0
      confirmed_0_act      — confirmed actual rows for loan 0
+
+   Migration: loans missing lumpMonth default to 8 (August)
+   via genProj param default and form fallbacks.
 
    Migration (v1 → v2): if lt_loans is absent but the old
    single-loan key lt_loan_mort exists, it is migrated into
@@ -260,7 +274,7 @@ function migrateV1(){
     id:0,label:'Loan',
     balance:old.balance,months:old.months,annualRate:old.annualRate,
     levy:old.levy,rateType:old.rateType,startMonth:old.startMonth,
-    startYear:old.startYear,seedInstallments:old.seedInstallments
+    startYear:old.startYear,lumpMonth:old.lumpMonth||8,seedInstallments:old.seedInstallments
   };
   localStorage.setItem(LS_LOANS,JSON.stringify([loan]));
   localStorage.removeItem(LS_OLD_MORT);
@@ -287,6 +301,7 @@ function populateForm(data){
   document.getElementById('s-loan-rtype').value=data.rateType??'fixed';
   document.getElementById('s-loan-startmon').value=data.startMonth??'5';
   document.getElementById('s-loan-startyear').value=data.startYear??'';
+  document.getElementById('s-loan-lumpmon').value=data.lumpMonth??'8';
   const seeds=data.seedInstallments||[0,0,0,0];
   ['s1','s2','s3','s4'].forEach((f,i)=>{document.getElementById('s-loan-'+f).value=seeds[i]??'';});
 }
@@ -325,8 +340,9 @@ function readForm(){
   const rtype=document.getElementById('s-loan-rtype').value;
   const smon=parseInt(document.getElementById('s-loan-startmon').value,10);
   const syr=parseInt(document.getElementById('s-loan-startyear').value,10);
+  const lmon=parseInt(document.getElementById('s-loan-lumpmon').value,10)||8;
   const seeds=['s1','s2','s3','s4'].map(f=>parseFloat(document.getElementById('s-loan-'+f).value)||0);
-  return{bal,months,rate,levy,rtype,smon,syr,seeds};
+  return{bal,months,rate,levy,rtype,smon,syr,lmon,seeds};
 }
 
 function validateForm(v){
@@ -348,7 +364,7 @@ function saveSetup(){
   loans[0]={
     id:0,label:existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
-    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,seedInstallments:v.seeds
+    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,seedInstallments:v.seeds
   };
   saveLoans(loans);
   closeSetup();
@@ -403,7 +419,7 @@ function computePlanStats(mRows,mS){
   document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
   document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
-  document.getElementById('app-footer').textContent='Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy · Lumps 3×/year (Apr, Aug, Dec) · Budget drives lump formula dynamically';
+  document.getElementById('app-footer').textContent='Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy · Annual lump in '+MN[(mS.lumpMonth||8)-1]+' · Budget drives lump formula dynamically';
   return{mBase};
 }
 
@@ -447,10 +463,11 @@ function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=a
    exposes a parallel per-month array of δοσολόγιο rows:
    {month,principal,interest,inst,lump,autoLump,bal} */
 let mSchedule=[];
-function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps,actuals){
+function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps,lumpMonth,actuals){
   const rows=[];const sched=[];let prev=startBal;
   const recent=[...histLastInsts];
   manLumps=manLumps||{};
+  lumpMonth=lumpMonth||8;
   actuals=actuals||{};
   let[y,mo]=startMonthStr.split('-').map(Number);
   while(prev>0.5){
@@ -473,9 +490,9 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
       continue;
     }
     let lump=0,autoLump=false;
-    if(mo===4||mo===8||mo===12){
-      const sum4=recent.slice(-4).reduce((a,b)=>a+b,0);
-      lump=Math.round(Math.max(Math.min(4*budget-sum4,prev),0));
+    if(mo===lumpMonth){
+      const sum12=recent.slice(-12).reduce((a,b)=>a+b,0);
+      lump=Math.round(Math.max(Math.min(12*budget-sum12,prev),0));
       if(lump>0)autoLump=true;
     }
     const man=manLumps[month]||0;
@@ -491,7 +508,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
     rows.push({month,type:'inst',inst,int:interest,bal:endBal});
     sched.push({month,principal,interest,inst,lump,autoLump,bal:endBal,confirmed:false});
     recent.push(inst);
-    if(recent.length>4)recent.shift();
+    if(recent.length>12)recent.shift();
     prev=endBal;
     mo++;if(mo>12){mo=1;y++;}
   }
@@ -609,7 +626,7 @@ function refreshLoan(){
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
-  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments,getManLumps(0),getActuals(0));
+  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments,getManLumps(0),_mS.lumpMonth,getActuals(0));
   renderProj('m-proj-tbody',0);
   rebuildChart();
 }
@@ -636,7 +653,7 @@ function initApp(){
   const mB=parseFloat(localStorage.getItem('lt_budget_0'))||820;
   document.getElementById('loan-budget').value=mB;
 
-  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments,getManLumps(0),getActuals(0));
+  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments,getManLumps(0),mS.lumpMonth,getActuals(0));
 
   renderProj('m-proj-tbody',0);
   rebuildChart();
