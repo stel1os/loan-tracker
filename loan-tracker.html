@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -36,20 +36,19 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
 .txn-note{font-size:.78rem;color:#666;margin-bottom:14px;line-height:1.5}
 .tbl-wrap{overflow-x:auto}
 table.txn{width:100%;border-collapse:collapse;font-size:.79rem}
-table.txn th{background:#f8f9fb;text-align:left;padding:8px 10px;font-size:.68rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e0e0e0;white-space:nowrap}
+table.txn th{background:#f8f9fb;text-align:left;padding:8px 10px;font-size:.68rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e0e0e0;white-space:nowrap;position:sticky;top:0;z-index:2}
 table.txn td{padding:7px 10px;border-bottom:1px solid #f3f3f3;vertical-align:middle}
 table.txn tr:last-child td{border-bottom:none}
 table.txn tr:hover td{background:#fafbff}
-.tr-draw td{background:#fff0f0}.tr-extra td{background:#f0fff4}
-.tr-proj td{background:#f8f8ff;color:#555}.tr-proj-extra td{background:#f0fff4;opacity:.85}
-.tr-confirmed td{background:#f0fff4}.tr-sep td{background:#e8eaf6;font-size:.72rem;font-weight:700;color:#3730a3;letter-spacing:.04em;padding:5px 10px}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.67rem;font-weight:700;white-space:nowrap}
-.pill-inst{background:#dbeafe;color:#1d4ed8}.pill-int{background:#fff7ed;color:#c2410c}
-.pill-draw{background:#fee2e2;color:#b91c1c}.pill-extra{background:#dcfce7;color:#15803d}
-.pill-proj{background:#e0e7ff;color:#4338ca}.pill-lproj{background:#dcfce7;color:#15803d;opacity:.75}
+.tr-confirmed td{background:#f0fff4}
+.tr-lump td{background:#fefce8}
+.tr-lump:hover td{background:#fef9c3}
+.tr-sep td{background:#e8eaf6;font-size:.72rem;font-weight:700;color:#3730a3;letter-spacing:.04em;padding:5px 10px;position:sticky;top:30px;z-index:1}
+.lock-ic{cursor:pointer;font-size:.85rem}
+.lump-add{cursor:pointer;color:#2563eb;font-weight:700;font-size:.95rem;border:1px dashed #93c5fd;border-radius:4px;padding:0 6px;background:#eff6ff}
+.lump-add:hover{background:#dbeafe}
 .num{font-family:'SF Mono',monospace;text-align:right}
 .bal-owed{font-weight:700;color:#dc2626;font-family:'SF Mono',monospace;text-align:right}
-.bal-up{color:#dc2626;font-size:.68rem}.bal-down{color:#16a34a;font-size:.68rem}
 .totals-row td{font-weight:700;border-top:2px solid #d0d0d0!important;background:#f8f9fb!important}
 .act-input{width:78px;font-size:.78rem;padding:2px 4px;border:1px solid #93c5fd;border-radius:4px;font-family:SF Mono,monospace;text-align:right}
 .btn-save{background:#16a34a;color:#fff;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.74rem;font-weight:600}
@@ -127,13 +126,14 @@ table.txn tr:hover td{background:#fafbff}
     <canvas id="balanceChart" height="220"></canvas>
   </div>
   <div class="txn-section">
-    <div class="txn-title">Loan &mdash; Projected Payments</div>
+    <div class="txn-title">Loan &mdash; &delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron; (Payment Schedule)</div>
     <div class="budget-bar">
       <label for="loan-budget"><strong>Monthly budget:</strong></label>
       <input type="number" id="loan-budget" value="820" step="10" min="0" onchange="refreshLoan()"> &euro;
       <span>&rarr; Accumulates 4&times;budget &minus; last-4-installments, paid as lump Apr / Aug / Dec</span>
     </div>
-    <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th>Type</th><th class="num">Installment</th><th class="num">Interest</th><th class="num">Net Principal</th><th class="num">Balance</th><th>Note</th><th style="text-align:center">Paid?</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
+    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off payment. Highlighted rows have an auto scheduled lump sum.</div>
+    <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Installment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>
 </div>
@@ -419,30 +419,47 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
-function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts){
-  const rows=[];let prev=startBal;
+function manLumpKey(idx){return 'lt_manlump_'+idx;}
+function getManLumps(idx){try{return JSON.parse(localStorage.getItem(manLumpKey(idx))||'{}');}catch(e){return{};}}
+function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=amt;else delete m[month];localStorage.setItem(manLumpKey(idx),JSON.stringify(m));}
+
+/* genProj returns inst/extra rows (chart + stats) AND mSchedule
+   exposes a parallel per-month array of δοσολόγιο rows:
+   {month,principal,interest,inst,lump,autoLump,bal} */
+let mSchedule=[];
+function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps){
+  const rows=[];const sched=[];let prev=startBal;
   const recent=[...histLastInsts];
+  manLumps=manLumps||{};
   let[y,mo]=startMonthStr.split('-').map(Number);
   while(prev>0.5){
     const month=y+'-'+String(mo).padStart(2,'0');
     const remainM=(endYear-y)*12+(endMon-mo);
     if(remainM<=0)break;
-    let lump=0;
+    let lump=0,autoLump=false;
     if(mo===4||mo===8||mo===12){
       const sum4=recent.slice(-4).reduce((a,b)=>a+b,0);
       lump=Math.round(Math.max(Math.min(4*budget-sum4,prev),0));
+      if(lump>0)autoLump=true;
     }
+    const man=manLumps[month]||0;
+    if(man>0)lump+=man;
+    lump=Math.min(lump,prev);
+    // lump sum applied BEFORE installment of the month
     const balPost=Math.max(0,prev-lump);
     const interest=+(balPost*rate).toFixed(2);
     const inst=+(calcPmt(balPost,rate,remainM)).toFixed(2);
     const endBal=+Math.max(0,balPost+interest-inst).toFixed(2);
+    const principal=+(inst-interest).toFixed(2);
     if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
     rows.push({month,type:'inst',inst,int:interest,bal:endBal});
+    sched.push({month,principal,interest,inst,lump,autoLump,bal:endBal});
     recent.push(inst);
     if(recent.length>4)recent.shift();
     prev=endBal;
     mo++;if(mo>12){mo=1;y++;}
   }
+  mSchedule=sched;
   return rows;
 }
 
@@ -450,61 +467,76 @@ function actKey(idx){return 'confirmed_'+idx+'_act';}
 function getActuals(idx){try{return JSON.parse(localStorage.getItem(actKey(idx))||'{}');}catch(e){return{};}}
 function saveActual(idx,key,data){const a=getActuals(idx);a[key]=data;localStorage.setItem(actKey(idx),JSON.stringify(a));}
 
-function renderProj(tbodyId,loanIdx,rows){
+function todayYM(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+/* renders the unified δοσολόγιο from mSchedule */
+function renderProj(tbodyId,loanIdx){
   const tbody=document.getElementById(tbodyId);
   const actuals=getActuals(loanIdx);
+  const tYM=todayYM();
   tbody.innerHTML='';
-  let n=0,prevYr='';
-  rows.forEach((row,idx)=>{
+  let n=0,prevYr='';let html='';
+  mSchedule.forEach((row,idx)=>{
     n++;
-    const key=row.month+'_'+row.type;
+    const key=row.month+'_inst';
     const act=actuals[key];
     const locked=act&&act.saved;
+    const isPast=row.month<tYM;
+    const principal=locked?act.principal:row.principal;
+    const interest=locked?act.int:row.interest;
     const inst=locked?act.inst:row.inst;
-    const interest=locked?act.int:row.int;
+    const lump=locked?(act.lump||0):row.lump;
     const bal=locked?act.bal:row.bal;
-    const net=inst-interest;
     const yr=row.month.slice(0,4);
-    if(yr!==prevYr){tbody.innerHTML+=`<tr class="tr-sep"><td colspan="9">${yr}</td></tr>`;prevYr=yr;}
-    const isExtra=row.type==='extra';
-    const pill=locked?(isExtra?'<span class="pill pill-extra">Lump Sum</span>':'<span class="pill pill-inst">Installment</span>'):(isExtra?'<span class="pill pill-lproj">Lump Sum</span>':'<span class="pill pill-proj">Projected</span>');
-    const rowCls=locked?'tr-confirmed':isExtra?'tr-proj-extra':'tr-proj';
-    const lastCol=locked?`<td style="text-align:center" title="Confirmed">&#128274;</td>`:`<td style="text-align:center"><input type="checkbox" id="chk-${loanIdx}-${idx}" onchange="toggleEdit(${loanIdx},${idx},'${row.month}','${row.type}',${row.inst},${row.int},${row.bal})" style="cursor:pointer;width:15px;height:15px"></td>`;
-    tbody.innerHTML+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
-      <td style="color:#bbb;font-size:.7rem">${n}</td>
+    if(yr!==prevYr){html+=`<tr class="tr-sep"><td colspan="7">${yr}</td></tr>`;prevYr=yr;}
+    const rowCls=locked?'tr-confirmed':row.autoLump?'tr-lump':'';
+    const numCol=locked
+      ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
+      :`<td style="color:#bbb;font-size:.7rem">${n}</td>`;
+    let lumpCell;
+    if(lump>0){lumpCell=`<td class="num" style="color:#15803d" id="pl-${loanIdx}-${idx}">${f2x(lump)}</td>`;}
+    else if(!isPast){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
+    else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
+    html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
+      ${numCol}
       <td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td>
-      <td>${pill}</td>
-      <td class="num" id="pi-${loanIdx}-${idx}">${f2x(inst)}</td>
+      <td class="num" style="color:#16a34a" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
       <td class="num" style="color:#c2410c" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
-      <td class="num" style="color:#16a34a">${f2x(net)}</td>
-      <td class="bal-owed">${f2x(bal)}</td>
-      <td style="font-size:.73rem;color:#888" id="pnote-${loanIdx}-${idx}">${locked?'&#10003; Confirmed':''}</td>
-      ${lastCol}</tr>`;
+      <td class="num" id="pi-${loanIdx}-${idx}">${f2x(inst)}</td>
+      ${lumpCell}
+      <td class="bal-owed">${f2x(bal)}</td></tr>`;
   });
+  tbody.innerHTML=html;
 }
 
-function toggleEdit(loanIdx,idx,month,type,projInst,projInt,projBal){
-  const chk=document.getElementById(`chk-${loanIdx}-${idx}`);
-  if(chk.checked){
-    document.getElementById(`pi-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="ai-${loanIdx}-${idx}" type="number" value="${projInst.toFixed(2)}" step="0.01">`;
-    document.getElementById(`pn-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="an-${loanIdx}-${idx}" type="number" value="${projInt.toFixed(2)}" step="0.01">`;
-    document.getElementById(`pnote-${loanIdx}-${idx}`).innerHTML=`<button class="btn-save" onclick="confirmActual(${loanIdx},${idx},'${month}','${type}',${projBal})">Save</button><button class="btn-cancel" onclick="cancelEdit(${loanIdx},${idx},${projInst},${projInt})">Cancel</button>`;
-  }else{cancelEdit(loanIdx,idx,projInst,projInt);}
+/* unlock a confirmed row → inline edit (principal / interest / installment) */
+function unlockRow(loanIdx,idx){
+  const row=mSchedule[idx];if(!row)return;
+  const a=getActuals(loanIdx)[row.month+'_inst']||{};
+  const p=a.principal??row.principal,it=a.int??row.interest,ins=a.inst??row.inst;
+  document.getElementById(`pp-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="ap-${loanIdx}-${idx}" type="number" value="${(+p).toFixed(2)}" step="0.01">`;
+  document.getElementById(`pn-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="an-${loanIdx}-${idx}" type="number" value="${(+it).toFixed(2)}" step="0.01">`;
+  document.getElementById(`pi-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="ai-${loanIdx}-${idx}" type="number" value="${(+ins).toFixed(2)}" step="0.01"> <button class="btn-save" onclick="confirmActual(${loanIdx},${idx},'${row.month}')">Save</button><button class="btn-cancel" onclick="renderProj('m-proj-tbody',${loanIdx})">Cancel</button>`;
 }
 
-function cancelEdit(loanIdx,idx,projInst,projInt){
-  const chk=document.getElementById(`chk-${loanIdx}-${idx}`);
-  if(chk)chk.checked=false;
-  document.getElementById(`pi-${loanIdx}-${idx}`).innerHTML=f2x(projInst);
-  document.getElementById(`pn-${loanIdx}-${idx}`).innerHTML=f2x(projInt);
-  document.getElementById(`pnote-${loanIdx}-${idx}`).innerHTML='';
+/* future row: inline manual lump sum entry */
+function addLump(loanIdx,idx,month){
+  const cur=getManLumps(loanIdx)[month]||0;
+  document.getElementById(`pl-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="al-${loanIdx}-${idx}" type="number" value="${cur||''}" placeholder="0.00" step="0.01"> <button class="btn-save" onclick="saveLumpEntry(${loanIdx},${idx},'${month}')">Save</button><button class="btn-cancel" onclick="renderProj('m-proj-tbody',${loanIdx})">Cancel</button>`;
+}
+function saveLumpEntry(loanIdx,idx,month){
+  const amt=parseFloat(document.getElementById(`al-${loanIdx}-${idx}`).value)||0;
+  saveManLump(loanIdx,month,amt);
+  refreshLoan();
 }
 
-function confirmActual(loanIdx,idx,month,type,projBal){
-  const inst=parseFloat(document.getElementById(`ai-${loanIdx}-${idx}`).value)||0;
+function confirmActual(loanIdx,idx,month){
+  const row=mSchedule[idx];
+  const principal=parseFloat(document.getElementById(`ap-${loanIdx}-${idx}`).value)||0;
   const interest=parseFloat(document.getElementById(`an-${loanIdx}-${idx}`).value)||0;
-  saveActual(loanIdx,month+'_'+type,{inst,int:interest,bal:projBal,saved:true});
-  renderProj('m-proj-tbody',loanIdx,mProjRows);
+  const inst=parseFloat(document.getElementById(`ai-${loanIdx}-${idx}`).value)||0;
+  saveActual(loanIdx,month+'_inst',{principal,int:interest,inst,lump:row?row.lump:0,bal:row?row.bal:0,saved:true});
+  renderProj('m-proj-tbody',loanIdx);
 }
 
 /* ─────────────────────────────────────────
@@ -539,8 +571,8 @@ function refreshLoan(){
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
-  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments);
-  renderProj('m-proj-tbody',0,mProjRows);
+  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments,getManLumps(0));
+  renderProj('m-proj-tbody',0);
   rebuildChart();
 }
 
@@ -566,9 +598,9 @@ function initApp(){
   const mB=parseFloat(localStorage.getItem('lt_budget_0'))||820;
   document.getElementById('loan-budget').value=mB;
 
-  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments);
+  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments,getManLumps(0));
 
-  renderProj('m-proj-tbody',0,mProjRows);
+  renderProj('m-proj-tbody',0);
   rebuildChart();
 }
 
