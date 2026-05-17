@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -234,6 +234,7 @@ table.txn tr:hover td{background:#fafbff}
               <input class="form-input" id="s-loan-balloon" type="number" step="100" min="0" placeholder="5,000" style="width:90px">
             </div>
           </div>
+          <div class="form-err" id="err-loan-balloon">Threshold must be greater than 0</div>
           <div class="form-hint">Pay off remaining balance when it drops to this amount</div>
         </div>
       </div>
@@ -390,7 +391,7 @@ function validateForm(v){
   if(!v.rate||isNaN(v.rate)||v.rate<=0){setErr('err-loan-rate','s-loan-rate');ok=false;}
   if(!v.syr||isNaN(v.syr)){setErr('err-loan-start','s-loan-startyear');ok=false;}
   if(v.balloonEnabled&&(!v.balloonThreshold||v.balloonThreshold<=0)){
-    document.getElementById('s-loan-balloon').classList.add('err');ok=false;
+    setErr('err-loan-balloon','s-loan-balloon');ok=false;
   }
   return ok;
 }
