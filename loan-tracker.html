@@ -105,10 +105,16 @@ table.txn tr:hover td{background:#fafbff}
     <h1>Loan Tracker</h1>
     <p class="subtitle" id="app-subtitle">Loading&hellip;</p>
   </div>
-  <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-settings" id="btn-export" onclick="exportData()" title="Download backup">&#8681; Export</button>
+    <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
+  </div>
 </div>
 <div class="first-run-banner" id="first-run-banner">
   No loan data found &mdash; please configure your loan to get started.
+  <span style="margin-left:10px">or</span>
+  <button class="btn-link-reset" onclick="triggerImport()" style="margin-left:6px;font-size:.82rem">Import from backup</button>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
 </div>
 <div id="tab-dashboard">
   <div class="summary-row">
@@ -206,11 +212,16 @@ table.txn tr:hover td{background:#fafbff}
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-rtype">Rate Type</label>
-        <select class="form-select" id="s-loan-rtype">
+        <select class="form-select" id="s-loan-rtype" onchange="toggleFixedPeriod()">
           <option value="fixed">Fixed</option>
           <option value="variable">Variable</option>
         </select>
         <div class="form-hint">Rate-change logic coming in a future release</div>
+      </div>
+      <div class="form-group" id="s-fixedperiod-group">
+        <label class="form-label" for="s-loan-fixedperiod">Fixed period (months)</label>
+        <input class="form-input" id="s-loan-fixedperiod" type="number" step="1" min="0" placeholder="e.g. 120">
+        <div class="form-hint">Duration of fixed rate from loan start; sets a chart marker at expiry</div>
       </div>
       <div class="form-group">
         <label class="form-label">Projection Start (month/year) *</label>
@@ -269,6 +280,20 @@ table.txn tr:hover td{background:#fafbff}
           <div class="form-hint">Pay off remaining balance when it drops to this amount</div>
         </div>
       </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div class="form-label" style="margin-bottom:6px">Target payoff by <span style="font-weight:400;color:#999">(optional)</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="form-select" id="s-loan-goalmon" style="width:auto">
+          <option value="">— Month —</option>
+          <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+          <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+          <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <input class="form-input" id="s-loan-goalyear" type="number" min="2024" max="2060" placeholder="Year" style="width:90px">
+      </div>
+      <div class="form-hint">Draws a goal marker on the balance chart</div>
     </div>
     <div class="modal-actions">
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto">Reset all data</button>
@@ -356,6 +381,11 @@ function populateForm(data){
   document.getElementById('s-loan-startmon').value=data.startMonth??'5';
   document.getElementById('s-loan-startyear').value=data.startYear??'';
   document.getElementById('s-loan-lumpmon').value=data.lumpMonth??'8';
+  document.getElementById('s-loan-fixedperiod').value=data.fixedPeriodMonths||'';
+  toggleFixedPeriod();
+  const gpd=data.targetPayoffDate||'';
+  document.getElementById('s-loan-goalmon').value=gpd?gpd.slice(5,7):'';
+  document.getElementById('s-loan-goalyear').value=gpd?gpd.slice(0,4):'';
   document.getElementById('s-loan-lump-enabled').checked=data.lumpEnabled!==false;
   toggleLumpOptions();
   document.getElementById('s-loan-effect').value=data.lumpEffect||'reduce-installment';
@@ -372,6 +402,54 @@ function openSetup(firstRun){
 }
 
 function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+function triggerImport(){document.getElementById('import-file').click();}
+
+function handleImport(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const state=JSON.parse(ev.target.result);
+      const loans=JSON.parse(state['lt_loans']||'null');
+      if(!Array.isArray(loans)||!loans[0])throw new Error('No loan data found in file');
+      const loan=loans[0];
+      const summary='Loan from '+(MN[(loan.startMonth||1)-1]||'')+' '+(loan.startYear||'?')+
+        (state._exported?', exported '+state._exported:'');
+      if(!confirm('Import: '+summary+'\n\nThis will replace your current data. Continue?'))return;
+      const toRemove=[];
+      for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith('lt_')||k.startsWith('confirmed_')))toRemove.push(k);}
+      toRemove.forEach(k=>localStorage.removeItem(k));
+      Object.keys(state).filter(k=>k.startsWith('lt_')||k.startsWith('confirmed_')).forEach(k=>localStorage.setItem(k,state[k]));
+      initApp();
+    }catch(err){
+      alert('Could not import: '+err.message);
+    }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+function exportData(){
+  const state={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&(k.startsWith('lt_')||k.startsWith('confirmed_')))state[k]=localStorage.getItem(k);
+  }
+  state._exported=new Date().toISOString().slice(0,10);
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='loan-tracker-'+state._exported+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function toggleFixedPeriod(){
+  const isFixed=document.getElementById('s-loan-rtype').value==='fixed';
+  document.getElementById('s-fixedperiod-group').style.display=isFixed?'':'none';
+}
 
 function toggleLumpOptions(){
   const en=document.getElementById('s-loan-lump-enabled').checked;
@@ -408,11 +486,15 @@ function readForm(){
   const smon=parseInt(document.getElementById('s-loan-startmon').value,10);
   const syr=parseInt(document.getElementById('s-loan-startyear').value,10);
   const lmon=parseInt(document.getElementById('s-loan-lumpmon').value,10)||8;
+  const fixedPeriodMonths=parseInt(document.getElementById('s-loan-fixedperiod').value,10)||0;
+  const goalMon=document.getElementById('s-loan-goalmon').value;
+  const goalYear=document.getElementById('s-loan-goalyear').value;
+  const targetPayoffDate=(goalMon&&goalYear)?(goalYear+'-'+goalMon):null;
   const lumpEnabled=document.getElementById('s-loan-lump-enabled').checked;
   const lumpEffect=document.getElementById('s-loan-effect').value;
   const balloonEnabled=document.getElementById('s-loan-balloon-enabled').checked;
   const balloonThreshold=parseFloat(document.getElementById('s-loan-balloon').value)||0;
-  return{bal,months,rate,levy,rtype,smon,syr,lmon,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold};
+  return{bal,months,rate,levy,rtype,fixedPeriodMonths,smon,syr,lmon,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,targetPayoffDate};
 }
 
 function validateForm(v){
@@ -437,6 +519,7 @@ function saveSetup(){
     id:0,label:existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
     rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,
+    fixedPeriodMonths:v.fixedPeriodMonths,targetPayoffDate:v.targetPayoffDate,
     lumpEnabled:v.lumpEnabled,lumpEffect:v.lumpEffect,
     balloonEnabled:v.balloonEnabled,balloonThreshold:v.balloonThreshold
   };
@@ -511,6 +594,24 @@ function buildLabels(mS){
   return l;
 }
 
+function makeMarkersPlugin(markers){
+  return {id:'markers',afterDraw(c){
+    markers.forEach(function(m){
+      const i=c.data.labels.indexOf(m.month);
+      if(i<0)return;
+      const x=c.scales.x.getPixelForValue(i),ya=c.scales.y,ctx=c.ctx;
+      ctx.save();
+      ctx.beginPath();ctx.moveTo(x,ya.top);ctx.lineTo(x,ya.bottom);
+      ctx.strokeStyle=m.color;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.stroke();
+      ctx.setLineDash([]);ctx.fillStyle=m.color;
+      ctx.font='600 10px sans-serif';ctx.textAlign='center';
+      ctx.fillText(m.label1,x,ya.top+12);
+      if(m.label2)ctx.fillText(m.label2,x,ya.top+24);
+      ctx.restore();
+    });
+  }};
+}
+
 function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const mStartKey=mS.startYear+'-'+String(mS.startMonth).padStart(2,'0');
   let mBSmon=mS.startMonth+1,mBSyr=mS.startYear;if(mBSmon>12){mBSmon=1;mBSyr++;}
@@ -520,7 +621,19 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const mBS=labels.indexOf(mBSkey);
   const mBD=labels.map((_,i)=>{const x=i-mBS;return x>=0&&x<mBase.length&&mBase[x]>0?mBase[x]:null;});
   const mLD=labels.map(l=>(l in mLumpsMap)&&(mPlanMap[l]!=null)?mPlanMap[l]:null);
-  const fxPlugin={id:'fx',afterDraw(c){const i=c.data.labels.indexOf('2039-07');if(i<0)return;const x=c.scales.x.getPixelForValue(i),ya=c.scales.y,ctx=c.ctx;ctx.save();ctx.beginPath();ctx.moveTo(x,ya.top);ctx.lineTo(x,ya.bottom);ctx.strokeStyle='#9333ea';ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#9333ea';ctx.font='600 10px sans-serif';ctx.textAlign='center';ctx.fillText('Fixed rate ends',x,ya.top+12);ctx.fillText('Jul 2039',x,ya.top+24);ctx.restore();}};
+  const _markers=[];
+  if(mS.rateType==='fixed'&&mS.fixedPeriodMonths>0){
+    let em=mS.startMonth+mS.fixedPeriodMonths,ey=mS.startYear;
+    while(em>12){em-=12;ey++;}
+    const fxKey=ey+'-'+String(em).padStart(2,'0');
+    _markers.push({month:fxKey,color:'#f97316',label1:'Rate end',label2:MN[em-1]+' '+ey});
+  }
+  if(mS.targetPayoffDate){
+    const tmo=+mS.targetPayoffDate.slice(5,7);
+    const tyr=mS.targetPayoffDate.slice(0,4);
+    _markers.push({month:mS.targetPayoffDate,color:'#a855f7',label1:'Goal',label2:MN[tmo-1]+' '+tyr});
+  }
+  const fxPlugin=makeMarkersPlugin(_markers);
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
     {label:'Loan (plan)',data:mP,borderColor:'#2563eb',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
