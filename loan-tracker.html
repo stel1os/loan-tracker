@@ -594,6 +594,24 @@ function buildLabels(mS){
   return l;
 }
 
+function makeMarkersPlugin(markers){
+  return {id:'markers',afterDraw(c){
+    markers.forEach(function(m){
+      const i=c.data.labels.indexOf(m.month);
+      if(i<0)return;
+      const x=c.scales.x.getPixelForValue(i),ya=c.scales.y,ctx=c.ctx;
+      ctx.save();
+      ctx.beginPath();ctx.moveTo(x,ya.top);ctx.lineTo(x,ya.bottom);
+      ctx.strokeStyle=m.color;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.stroke();
+      ctx.setLineDash([]);ctx.fillStyle=m.color;
+      ctx.font='600 10px sans-serif';ctx.textAlign='center';
+      ctx.fillText(m.label1,x,ya.top+12);
+      if(m.label2)ctx.fillText(m.label2,x,ya.top+24);
+      ctx.restore();
+    });
+  }};
+}
+
 function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const mStartKey=mS.startYear+'-'+String(mS.startMonth).padStart(2,'0');
   let mBSmon=mS.startMonth+1,mBSyr=mS.startYear;if(mBSmon>12){mBSmon=1;mBSyr++;}
@@ -603,7 +621,19 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const mBS=labels.indexOf(mBSkey);
   const mBD=labels.map((_,i)=>{const x=i-mBS;return x>=0&&x<mBase.length&&mBase[x]>0?mBase[x]:null;});
   const mLD=labels.map(l=>(l in mLumpsMap)&&(mPlanMap[l]!=null)?mPlanMap[l]:null);
-  const fxPlugin={id:'fx',afterDraw(c){const i=c.data.labels.indexOf('2039-07');if(i<0)return;const x=c.scales.x.getPixelForValue(i),ya=c.scales.y,ctx=c.ctx;ctx.save();ctx.beginPath();ctx.moveTo(x,ya.top);ctx.lineTo(x,ya.bottom);ctx.strokeStyle='#9333ea';ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#9333ea';ctx.font='600 10px sans-serif';ctx.textAlign='center';ctx.fillText('Fixed rate ends',x,ya.top+12);ctx.fillText('Jul 2039',x,ya.top+24);ctx.restore();}};
+  const _markers=[];
+  if(mS.rateType==='fixed'&&mS.fixedPeriodMonths>0){
+    let em=mS.startMonth+mS.fixedPeriodMonths,ey=mS.startYear;
+    while(em>12){em-=12;ey++;}
+    const fxKey=ey+'-'+String(em).padStart(2,'0');
+    _markers.push({month:fxKey,color:'#f97316',label1:'Rate end',label2:MN[em-1]+' '+ey});
+  }
+  if(mS.targetPayoffDate){
+    const tmo=+mS.targetPayoffDate.slice(5,7);
+    const tyr=mS.targetPayoffDate.slice(0,4);
+    _markers.push({month:mS.targetPayoffDate,color:'#a855f7',label1:'Goal',label2:MN[tmo-1]+' '+tyr});
+  }
+  const fxPlugin=makeMarkersPlugin(_markers);
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
     {label:'Loan (plan)',data:mP,borderColor:'#2563eb',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
