@@ -105,7 +105,10 @@ table.txn tr:hover td{background:#fafbff}
     <h1>Loan Tracker</h1>
     <p class="subtitle" id="app-subtitle">Loading&hellip;</p>
   </div>
-  <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-settings" id="btn-export" onclick="exportData()" title="Download backup">&#8681; Export</button>
+    <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
+  </div>
 </div>
 <div class="first-run-banner" id="first-run-banner">
   No loan data found &mdash; please configure your loan to get started.
@@ -372,6 +375,21 @@ function openSetup(firstRun){
 }
 
 function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+function exportData(){
+  const state={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('lt_'))state[k]=localStorage.getItem(k);
+  }
+  state._exported=new Date().toISOString().slice(0,10);
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='loan-tracker-'+state._exported+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
 function toggleLumpOptions(){
   const en=document.getElementById('s-loan-lump-enabled').checked;
