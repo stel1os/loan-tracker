@@ -212,6 +212,32 @@ table.txn tr:hover td{background:#fafbff}
     </div>
 
 
+    <div style="margin-bottom:18px">
+      <div class="form-label" style="margin-bottom:10px">Payoff Strategy</div>
+      <div class="form-grid" style="margin-bottom:0">
+        <div class="form-group">
+          <label class="form-label">After lump sum, bank recalculates</label>
+          <select class="form-select" id="s-loan-effect">
+            <option value="reduce-installment">Reduce installment (same term)</option>
+            <option value="reduce-duration">Reduce duration (same installment)</option>
+          </select>
+          <div class="form-hint">Affects all future lump-sum rows in the projection</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="s-loan-balloon-enabled" onchange="toggleBalloonOptions()" style="width:auto">
+            Auto payoff at balance
+          </label>
+          <div id="s-balloon-options" style="display:none;margin-top:6px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:.78rem;color:#555">&#8804; &euro;</span>
+              <input class="form-input" id="s-loan-balloon" type="number" step="100" min="0" placeholder="5,000" style="width:90px">
+            </div>
+          </div>
+          <div class="form-hint">Pay off remaining balance when it drops to this amount</div>
+        </div>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto">Reset all data</button>
       <button class="btn-secondary" id="setup-cancel-btn" onclick="closeSetup()">Cancel</button>
@@ -300,6 +326,10 @@ function populateForm(data){
   document.getElementById('s-loan-lumpmon').value=data.lumpMonth??'8';
   document.getElementById('s-loan-lump-enabled').checked=data.lumpEnabled!==false;
   toggleLumpOptions();
+  document.getElementById('s-loan-effect').value=data.lumpEffect||'reduce-installment';
+  document.getElementById('s-loan-balloon-enabled').checked=!!data.balloonEnabled;
+  document.getElementById('s-loan-balloon').value=data.balloonThreshold||'';
+  toggleBalloonOptions();
 }
 
 function openSetup(firstRun){
@@ -314,6 +344,10 @@ function closeSetup(){document.getElementById('setup-modal').classList.remove('o
 function toggleLumpOptions(){
   const en=document.getElementById('s-loan-lump-enabled').checked;
   document.getElementById('s-lump-options').style.display=en?'':'none';
+}
+function toggleBalloonOptions(){
+  const en=document.getElementById('s-loan-balloon-enabled').checked;
+  document.getElementById('s-balloon-options').style.display=en?'':'none';
 }
 
 function resetApp(){
@@ -343,7 +377,10 @@ function readForm(){
   const syr=parseInt(document.getElementById('s-loan-startyear').value,10);
   const lmon=parseInt(document.getElementById('s-loan-lumpmon').value,10)||8;
   const lumpEnabled=document.getElementById('s-loan-lump-enabled').checked;
-  return{bal,months,rate,levy,rtype,smon,syr,lmon,lumpEnabled};
+  const lumpEffect=document.getElementById('s-loan-effect').value;
+  const balloonEnabled=document.getElementById('s-loan-balloon-enabled').checked;
+  const balloonThreshold=parseFloat(document.getElementById('s-loan-balloon').value)||0;
+  return{bal,months,rate,levy,rtype,smon,syr,lmon,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold};
 }
 
 function validateForm(v){
@@ -352,6 +389,9 @@ function validateForm(v){
   if(!v.months||isNaN(v.months)||v.months<1){setErr('err-loan-months','s-loan-months');ok=false;}
   if(!v.rate||isNaN(v.rate)||v.rate<=0){setErr('err-loan-rate','s-loan-rate');ok=false;}
   if(!v.syr||isNaN(v.syr)){setErr('err-loan-start','s-loan-startyear');ok=false;}
+  if(v.balloonEnabled&&(!v.balloonThreshold||v.balloonThreshold<=0)){
+    document.getElementById('s-loan-balloon').classList.add('err');ok=false;
+  }
   return ok;
 }
 
@@ -364,7 +404,9 @@ function saveSetup(){
   loans[0]={
     id:0,label:existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
-    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,lumpEnabled:v.lumpEnabled
+    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,
+    lumpEnabled:v.lumpEnabled,lumpEffect:v.lumpEffect,
+    balloonEnabled:v.balloonEnabled,balloonThreshold:v.balloonThreshold
   };
   saveLoans(loans);
   closeSetup();
