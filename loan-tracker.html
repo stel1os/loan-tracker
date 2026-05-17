@@ -570,7 +570,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     // balloon: if balance after installment <= threshold, add payoff row and stop
     if(balloonEnabled&&balloonThreshold>0&&endBal>0&&endBal<=balloonThreshold){
       if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
-      rows.push({month,type:'inst',inst,int:interest,bal:0});
+      rows.push({month,type:'inst',inst:inst+endBal,int:interest,bal:0});
       sched.push({month,principal:principal+endBal,interest,inst:inst+endBal,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
       mSchedule=sched;
       return rows;
