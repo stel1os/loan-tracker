@@ -506,17 +506,24 @@ function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=a
    exposes a parallel per-month array of δοσολόγιο rows:
    {month,principal,interest,inst,lump,autoLump,manualLump,bal} */
 let mSchedule=[];
-function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps,lumpMonth,actuals){
+function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lumpMonth,actuals,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold){
   const rows=[];const sched=[];let prev=startBal;
-  const recent=[...histLastInsts];
+  const recent=[];
   manLumps=manLumps||{};
   lumpMonth=lumpMonth||8;
   actuals=actuals||{};
+  lumpEnabled=lumpEnabled!==false;
+  lumpEffect=lumpEffect||'reduce-installment';
+  balloonEnabled=!!balloonEnabled;
+  balloonThreshold=balloonThreshold||0;
+  const[sy,sm]=startMonthStr.split('-').map(Number);
+  const initRemM=(endYear-sy)*12+(endMon-sm);
+  const initM=calcPmt(startBal,rate,Math.max(1,initRemM));
+  let effEndYear=endYear,effEndMon=endMon;
   let[y,mo]=startMonthStr.split('-').map(Number);
   while(prev>0.5){
     const month=y+'-'+String(mo).padStart(2,'0');
-    const remainM=(endYear-y)*12+(endMon-mo);
-    if(remainM<=0)break;
+    if((effEndYear-y)*12+(effEndMon-mo)<=0)break;
     const act=actuals[month+'_inst'];
     if(act&&act.saved){
       // Confirmed actual: use saved figures verbatim; balance flows downstream
@@ -527,13 +534,13 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
       rows.push({month,type:'inst',inst:aInst,int:aInt,bal:aBal});
       sched.push({month,principal:aPrin,interest:aInt,inst:aInst,lump:aLump,autoLump:false,bal:aBal,confirmed:true});
       recent.push(aInst);
-      if(recent.length>4)recent.shift();
+      if(recent.length>12)recent.shift();
       prev=aBal;
       mo++;if(mo>12){mo=1;y++;}
       continue;
     }
     let lump=0,autoLump=false;
-    if(mo===lumpMonth){
+    if(lumpEnabled&&mo===lumpMonth){
       const sum12=recent.slice(-12).reduce((a,b)=>a+b,0);
       lump=Math.round(Math.max(Math.min(12*budget-sum12,prev),0));
       if(lump>0)autoLump=true;
@@ -544,10 +551,30 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
     const manualLump=Math.max(0,Math.min(man,prev));
     // lump sum applied BEFORE installment of the month
     const balPost=Math.max(0,prev-lump);
+    // reduce-duration: after a lump sum, solve for new remaining term so installment stays constant
+    if(lump>0&&lumpEffect==='reduce-duration'&&initM>0){
+      const rP=rate*balPost/initM;
+      if(rP>0&&rP<1){
+        const newN=Math.max(1,Math.ceil(-Math.log(1-rP)/Math.log(1+rate)));
+        let em=mo+newN,ey=y;
+        while(em>12){em-=12;ey++;}
+        effEndYear=ey;effEndMon=em;
+      }
+    }
+    const remM=(effEndYear-y)*12+(effEndMon-mo);
+    if(remM<=0)break;
     const interest=+(balPost*rate).toFixed(2);
-    const inst=+(calcPmt(balPost,rate,remainM)).toFixed(2);
+    const inst=+(calcPmt(balPost,rate,remM)).toFixed(2);
     const endBal=+Math.max(0,balPost+interest-inst).toFixed(2);
     const principal=+(inst-interest).toFixed(2);
+    // balloon: if balance after installment <= threshold, add payoff row and stop
+    if(balloonEnabled&&balloonThreshold>0&&endBal>0&&endBal<=balloonThreshold){
+      if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
+      rows.push({month,type:'inst',inst,int:interest,bal:0});
+      sched.push({month,principal:principal+endBal,interest,inst:inst+endBal,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
+      mSchedule=sched;
+      return rows;
+    }
     if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
     rows.push({month,type:'inst',inst,int:interest,bal:endBal});
     sched.push({month,principal,interest,inst,lump,autoLump,manualLump,bal:endBal,confirmed:false});
@@ -676,7 +703,7 @@ function refreshLoan(){
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
-  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments||[],getManLumps(0),_mS.lumpMonth,getActuals(0));
+  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,getManLumps(0),_mS.lumpMonth,getActuals(0),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',!!_mS.balloonEnabled,_mS.balloonThreshold||0);
   renderProj('m-proj-tbody',0);
   rebuildChart();
 }
@@ -703,7 +730,7 @@ function initApp(){
   const mB=parseFloat(localStorage.getItem('lt_budget_0'))||820;
   document.getElementById('loan-budget').value=mB;
 
-  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments||[],getManLumps(0),mS.lumpMonth,getActuals(0));
+  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,getManLumps(0),mS.lumpMonth,getActuals(0),mS.lumpEnabled!==false,mS.lumpEffect||'reduce-installment',!!mS.balloonEnabled,mS.balloonThreshold||0);
 
   renderProj('m-proj-tbody',0);
   rebuildChart();
