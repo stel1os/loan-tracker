@@ -741,6 +741,7 @@ function refreshPayoffPanel(){
 function updatePayoffPanel(){
   // Mode A: target month → required lump sum (opening balance of that month)
   const targetMonth=document.getElementById('pp-month').value;
+  if(!targetMonth){document.getElementById('pp-result-month').textContent='—';document.getElementById('pp-result-amount').textContent='—';return;}
   const tIdx=mSchedule.findIndex(r=>r.month===targetMonth);
   const openingBal=tIdx>0?mSchedule[tIdx-1].bal:(_mS?_mS.balance:0);
   document.getElementById('pp-result-month').textContent=openingBal>0?fmtE(openingBal):'—';
@@ -777,6 +778,8 @@ function refreshLoan(){
   renderProj('m-proj-tbody',0);
   rebuildChart();
   refreshPayoffPanel();
+  const bnEl=document.getElementById('budget-bar-note');
+  if(bnEl)bnEl.textContent=_mS&&_mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
 }
 
 /* ─────────────────────────────────────────
@@ -806,6 +809,8 @@ function initApp(){
   renderProj('m-proj-tbody',0);
   rebuildChart();
   refreshPayoffPanel();
+  const bnEl=document.getElementById('budget-bar-note');
+  if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
 }
 
 initApp();
