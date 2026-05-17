@@ -212,11 +212,16 @@ table.txn tr:hover td{background:#fafbff}
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-rtype">Rate Type</label>
-        <select class="form-select" id="s-loan-rtype">
+        <select class="form-select" id="s-loan-rtype" onchange="toggleFixedPeriod()">
           <option value="fixed">Fixed</option>
           <option value="variable">Variable</option>
         </select>
         <div class="form-hint">Rate-change logic coming in a future release</div>
+      </div>
+      <div class="form-group" id="s-fixedperiod-group">
+        <label class="form-label" for="s-loan-fixedperiod">Fixed period (months)</label>
+        <input class="form-input" id="s-loan-fixedperiod" type="number" step="1" min="0" placeholder="e.g. 120">
+        <div class="form-hint">Duration of fixed rate from loan start; sets a chart marker at expiry</div>
       </div>
       <div class="form-group">
         <label class="form-label">Projection Start (month/year) *</label>
@@ -275,6 +280,20 @@ table.txn tr:hover td{background:#fafbff}
           <div class="form-hint">Pay off remaining balance when it drops to this amount</div>
         </div>
       </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div class="form-label" style="margin-bottom:6px">Target payoff by <span style="font-weight:400;color:#999">(optional)</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="form-select" id="s-loan-goalmon" style="width:auto">
+          <option value="">— Month —</option>
+          <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+          <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+          <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <input class="form-input" id="s-loan-goalyear" type="number" min="2024" max="2060" placeholder="Year" style="width:90px">
+      </div>
+      <div class="form-hint">Draws a goal marker on the balance chart</div>
     </div>
     <div class="modal-actions">
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto">Reset all data</button>
@@ -362,6 +381,11 @@ function populateForm(data){
   document.getElementById('s-loan-startmon').value=data.startMonth??'5';
   document.getElementById('s-loan-startyear').value=data.startYear??'';
   document.getElementById('s-loan-lumpmon').value=data.lumpMonth??'8';
+  document.getElementById('s-loan-fixedperiod').value=data.fixedPeriodMonths||'';
+  toggleFixedPeriod();
+  const gpd=data.targetPayoffDate||'';
+  document.getElementById('s-loan-goalmon').value=gpd?gpd.slice(5,7):'';
+  document.getElementById('s-loan-goalyear').value=gpd?gpd.slice(0,4):'';
   document.getElementById('s-loan-lump-enabled').checked=data.lumpEnabled!==false;
   toggleLumpOptions();
   document.getElementById('s-loan-effect').value=data.lumpEffect||'reduce-installment';
@@ -422,6 +446,11 @@ function exportData(){
   URL.revokeObjectURL(a.href);
 }
 
+function toggleFixedPeriod(){
+  const isFixed=document.getElementById('s-loan-rtype').value==='fixed';
+  document.getElementById('s-fixedperiod-group').style.display=isFixed?'':'none';
+}
+
 function toggleLumpOptions(){
   const en=document.getElementById('s-loan-lump-enabled').checked;
   document.getElementById('s-lump-options').style.display=en?'':'none';
@@ -457,11 +486,15 @@ function readForm(){
   const smon=parseInt(document.getElementById('s-loan-startmon').value,10);
   const syr=parseInt(document.getElementById('s-loan-startyear').value,10);
   const lmon=parseInt(document.getElementById('s-loan-lumpmon').value,10)||8;
+  const fixedPeriodMonths=parseInt(document.getElementById('s-loan-fixedperiod').value,10)||0;
+  const goalMon=document.getElementById('s-loan-goalmon').value;
+  const goalYear=document.getElementById('s-loan-goalyear').value;
+  const targetPayoffDate=(goalMon&&goalYear)?(goalYear+'-'+goalMon):null;
   const lumpEnabled=document.getElementById('s-loan-lump-enabled').checked;
   const lumpEffect=document.getElementById('s-loan-effect').value;
   const balloonEnabled=document.getElementById('s-loan-balloon-enabled').checked;
   const balloonThreshold=parseFloat(document.getElementById('s-loan-balloon').value)||0;
-  return{bal,months,rate,levy,rtype,smon,syr,lmon,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold};
+  return{bal,months,rate,levy,rtype,fixedPeriodMonths,smon,syr,lmon,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,targetPayoffDate};
 }
 
 function validateForm(v){
@@ -486,6 +519,7 @@ function saveSetup(){
     id:0,label:existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
     rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,
+    fixedPeriodMonths:v.fixedPeriodMonths,targetPayoffDate:v.targetPayoffDate,
     lumpEnabled:v.lumpEnabled,lumpEffect:v.lumpEffect,
     balloonEnabled:v.balloonEnabled,balloonThreshold:v.balloonThreshold
   };
