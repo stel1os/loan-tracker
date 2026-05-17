@@ -564,7 +564,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     const remM=(effEndYear-y)*12+(effEndMon-mo);
     if(remM<=0)break;
     const interest=+(balPost*rate).toFixed(2);
-    const inst=+(calcPmt(balPost,rate,remM)).toFixed(2);
+    const inst=+(lumpEffect==='reduce-duration'?initM:calcPmt(balPost,rate,remM)).toFixed(2);
     const endBal=+Math.max(0,balPost+interest-inst).toFixed(2);
     const principal=+(inst-interest).toFixed(2);
     // balloon: if balance after installment <= threshold, add payoff row and stop
