@@ -127,7 +127,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="stat-grid">
       <div><div class="stat-label">Balance</div><div class="stat-val red" id="m-bal-stat">&#8230;</div></div>
       <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">&#8230;</div></div>
-      <div><div class="stat-label">Time Saved</div><div class="stat-val green">~11.5 yrs</div></div>
+      <div><div class="stat-label">Time Saved</div><div class="stat-val green" id="m-time-saved">&#8230;</div></div>
       <div><div class="stat-label">Next Lump</div><div class="stat-val" id="m-next-lump" style="color:#2563eb">&#8230;</div></div>
     </div>
     <div class="progress-track"><div class="progress-fill" style="width:7%;background:linear-gradient(90deg,#2563eb,#93c5fd)"></div></div>
@@ -566,6 +566,8 @@ function computePlanStats(mRows,mS){
   document.getElementById('m-int-saved').textContent=fmtE(mSv);
   document.getElementById('m-lumps-total').textContent=mLN+' payments = '+fmtE(mLT);
   document.getElementById('m-payoff').textContent=fmtMon(mPayoff);
+  const mTimeSaved=mBase.length-mInst.length;
+  document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
   document.getElementById('m-next-lump').textContent=(()=>{const nx=mRows.find(r=>r.type==='extra');return nx?fmtMon(nx.month)+' · '+fmtE(nx.inst):'None';})();
   document.getElementById('card-saved').textContent=fmtE(mSv);
   document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' vs no extras';
