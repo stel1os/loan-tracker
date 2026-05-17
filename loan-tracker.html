@@ -43,6 +43,8 @@ table.txn tr:hover td{background:#fafbff}
 .tr-confirmed td{background:#f0fff4}
 .tr-lump td{background:#fefce8}
 .tr-lump:hover td{background:#fef9c3}
+.tr-payoff td{background:#fdf2ff;border-top:2px solid #d8b4fe!important}
+.tr-payoff:hover td{background:#f5e8ff}
 .tr-sep td{background:#e8eaf6;font-size:.72rem;font-weight:700;color:#3730a3;letter-spacing:.04em;padding:5px 10px;position:sticky;top:30px;z-index:1}
 .lock-ic{cursor:pointer;font-size:.85rem}
 .lump-add{cursor:pointer;color:#2563eb;font-weight:700;font-size:.95rem;border:1px dashed #93c5fd;border-radius:4px;padding:0 6px;background:#eff6ff}
@@ -606,13 +608,15 @@ function renderProj(tbodyId,loanIdx){
     const bal=row.bal;
     const yr=row.month.slice(0,4);
     if(yr!==prevYr){html+=`<tr class="tr-sep"><td colspan="7">${yr}</td></tr>`;prevYr=yr;}
-    const rowCls=locked?'tr-confirmed':row.autoLump?'tr-lump':'';
+    const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
     const numCol=locked
       ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
       :`<td style="color:#bbb;font-size:.7rem">${n} <span class="lock-ic" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})" style="color:#2563eb">&#10003;</span></td>`;
     let lumpCell;
     const manL=locked?0:(row.manualLump||0);
-    if(lump>0&&!locked){
+    if(row.payoff&&row.payoffAmt>0){
+      lumpCell=`<td class="num" style="color:#7c3aed;font-weight:700" id="pl-${loanIdx}-${idx}" title="Balloon payoff">Payoff ${f2x(row.payoffAmt)}</td>`;
+    } else if(lump>0&&!locked){
       const t=manL>0?`Manual lump €${f2x(manL)} (click to edit)`:'Add manual lump sum';
       lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add${manL>0?' lump-set':''}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
     }
