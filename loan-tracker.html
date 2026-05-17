@@ -199,7 +199,7 @@ table.txn tr:hover td{background:#fafbff}
           <input type="checkbox" id="s-loan-lump-enabled" onchange="toggleLumpOptions()" style="width:auto">
           Annual lump sum
         </label>
-        <div id="s-lump-options" style="margin-top:6px">
+        <div id="s-lump-options" style="margin-top:6px;display:none">
           <select class="form-select" id="s-loan-lumpmon">
             <option value="1">January</option><option value="2">February</option><option value="3">March</option>
             <option value="4">April</option><option value="5">May</option><option value="6">June</option>
@@ -633,7 +633,7 @@ function refreshLoan(){
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
-  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments,getManLumps(0),_mS.lumpMonth,getActuals(0));
+  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments||[],getManLumps(0),_mS.lumpMonth,getActuals(0));
   renderProj('m-proj-tbody',0);
   rebuildChart();
 }
@@ -660,7 +660,7 @@ function initApp(){
   const mB=parseFloat(localStorage.getItem('lt_budget_0'))||820;
   document.getElementById('loan-budget').value=mB;
 
-  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments,getManLumps(0),mS.lumpMonth,getActuals(0));
+  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments||[],getManLumps(0),mS.lumpMonth,getActuals(0));
 
   renderProj('m-proj-tbody',0);
   rebuildChart();
