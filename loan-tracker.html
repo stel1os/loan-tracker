@@ -79,8 +79,7 @@ table.txn tr:hover td{background:#fafbff}
 .form-hint{font-size:.68rem;color:#999;margin-top:1px}
 .form-err{font-size:.7rem;color:#dc2626;margin-top:2px;display:none}
 .form-err.show{display:block}
-.seeds-label{font-size:.72rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-.seeds-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #eee;padding-top:16px;margin-top:4px}
 .btn-primary{background:#2563eb;color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
 .btn-primary:hover{background:#1d4ed8}
@@ -136,7 +135,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="budget-bar">
       <label for="loan-budget"><strong>Monthly budget:</strong></label>
       <input type="number" id="loan-budget" value="820" step="10" min="0" onchange="refreshLoan()"> &euro;
-      <span>&rarr; Accumulates 12&times;budget &minus; last-12-installments, paid once a year as a lump sum</span>
+      <span id="budget-bar-note"></span>
     </div>
     <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off payment. Highlighted rows have an auto scheduled lump sum.</div>
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Installment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
@@ -154,24 +153,24 @@ table.txn tr:hover td{background:#fafbff}
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="s-loan-bal">Opening Balance (&#8364;) *</label>
-        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 88314.11">
+        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100,000">
         <div class="form-hint">Balance at start of projection</div>
         <div class="form-err" id="err-loan-bal">Required &mdash; must be &gt; 0</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-months">Remaining Term (months) *</label>
-        <input class="form-input" id="s-loan-months" type="number" step="1" min="1" placeholder="e.g. 278">
+        <input class="form-input" id="s-loan-months" type="number" step="1" min="1" placeholder="e.g. 240">
         <div class="form-err" id="err-loan-months">Required &mdash; must be &ge; 1</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-rate">Annual Interest Rate (%) *</label>
-        <input class="form-input" id="s-loan-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.52">
+        <input class="form-input" id="s-loan-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.5">
         <div class="form-hint">Base nominal rate, before levy</div>
         <div class="form-err" id="err-loan-rate">Required &mdash; must be &gt; 0</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-levy">Additional Levy (%)</label>
-        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.12">
+        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.1">
         <div class="form-hint">Bank risk levy on top of base rate (leave 0 if none)</div>
       </div>
       <div class="form-group">
@@ -196,27 +195,22 @@ table.txn tr:hover td{background:#fafbff}
         <div class="form-err" id="err-loan-start">Year is required</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Lump Sum Month</label>
-        <select class="form-select" id="s-loan-lumpmon">
-          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-          <option value="7">July</option><option value="8" selected>August</option><option value="9">September</option>
-          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-        </select>
-        <div class="form-hint">Annual lump sum fires once per year in this month</div>
+        <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="s-loan-lump-enabled" onchange="toggleLumpOptions()" style="width:auto">
+          Annual lump sum
+        </label>
+        <div id="s-lump-options" style="margin-top:6px">
+          <select class="form-select" id="s-loan-lumpmon">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8" selected>August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-hint">Accumulated yearly surplus paid once a year in selected month</div>
       </div>
     </div>
-    <div style="margin-bottom:18px">
-      <div class="seeds-label">Last 4 Known Installments (&#8364;) &mdash; seeds the lump-sum formula *</div>
-      <div style="font-size:.68rem;color:#999;margin-bottom:8px">Enter oldest to most recent. At least one must be non-zero.</div>
-      <div class="seeds-row">
-        <div class="form-group"><label class="form-label" for="s-loan-s1">Oldest</label><input class="form-input" id="s-loan-s1" type="number" step="0.01" min="0" placeholder="0.00"></div>
-        <div class="form-group"><label class="form-label" for="s-loan-s2">&nbsp;</label><input class="form-input" id="s-loan-s2" type="number" step="0.01" min="0" placeholder="0.00"></div>
-        <div class="form-group"><label class="form-label" for="s-loan-s3">&nbsp;</label><input class="form-input" id="s-loan-s3" type="number" step="0.01" min="0" placeholder="0.00"></div>
-        <div class="form-group"><label class="form-label" for="s-loan-s4">Most recent</label><input class="form-input" id="s-loan-s4" type="number" step="0.01" min="0" placeholder="0.00"></div>
-      </div>
-      <div class="form-err" id="err-loan-seeds">At least one seed installment must be non-zero</div>
-    </div>
+
 
     <div class="modal-actions">
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto">Reset all data</button>
@@ -304,8 +298,8 @@ function populateForm(data){
   document.getElementById('s-loan-startmon').value=data.startMonth??'5';
   document.getElementById('s-loan-startyear').value=data.startYear??'';
   document.getElementById('s-loan-lumpmon').value=data.lumpMonth??'8';
-  const seeds=data.seedInstallments||[0,0,0,0];
-  ['s1','s2','s3','s4'].forEach((f,i)=>{document.getElementById('s-loan-'+f).value=seeds[i]??'';});
+  document.getElementById('s-loan-lump-enabled').checked=data.lumpEnabled!==false;
+  toggleLumpOptions();
 }
 
 function openSetup(firstRun){
@@ -316,6 +310,11 @@ function openSetup(firstRun){
 }
 
 function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+function toggleLumpOptions(){
+  const en=document.getElementById('s-loan-lump-enabled').checked;
+  document.getElementById('s-lump-options').style.display=en?'':'none';
+}
 
 function resetApp(){
   Object.keys(localStorage)
@@ -343,8 +342,8 @@ function readForm(){
   const smon=parseInt(document.getElementById('s-loan-startmon').value,10);
   const syr=parseInt(document.getElementById('s-loan-startyear').value,10);
   const lmon=parseInt(document.getElementById('s-loan-lumpmon').value,10)||8;
-  const seeds=['s1','s2','s3','s4'].map(f=>parseFloat(document.getElementById('s-loan-'+f).value)||0);
-  return{bal,months,rate,levy,rtype,smon,syr,lmon,seeds};
+  const lumpEnabled=document.getElementById('s-loan-lump-enabled').checked;
+  return{bal,months,rate,levy,rtype,smon,syr,lmon,lumpEnabled};
 }
 
 function validateForm(v){
@@ -353,7 +352,6 @@ function validateForm(v){
   if(!v.months||isNaN(v.months)||v.months<1){setErr('err-loan-months','s-loan-months');ok=false;}
   if(!v.rate||isNaN(v.rate)||v.rate<=0){setErr('err-loan-rate','s-loan-rate');ok=false;}
   if(!v.syr||isNaN(v.syr)){setErr('err-loan-start','s-loan-startyear');ok=false;}
-  if(v.seeds.every(s=>s===0)){document.getElementById('err-loan-seeds').classList.add('show');ok=false;}
   return ok;
 }
 
@@ -366,7 +364,7 @@ function saveSetup(){
   loans[0]={
     id:0,label:existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
-    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,seedInstallments:v.seeds
+    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,lumpEnabled:v.lumpEnabled
   };
   saveLoans(loans);
   closeSetup();
