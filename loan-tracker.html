@@ -28,6 +28,12 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
 .plan-box{margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;font-size:.78rem;color:#15803d;line-height:1.8}
 .plan-box strong{color:#166534}
 .plan-row{display:flex;justify-content:space-between}
+.payoff-panel{margin-top:14px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px 14px;font-size:.8rem;color:#3730a3}
+.payoff-panel h3{font-size:.8rem;font-weight:700;margin-bottom:10px;color:#3730a3}
+.payoff-panel label{font-size:.72rem;font-weight:600;color:#555;display:block;margin-bottom:3px}
+.payoff-panel input,.payoff-panel select{padding:4px 7px;border:1px solid #c4b5fd;border-radius:4px;font-size:.8rem;font-family:inherit;background:#fff}
+.payoff-panel .pp-result{color:#166534;font-weight:700}
+.payoff-panel .pp-na{color:#9ca3af;font-style:italic}
 .chart-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
 .chart-title{font-size:.88rem;font-weight:700;margin-bottom:4px;color:#333}
 .chart-note{font-size:.72rem;color:#999;margin-bottom:12px}
@@ -125,6 +131,29 @@ table.txn tr:hover td{background:#fafbff}
       <div class="plan-row"><span>No-extras interest</span><strong id="m-base-int">&#8230;</strong></div>
       <div class="plan-row"><span>Interest saved</span><strong class="green" id="m-int-saved">&#8230;</strong></div>
       <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">&#8230;</strong></div>
+    </div>
+    <div class="payoff-panel" id="payoff-panel">
+      <h3>&#128203; Final Payoff Planning</h3>
+      <div id="payoff-panel-body">
+        <p class="pp-na" id="payoff-panel-na">Available in Reduce Installment mode only.</p>
+        <div id="payoff-panel-content" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label>Target payoff month &rarr; required lump sum</label>
+              <select id="pp-month" style="width:100%;margin-bottom:6px" onchange="updatePayoffPanel()"></select>
+              <div>Required: <span class="pp-result" id="pp-result-month">&mdash;</span></div>
+            </div>
+            <div>
+              <label>One-time amount &rarr; earliest payoff month</label>
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                <input type="number" id="pp-amount" step="500" min="0" placeholder="e.g. 10,000" style="width:120px" oninput="updatePayoffPanel()">
+                <span style="font-size:.78rem;color:#555">&euro;</span>
+              </div>
+              <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="chart-card">
@@ -688,6 +717,43 @@ function rebuildChart(){
   buildChart(mBase,mp,ml,_mS);
 }
 
+function refreshPayoffPanel(){
+  if(!_mS)return;
+  const panel=document.getElementById('payoff-panel');
+  if(!panel)return;
+  const isReduceInst=(_mS.lumpEffect||'reduce-installment')==='reduce-installment';
+  document.getElementById('payoff-panel-na').style.display=isReduceInst?'none':'';
+  document.getElementById('payoff-panel-content').style.display=isReduceInst?'':'none';
+  if(!isReduceInst)return;
+  // populate month picker with future unconfirmed rows
+  const sel=document.getElementById('pp-month');
+  sel.innerHTML='';
+  const future=mSchedule.filter(r=>!r.confirmed&&!r.payoff);
+  future.forEach(r=>{
+    const o=document.createElement('option');
+    o.value=r.month;
+    o.textContent=r.month.slice(0,4)+' '+MN[+r.month.slice(5,7)-1];
+    sel.appendChild(o);
+  });
+  updatePayoffPanel();
+}
+
+function updatePayoffPanel(){
+  // Mode A: target month → required lump sum (opening balance of that month)
+  const targetMonth=document.getElementById('pp-month').value;
+  const tIdx=mSchedule.findIndex(r=>r.month===targetMonth);
+  const openingBal=tIdx>0?mSchedule[tIdx-1].bal:(_mS?_mS.balance:0);
+  document.getElementById('pp-result-month').textContent=openingBal>0?fmtE(openingBal):'—';
+  // Mode B: lump sum amount → earliest payoff month
+  const amt=parseFloat(document.getElementById('pp-amount').value)||0;
+  if(amt>0){
+    const hit=mSchedule.find((r,i)=>!r.confirmed&&!r.payoff&&(i===0?_mS.balance:mSchedule[i-1].bal)<=amt);
+    document.getElementById('pp-result-amount').textContent=hit?(hit.month.slice(0,4)+' '+MN[+hit.month.slice(5,7)-1]):'Balance never reaches this amount';
+  } else {
+    document.getElementById('pp-result-amount').textContent='—';
+  }
+}
+
 function projEndMonth(s){
   let ey=s.startYear,em=s.startMonth+s.months+1;
   while(em>12){em-=12;ey++;}
@@ -710,6 +776,7 @@ function refreshLoan(){
   mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,getManLumps(0),_mS.lumpMonth,getActuals(0),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',!!_mS.balloonEnabled,_mS.balloonThreshold||0);
   renderProj('m-proj-tbody',0);
   rebuildChart();
+  refreshPayoffPanel();
 }
 
 /* ─────────────────────────────────────────
