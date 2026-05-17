@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -28,6 +28,12 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
 .plan-box{margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;font-size:.78rem;color:#15803d;line-height:1.8}
 .plan-box strong{color:#166534}
 .plan-row{display:flex;justify-content:space-between}
+.payoff-panel{margin-top:14px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px 14px;font-size:.8rem;color:#3730a3}
+.payoff-panel h3{font-size:.8rem;font-weight:700;margin-bottom:10px;color:#3730a3}
+.payoff-panel label{font-size:.72rem;font-weight:600;color:#555;display:block;margin-bottom:3px}
+.payoff-panel input,.payoff-panel select{padding:4px 7px;border:1px solid #c4b5fd;border-radius:4px;font-size:.8rem;font-family:inherit;background:#fff}
+.payoff-panel .pp-result{color:#166534;font-weight:700}
+.payoff-panel .pp-na{color:#9ca3af;font-style:italic}
 .chart-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
 .chart-title{font-size:.88rem;font-weight:700;margin-bottom:4px;color:#333}
 .chart-note{font-size:.72rem;color:#999;margin-bottom:12px}
@@ -43,6 +49,8 @@ table.txn tr:hover td{background:#fafbff}
 .tr-confirmed td{background:#f0fff4}
 .tr-lump td{background:#fefce8}
 .tr-lump:hover td{background:#fef9c3}
+.tr-payoff td{background:#fdf2ff;border-top:2px solid #d8b4fe!important}
+.tr-payoff:hover td{background:#f5e8ff}
 .tr-sep td{background:#e8eaf6;font-size:.72rem;font-weight:700;color:#3730a3;letter-spacing:.04em;padding:5px 10px;position:sticky;top:30px;z-index:1}
 .lock-ic{cursor:pointer;font-size:.85rem}
 .lump-add{cursor:pointer;color:#2563eb;font-weight:700;font-size:.95rem;border:1px dashed #93c5fd;border-radius:4px;padding:0 6px;background:#eff6ff}
@@ -79,8 +87,7 @@ table.txn tr:hover td{background:#fafbff}
 .form-hint{font-size:.68rem;color:#999;margin-top:1px}
 .form-err{font-size:.7rem;color:#dc2626;margin-top:2px;display:none}
 .form-err.show{display:block}
-.seeds-label{font-size:.72rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-.seeds-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #eee;padding-top:16px;margin-top:4px}
 .btn-primary{background:#2563eb;color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
 .btn-primary:hover{background:#1d4ed8}
@@ -125,6 +132,29 @@ table.txn tr:hover td{background:#fafbff}
       <div class="plan-row"><span>Interest saved</span><strong class="green" id="m-int-saved">&#8230;</strong></div>
       <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">&#8230;</strong></div>
     </div>
+    <div class="payoff-panel" id="payoff-panel">
+      <h3>&#128203; Final Payoff Planning</h3>
+      <div id="payoff-panel-body">
+        <p class="pp-na" id="payoff-panel-na">Available in Reduce Installment mode only.</p>
+        <div id="payoff-panel-content" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label>Target payoff month &rarr; required lump sum</label>
+              <select id="pp-month" style="width:100%;margin-bottom:6px" onchange="updatePayoffPanel()"></select>
+              <div>Required: <span class="pp-result" id="pp-result-month">&mdash;</span></div>
+            </div>
+            <div>
+              <label>One-time amount &rarr; earliest payoff month</label>
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                <input type="number" id="pp-amount" step="500" min="0" placeholder="e.g. 10,000" style="width:120px" oninput="updatePayoffPanel()">
+                <span style="font-size:.78rem;color:#555">&euro;</span>
+              </div>
+              <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="chart-card">
     <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
@@ -136,7 +166,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="budget-bar">
       <label for="loan-budget"><strong>Monthly budget:</strong></label>
       <input type="number" id="loan-budget" value="820" step="10" min="0" onchange="refreshLoan()"> &euro;
-      <span>&rarr; Accumulates 12&times;budget &minus; last-12-installments, paid once a year as a lump sum</span>
+      <span id="budget-bar-note"></span>
     </div>
     <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off payment. Highlighted rows have an auto scheduled lump sum.</div>
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Installment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
@@ -154,24 +184,24 @@ table.txn tr:hover td{background:#fafbff}
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="s-loan-bal">Opening Balance (&#8364;) *</label>
-        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 88314.11">
+        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100,000">
         <div class="form-hint">Balance at start of projection</div>
         <div class="form-err" id="err-loan-bal">Required &mdash; must be &gt; 0</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-months">Remaining Term (months) *</label>
-        <input class="form-input" id="s-loan-months" type="number" step="1" min="1" placeholder="e.g. 278">
+        <input class="form-input" id="s-loan-months" type="number" step="1" min="1" placeholder="e.g. 240">
         <div class="form-err" id="err-loan-months">Required &mdash; must be &ge; 1</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-rate">Annual Interest Rate (%) *</label>
-        <input class="form-input" id="s-loan-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.52">
+        <input class="form-input" id="s-loan-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.5">
         <div class="form-hint">Base nominal rate, before levy</div>
         <div class="form-err" id="err-loan-rate">Required &mdash; must be &gt; 0</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-levy">Additional Levy (%)</label>
-        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.12">
+        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.1">
         <div class="form-hint">Bank risk levy on top of base rate (leave 0 if none)</div>
       </div>
       <div class="form-group">
@@ -196,28 +226,50 @@ table.txn tr:hover td{background:#fafbff}
         <div class="form-err" id="err-loan-start">Year is required</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Lump Sum Month</label>
-        <select class="form-select" id="s-loan-lumpmon">
-          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-          <option value="7">July</option><option value="8" selected>August</option><option value="9">September</option>
-          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-        </select>
-        <div class="form-hint">Annual lump sum fires once per year in this month</div>
+        <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="s-loan-lump-enabled" onchange="toggleLumpOptions()" style="width:auto">
+          Annual lump sum
+        </label>
+        <div id="s-lump-options" style="margin-top:6px;display:none">
+          <select class="form-select" id="s-loan-lumpmon">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8" selected>August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-hint">Accumulated yearly surplus paid once a year in selected month</div>
       </div>
-    </div>
-    <div style="margin-bottom:18px">
-      <div class="seeds-label">Last 4 Known Installments (&#8364;) &mdash; seeds the lump-sum formula *</div>
-      <div style="font-size:.68rem;color:#999;margin-bottom:8px">Enter oldest to most recent. At least one must be non-zero.</div>
-      <div class="seeds-row">
-        <div class="form-group"><label class="form-label" for="s-loan-s1">Oldest</label><input class="form-input" id="s-loan-s1" type="number" step="0.01" min="0" placeholder="0.00"></div>
-        <div class="form-group"><label class="form-label" for="s-loan-s2">&nbsp;</label><input class="form-input" id="s-loan-s2" type="number" step="0.01" min="0" placeholder="0.00"></div>
-        <div class="form-group"><label class="form-label" for="s-loan-s3">&nbsp;</label><input class="form-input" id="s-loan-s3" type="number" step="0.01" min="0" placeholder="0.00"></div>
-        <div class="form-group"><label class="form-label" for="s-loan-s4">Most recent</label><input class="form-input" id="s-loan-s4" type="number" step="0.01" min="0" placeholder="0.00"></div>
-      </div>
-      <div class="form-err" id="err-loan-seeds">At least one seed installment must be non-zero</div>
     </div>
 
+
+    <div style="margin-bottom:18px">
+      <div class="form-label" style="margin-bottom:10px">Payoff Strategy</div>
+      <div class="form-grid" style="margin-bottom:0">
+        <div class="form-group">
+          <label class="form-label">After lump sum, bank recalculates</label>
+          <select class="form-select" id="s-loan-effect">
+            <option value="reduce-installment">Reduce installment (same term)</option>
+            <option value="reduce-duration">Reduce duration (same installment)</option>
+          </select>
+          <div class="form-hint">Affects all future lump-sum rows in the projection</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="s-loan-balloon-enabled" onchange="toggleBalloonOptions()" style="width:auto">
+            Auto payoff at balance
+          </label>
+          <div id="s-balloon-options" style="display:none;margin-top:6px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:.78rem;color:#555">&#8804; &euro;</span>
+              <input class="form-input" id="s-loan-balloon" type="number" step="100" min="0" placeholder="5,000" style="width:90px">
+            </div>
+          </div>
+          <div class="form-err" id="err-loan-balloon">Threshold must be greater than 0</div>
+          <div class="form-hint">Pay off remaining balance when it drops to this amount</div>
+        </div>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto">Reset all data</button>
       <button class="btn-secondary" id="setup-cancel-btn" onclick="closeSetup()">Cancel</button>
@@ -304,8 +356,12 @@ function populateForm(data){
   document.getElementById('s-loan-startmon').value=data.startMonth??'5';
   document.getElementById('s-loan-startyear').value=data.startYear??'';
   document.getElementById('s-loan-lumpmon').value=data.lumpMonth??'8';
-  const seeds=data.seedInstallments||[0,0,0,0];
-  ['s1','s2','s3','s4'].forEach((f,i)=>{document.getElementById('s-loan-'+f).value=seeds[i]??'';});
+  document.getElementById('s-loan-lump-enabled').checked=data.lumpEnabled!==false;
+  toggleLumpOptions();
+  document.getElementById('s-loan-effect').value=data.lumpEffect||'reduce-installment';
+  document.getElementById('s-loan-balloon-enabled').checked=!!data.balloonEnabled;
+  document.getElementById('s-loan-balloon').value=data.balloonThreshold||'';
+  toggleBalloonOptions();
 }
 
 function openSetup(firstRun){
@@ -316,6 +372,15 @@ function openSetup(firstRun){
 }
 
 function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+function toggleLumpOptions(){
+  const en=document.getElementById('s-loan-lump-enabled').checked;
+  document.getElementById('s-lump-options').style.display=en?'':'none';
+}
+function toggleBalloonOptions(){
+  const en=document.getElementById('s-loan-balloon-enabled').checked;
+  document.getElementById('s-balloon-options').style.display=en?'':'none';
+}
 
 function resetApp(){
   Object.keys(localStorage)
@@ -343,8 +408,11 @@ function readForm(){
   const smon=parseInt(document.getElementById('s-loan-startmon').value,10);
   const syr=parseInt(document.getElementById('s-loan-startyear').value,10);
   const lmon=parseInt(document.getElementById('s-loan-lumpmon').value,10)||8;
-  const seeds=['s1','s2','s3','s4'].map(f=>parseFloat(document.getElementById('s-loan-'+f).value)||0);
-  return{bal,months,rate,levy,rtype,smon,syr,lmon,seeds};
+  const lumpEnabled=document.getElementById('s-loan-lump-enabled').checked;
+  const lumpEffect=document.getElementById('s-loan-effect').value;
+  const balloonEnabled=document.getElementById('s-loan-balloon-enabled').checked;
+  const balloonThreshold=parseFloat(document.getElementById('s-loan-balloon').value)||0;
+  return{bal,months,rate,levy,rtype,smon,syr,lmon,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold};
 }
 
 function validateForm(v){
@@ -353,7 +421,9 @@ function validateForm(v){
   if(!v.months||isNaN(v.months)||v.months<1){setErr('err-loan-months','s-loan-months');ok=false;}
   if(!v.rate||isNaN(v.rate)||v.rate<=0){setErr('err-loan-rate','s-loan-rate');ok=false;}
   if(!v.syr||isNaN(v.syr)){setErr('err-loan-start','s-loan-startyear');ok=false;}
-  if(v.seeds.every(s=>s===0)){document.getElementById('err-loan-seeds').classList.add('show');ok=false;}
+  if(v.balloonEnabled&&(!v.balloonThreshold||v.balloonThreshold<=0)){
+    setErr('err-loan-balloon','s-loan-balloon');ok=false;
+  }
   return ok;
 }
 
@@ -366,7 +436,9 @@ function saveSetup(){
   loans[0]={
     id:0,label:existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
-    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,seedInstallments:v.seeds
+    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,
+    lumpEnabled:v.lumpEnabled,lumpEffect:v.lumpEffect,
+    balloonEnabled:v.balloonEnabled,balloonThreshold:v.balloonThreshold
   };
   saveLoans(loans);
   closeSetup();
@@ -465,17 +537,24 @@ function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=a
    exposes a parallel per-month array of δοσολόγιο rows:
    {month,principal,interest,inst,lump,autoLump,manualLump,bal} */
 let mSchedule=[];
-function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts,manLumps,lumpMonth,actuals){
+function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lumpMonth,actuals,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold){
   const rows=[];const sched=[];let prev=startBal;
-  const recent=[...histLastInsts];
+  const recent=[];
   manLumps=manLumps||{};
   lumpMonth=lumpMonth||8;
   actuals=actuals||{};
+  lumpEnabled=lumpEnabled!==false;
+  lumpEffect=lumpEffect||'reduce-installment';
+  balloonEnabled=!!balloonEnabled;
+  balloonThreshold=balloonThreshold||0;
+  const[sy,sm]=startMonthStr.split('-').map(Number);
+  const initRemM=(endYear-sy)*12+(endMon-sm);
+  const initM=calcPmt(startBal,rate,Math.max(1,initRemM));
+  let effEndYear=endYear,effEndMon=endMon;
   let[y,mo]=startMonthStr.split('-').map(Number);
   while(prev>0.5){
     const month=y+'-'+String(mo).padStart(2,'0');
-    const remainM=(endYear-y)*12+(endMon-mo);
-    if(remainM<=0)break;
+    if((effEndYear-y)*12+(effEndMon-mo)<=0)break;
     const act=actuals[month+'_inst'];
     if(act&&act.saved){
       // Confirmed actual: use saved figures verbatim; balance flows downstream
@@ -486,13 +565,13 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
       rows.push({month,type:'inst',inst:aInst,int:aInt,bal:aBal});
       sched.push({month,principal:aPrin,interest:aInt,inst:aInst,lump:aLump,autoLump:false,bal:aBal,confirmed:true});
       recent.push(aInst);
-      if(recent.length>4)recent.shift();
+      if(recent.length>12)recent.shift();
       prev=aBal;
       mo++;if(mo>12){mo=1;y++;}
       continue;
     }
     let lump=0,autoLump=false;
-    if(mo===lumpMonth){
+    if(lumpEnabled&&mo===lumpMonth){
       const sum12=recent.slice(-12).reduce((a,b)=>a+b,0);
       lump=Math.round(Math.max(Math.min(12*budget-sum12,prev),0));
       if(lump>0)autoLump=true;
@@ -503,10 +582,30 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,histLastInsts
     const manualLump=Math.max(0,Math.min(man,prev));
     // lump sum applied BEFORE installment of the month
     const balPost=Math.max(0,prev-lump);
+    // reduce-duration: after a lump sum, solve for new remaining term so installment stays constant
+    if(lump>0&&lumpEffect==='reduce-duration'&&initM>0){
+      const rP=rate*balPost/initM;
+      if(rP>0&&rP<1){
+        const newN=Math.max(1,Math.ceil(-Math.log(1-rP)/Math.log(1+rate)));
+        let em=mo+newN,ey=y;
+        while(em>12){em-=12;ey++;}
+        effEndYear=ey;effEndMon=em;
+      }
+    }
+    const remM=(effEndYear-y)*12+(effEndMon-mo);
+    if(remM<=0)break;
     const interest=+(balPost*rate).toFixed(2);
-    const inst=+(calcPmt(balPost,rate,remainM)).toFixed(2);
+    const inst=+(lumpEffect==='reduce-duration'?initM:calcPmt(balPost,rate,remM)).toFixed(2);
     const endBal=+Math.max(0,balPost+interest-inst).toFixed(2);
     const principal=+(inst-interest).toFixed(2);
+    // balloon: if balance after installment <= threshold, add payoff row and stop
+    if(balloonEnabled&&balloonThreshold>0&&endBal>0&&endBal<=balloonThreshold){
+      if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
+      rows.push({month,type:'inst',inst:inst+endBal,int:interest,bal:0});
+      sched.push({month,principal:principal+endBal,interest,inst:inst+endBal,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
+      mSchedule=sched;
+      return rows;
+    }
     if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
     rows.push({month,type:'inst',inst,int:interest,bal:endBal});
     sched.push({month,principal,interest,inst,lump,autoLump,manualLump,bal:endBal,confirmed:false});
@@ -538,13 +637,15 @@ function renderProj(tbodyId,loanIdx){
     const bal=row.bal;
     const yr=row.month.slice(0,4);
     if(yr!==prevYr){html+=`<tr class="tr-sep"><td colspan="7">${yr}</td></tr>`;prevYr=yr;}
-    const rowCls=locked?'tr-confirmed':row.autoLump?'tr-lump':'';
+    const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
     const numCol=locked
       ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
       :`<td style="color:#bbb;font-size:.7rem">${n} <span class="lock-ic" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})" style="color:#2563eb">&#10003;</span></td>`;
     let lumpCell;
     const manL=locked?0:(row.manualLump||0);
-    if(lump>0&&!locked){
+    if(row.payoff&&row.payoffAmt>0){
+      lumpCell=`<td class="num" style="color:#7c3aed;font-weight:700" id="pl-${loanIdx}-${idx}" title="Balloon payoff">Payoff ${f2x(row.payoffAmt)}</td>`;
+    } else if(lump>0&&!locked){
       const t=manL>0?`Manual lump €${f2x(manL)} (click to edit)`:'Add manual lump sum';
       lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add${manL>0?' lump-set':''}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
     }
@@ -616,6 +717,44 @@ function rebuildChart(){
   buildChart(mBase,mp,ml,_mS);
 }
 
+function refreshPayoffPanel(){
+  if(!_mS)return;
+  const panel=document.getElementById('payoff-panel');
+  if(!panel)return;
+  const isReduceInst=(_mS.lumpEffect||'reduce-installment')==='reduce-installment';
+  document.getElementById('payoff-panel-na').style.display=isReduceInst?'none':'';
+  document.getElementById('payoff-panel-content').style.display=isReduceInst?'':'none';
+  if(!isReduceInst)return;
+  // populate month picker with future unconfirmed rows
+  const sel=document.getElementById('pp-month');
+  sel.innerHTML='';
+  const future=mSchedule.filter(r=>!r.confirmed&&!r.payoff);
+  future.forEach(r=>{
+    const o=document.createElement('option');
+    o.value=r.month;
+    o.textContent=r.month.slice(0,4)+' '+MN[+r.month.slice(5,7)-1];
+    sel.appendChild(o);
+  });
+  updatePayoffPanel();
+}
+
+function updatePayoffPanel(){
+  // Mode A: target month → required lump sum (opening balance of that month)
+  const targetMonth=document.getElementById('pp-month').value;
+  if(!targetMonth){document.getElementById('pp-result-month').textContent='—';document.getElementById('pp-result-amount').textContent='—';return;}
+  const tIdx=mSchedule.findIndex(r=>r.month===targetMonth);
+  const openingBal=tIdx>0?mSchedule[tIdx-1].bal:(_mS?_mS.balance:0);
+  document.getElementById('pp-result-month').textContent=openingBal>0?fmtE(openingBal):'—';
+  // Mode B: lump sum amount → earliest payoff month
+  const amt=parseFloat(document.getElementById('pp-amount').value)||0;
+  if(amt>0){
+    const hit=mSchedule.find((r,i)=>!r.confirmed&&!r.payoff&&(i===0?_mS.balance:mSchedule[i-1].bal)<=amt);
+    document.getElementById('pp-result-amount').textContent=hit?(hit.month.slice(0,4)+' '+MN[+hit.month.slice(5,7)-1]):'Balance never reaches this amount';
+  } else {
+    document.getElementById('pp-result-amount').textContent='—';
+  }
+}
+
 function projEndMonth(s){
   let ey=s.startYear,em=s.startMonth+s.months+1;
   while(em>12){em-=12;ey++;}
@@ -635,9 +774,12 @@ function refreshLoan(){
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
-  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,_mS.seedInstallments,getManLumps(0),_mS.lumpMonth,getActuals(0));
+  mProjRows=genProj(budget,_mS.balance,startKey,rate,ey,em,getManLumps(0),_mS.lumpMonth,getActuals(0),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',!!_mS.balloonEnabled,_mS.balloonThreshold||0);
   renderProj('m-proj-tbody',0);
   rebuildChart();
+  refreshPayoffPanel();
+  const bnEl=document.getElementById('budget-bar-note');
+  if(bnEl)bnEl.textContent=_mS&&_mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
 }
 
 /* ─────────────────────────────────────────
@@ -662,10 +804,13 @@ function initApp(){
   const mB=parseFloat(localStorage.getItem('lt_budget_0'))||820;
   document.getElementById('loan-budget').value=mB;
 
-  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,mS.seedInstallments,getManLumps(0),mS.lumpMonth,getActuals(0));
+  mProjRows=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,getManLumps(0),mS.lumpMonth,getActuals(0),mS.lumpEnabled!==false,mS.lumpEffect||'reduce-installment',!!mS.balloonEnabled,mS.balloonThreshold||0);
 
   renderProj('m-proj-tbody',0);
   rebuildChart();
+  refreshPayoffPanel();
+  const bnEl=document.getElementById('budget-bar-note');
+  if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
 }
 
 initApp();
