@@ -223,7 +223,7 @@ table.txn tr:hover td{background:#fafbff}
         <input class="form-input" id="s-loan-fixedperiod" type="number" step="1" min="0" placeholder="e.g. 120" oninput="toggleFixedPeriod()">
         <div class="form-hint">Duration of fixed rate from loan start; sets a chart marker at expiry</div>
       </div>
-      <div class="form-group" id="s-postrate-group">
+      <div class="form-group" id="s-postrate-group" style="display:none">
         <label class="form-label" for="s-loan-postrate">Rate after fixed period (%)</label>
         <input class="form-input" id="s-loan-postrate" type="number" step="0.001" min="0" placeholder="e.g. 5.1" oninput="toggleFixedPeriod()">
         <div class="form-hint">Applied from month <span id="s-postrate-hint-month">&#8212;</span> onwards; leave blank to continue at fixed rate</div>
