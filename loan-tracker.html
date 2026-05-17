@@ -112,6 +112,9 @@ table.txn tr:hover td{background:#fafbff}
 </div>
 <div class="first-run-banner" id="first-run-banner">
   No loan data found &mdash; please configure your loan to get started.
+  <span style="margin-left:10px">or</span>
+  <button class="btn-link-reset" onclick="triggerImport()" style="margin-left:6px;font-size:.82rem">Import from backup</button>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
 </div>
 <div id="tab-dashboard">
   <div class="summary-row">
@@ -375,6 +378,34 @@ function openSetup(firstRun){
 }
 
 function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+function triggerImport(){document.getElementById('import-file').click();}
+
+function handleImport(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const state=JSON.parse(ev.target.result);
+      const loans=JSON.parse(state['lt_loans']||'null');
+      if(!Array.isArray(loans)||!loans[0])throw new Error('No loan data found in file');
+      const loan=loans[0];
+      const summary='Loan from '+(MN[(loan.startMonth||1)-1]||'')+' '+(loan.startYear||'?')+
+        (state._exported?', exported '+state._exported:'');
+      if(!confirm('Import: '+summary+'\n\nThis will replace your current data. Continue?'))return;
+      const toRemove=[];
+      for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('lt_'))toRemove.push(k);}
+      toRemove.forEach(k=>localStorage.removeItem(k));
+      Object.keys(state).filter(k=>k.startsWith('lt_')).forEach(k=>localStorage.setItem(k,state[k]));
+      initApp();
+    }catch(err){
+      alert('Could not import: '+err.message);
+    }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
 
 function exportData(){
   const state={};
