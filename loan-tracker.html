@@ -165,10 +165,10 @@ table.txn tr:hover td{background:#fafbff}
   <div class="chart-card">
     <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
     <div class="chart-note">Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
-    <canvas id="balanceChart" height="220"></canvas>
+    <canvas id="balanceChart" height="120"></canvas>
   </div>
   <div class="txn-section">
-    <div class="txn-title">Loan &mdash; &delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron; (Payment Schedule)</div>
+    <div class="txn-title">Payment Schedule (&Delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron;)</div>
     <div class="budget-bar">
       <label for="loan-budget"><strong>Monthly budget:</strong></label>
       <input type="number" id="loan-budget" value="820" step="10" min="0" onchange="refreshLoan()"> &euro;
@@ -216,7 +216,7 @@ table.txn tr:hover td{background:#fafbff}
           <option value="fixed">Fixed</option>
           <option value="variable">Variable</option>
         </select>
-        <div class="form-hint">Rate-change logic coming in a future release</div>
+        
       </div>
       <div class="form-group" id="s-fixedperiod-group">
         <label class="form-label" for="s-loan-fixedperiod">Fixed period (months)</label>
