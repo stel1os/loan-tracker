@@ -139,7 +139,7 @@ table.txn tr:hover td{background:#fafbff}
       <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">&#8230;</strong></div>
     </div>
     <div class="payoff-panel" id="payoff-panel">
-      <h3>&#128203; Final Payoff Planning</h3>
+      <h3>Early Settlement Calculator</h3>
       <div id="payoff-panel-body">
         <p class="pp-na" id="payoff-panel-na">Available in Reduce Installment mode only.</p>
         <div id="payoff-panel-content" style="display:none">
@@ -147,7 +147,7 @@ table.txn tr:hover td{background:#fafbff}
             <div>
               <label>Target payoff month &rarr; required lump sum</label>
               <select id="pp-month" style="width:100%;margin-bottom:6px" onchange="updatePayoffPanel()"></select>
-              <div>Required: <span class="pp-result" id="pp-result-month">&mdash;</span></div>
+              <div>Required in <span id="pp-result-month-when" style="font-weight:600">&#8212;</span>: <span class="pp-result" id="pp-result-month">&mdash;</span> <button class="btn-link-reset" id="pp-apply-month" onclick="applyEarlySettlement('month')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
             </div>
             <div>
               <label>One-time amount &rarr; earliest payoff month</label>
@@ -155,7 +155,7 @@ table.txn tr:hover td{background:#fafbff}
                 <input type="number" id="pp-amount" step="500" min="0" placeholder="e.g. 10,000" style="width:120px" oninput="updatePayoffPanel()">
                 <span style="font-size:.78rem;color:#555">&euro;</span>
               </div>
-              <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span></div>
+              <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span> <button class="btn-link-reset" id="pp-apply-amount" onclick="applyEarlySettlement('amount')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
             </div>
           </div>
         </div>
@@ -853,20 +853,43 @@ function refreshPayoffPanel(){
   updatePayoffPanel();
 }
 
+function applyEarlySettlement(mode){
+  if(!_mS)return;
+  let threshold=0;
+  if(mode==='month'){
+    const targetMonth=document.getElementById('pp-month').value;
+    const tIdx=mSchedule.findIndex(r=>r.month===targetMonth);
+    threshold=tIdx>0?mSchedule[tIdx-1].bal:(_mS?_mS.balance:0);
+  } else {
+    threshold=parseFloat(document.getElementById('pp-amount').value)||0;
+  }
+  if(!threshold)return;
+  const loans=loadLoans()||[];
+  loans[0]={...loans[0],balloonEnabled:true,balloonThreshold:threshold};
+  saveLoans(loans);
+  _mS=loans[0];
+  refreshLoan();
+}
 function updatePayoffPanel(){
-  // Mode A: target month → required lump sum (opening balance of that month)
+  // Mode A: target month -> required lump sum (opening balance of that month)
   const targetMonth=document.getElementById('pp-month').value;
-  if(!targetMonth){document.getElementById('pp-result-month').textContent='—';document.getElementById('pp-result-amount').textContent='—';return;}
+  if(!targetMonth){document.getElementById('pp-result-month').textContent='—';document.getElementById('pp-result-amount').textContent='—';document.getElementById('pp-apply-month').style.display='none';document.getElementById('pp-apply-amount').style.display='none';return;}
   const tIdx=mSchedule.findIndex(r=>r.month===targetMonth);
   const openingBal=tIdx>0?mSchedule[tIdx-1].bal:(_mS?_mS.balance:0);
-  document.getElementById('pp-result-month').textContent=openingBal>0?fmtE(openingBal):'—';
-  // Mode B: lump sum amount → earliest payoff month
+  const tmo=+targetMonth.slice(5,7);
+  document.getElementById('pp-result-month-when').textContent=MN[tmo-1]+' '+targetMonth.slice(0,4);
+  const hasMonResult=openingBal>0;
+  document.getElementById('pp-result-month').textContent=hasMonResult?fmtE(openingBal):'—';
+  document.getElementById('pp-apply-month').style.display=hasMonResult?'':'none';
+  // Mode B: lump sum amount -> earliest payoff month
   const amt=parseFloat(document.getElementById('pp-amount').value)||0;
   if(amt>0){
     const hit=mSchedule.find((r,i)=>!r.confirmed&&!r.payoff&&(i===0?_mS.balance:mSchedule[i-1].bal)<=amt);
     document.getElementById('pp-result-amount').textContent=hit?(hit.month.slice(0,4)+' '+MN[+hit.month.slice(5,7)-1]):'Balance never reaches this amount';
+    document.getElementById('pp-apply-amount').style.display=hit?'':'none';
   } else {
     document.getElementById('pp-result-amount').textContent='—';
+    document.getElementById('pp-apply-amount').style.display='none';
   }
 }
 
