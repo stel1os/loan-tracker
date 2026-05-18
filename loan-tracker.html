@@ -172,7 +172,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="txn-title">Payment Schedule (&Delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron;)</div>
     <div class="budget-bar">
       <label for="loan-budget"><strong>Monthly budget:</strong></label>
-      <input type="number" id="loan-budget" value="820" step="10" min="0" onchange="refreshLoan()"> &euro;
+      <input type="number" id="loan-budget" value="1000" step="10" min="0" onchange="refreshLoan()"> &euro;
       <span id="budget-bar-note"></span>
     </div>
     <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off payment. Highlighted rows have an auto scheduled lump sum.</div>
@@ -940,7 +940,7 @@ function projFirstMonth(s){
 
 function refreshLoan(){
   if(!_mS)return;
-  const budget=parseFloat(document.getElementById('loan-budget').value)||820;
+  const budget=parseFloat(document.getElementById('loan-budget').value)||1000;
   localStorage.setItem('lt_budget_0',budget);
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
@@ -973,7 +973,7 @@ function initApp(){
   const mStartKey=projFirstMonth(mS);
   const{ey:mEy,em:mEm}=projEndMonth(mS);
 
-  const mB=parseFloat(localStorage.getItem('lt_budget_0'))||820;
+  const mB=parseFloat(localStorage.getItem('lt_budget_0'))||1000;
   document.getElementById('loan-budget').value=mB;
 
   const mPostRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
