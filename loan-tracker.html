@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -107,6 +107,7 @@ table.txn tr:hover td{background:#fafbff}
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <button class="btn-settings" id="btn-export" onclick="exportData()" title="Download backup">&#8681; Export</button>
+    <button class="btn-settings" onclick="triggerImport()" title="Restore from backup">&#8679; Import</button>
     <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
   </div>
 </div>
@@ -377,7 +378,15 @@ function saveLoans(arr){localStorage.setItem(LS_LOANS,JSON.stringify(arr));}
 function loadLoan(idx){const a=loadLoans();return a&&a[idx]?a[idx]:null;}
 
 function populateForm(data){
-  if(!data)return;
+  if(!data){
+    ['s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy','s-loan-startmon','s-loan-startyear','s-loan-lumpmon','s-loan-fixedperiod','s-loan-postrate','s-loan-goalmon','s-loan-goalyear','s-loan-balloon'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('s-loan-rtype').value='fixed';
+    document.getElementById('s-loan-lump-enabled').checked=true;
+    document.getElementById('s-loan-effect').value='reduce-installment';
+    document.getElementById('s-loan-balloon-enabled').checked=false;
+    toggleFixedPeriod();toggleLumpOptions();toggleBalloonOptions();
+    return;
+  }
   document.getElementById('s-loan-bal').value=data.balance??'';
   document.getElementById('s-loan-months').value=data.months??'';
   document.getElementById('s-loan-rate').value=data.annualRate??'';
@@ -474,7 +483,8 @@ function resetApp(){
   Object.keys(localStorage)
     .filter(k=>k.startsWith('lt_')||k.startsWith('confirmed_'))
     .forEach(k=>localStorage.removeItem(k));
-  openSetup(true);
+  closeSetup();
+  initApp();
 }
 
 function clearErrors(){
