@@ -302,7 +302,8 @@ table.txn tr:hover td{background:#fafbff}
       <div class="form-hint">Draws a goal marker on the balance chart</div>
     </div>
     <div class="modal-actions">
-      <button class="btn-danger" onclick="resetApp()" style="margin-right:auto">Reset all data</button>
+      <button class="btn-danger" onclick="resetApp()" style="margin-right:auto" id="setup-reset-btn">Reset all data</button>
+      <button class="btn-link-reset" id="setup-import-btn" onclick="triggerImport()" style="display:none;margin-right:auto;font-size:.82rem">Import from backup</button>
       <button class="btn-secondary" id="setup-cancel-btn" onclick="closeSetup()">Cancel</button>
       <button class="btn-primary" onclick="saveSetup()">Save &amp; Apply</button>
     </div>
@@ -413,6 +414,8 @@ function openSetup(firstRun){
   populateForm(loadLoan(0));
   clearErrors();
   document.getElementById('setup-cancel-btn').style.display=firstRun?'none':'';
+  document.getElementById('setup-reset-btn').style.display=firstRun?'none':'';
+  document.getElementById('setup-import-btn').style.display=firstRun?'':'none';
   document.getElementById('setup-modal').classList.add('open');
 }
 
