@@ -2,6 +2,13 @@
 
 A zero-install, browser-based loan tracker. Open the HTML file in any browser — no server, no setup, no dependencies.
 
+## Screenshots
+
+![Dashboard](Screenshots/dashboard.png)
+![Payment Schedule](Screenshots/schedule.png)
+![Balance Chart](Screenshots/chart.png)
+![Loan Setup](Screenshots/setup.png)
+
 ## What it does
 
 - Configure your loan once (balance, term, rate, start date)
