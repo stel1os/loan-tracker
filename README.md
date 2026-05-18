@@ -39,3 +39,8 @@ Click **Export** in the header to download a timestamped JSON file of your full 
 |---|---|
 | `loan-tracker.html` | The entire app |
 | `README.md` | This file |
+
+## Support
+
+If you find this useful, you can buy me a coffee:
+[ko-fi.com/stel1os](https://ko-fi.com/stel1os)
