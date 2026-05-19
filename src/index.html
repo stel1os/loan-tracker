@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loan Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<!-- STYLE -->
+</head>
+<body>
+<div class="hdr-row">
+  <div>
+    <h1>Loan Tracker</h1>
+    <p class="subtitle" id="app-subtitle">Loading&hellip;</p>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-settings" id="btn-export" onclick="exportData()" title="Download backup">&#8681; Export</button>
+    <button class="btn-settings" onclick="triggerImport()" title="Restore from backup">&#8679; Import</button>
+    <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
+    <button class="btn-settings" onclick="openHelp()">? Help</button>
+  </div>
+</div>
+<div class="first-run-banner" id="first-run-banner">
+  No loan data found &mdash; please configure your loan to get started.
+  <span style="margin-left:10px">or</span>
+  <button class="btn-link-reset" onclick="triggerImport()" style="margin-left:6px;font-size:.82rem">Import from backup</button>
+  <button class="btn-link-reset" onclick="loadExample()" style="margin-left:10px;font-size:.82rem">Load example</button>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+</div>
+<div id="tab-dashboard">
+  <div class="summary-row">
+    <div class="card"><div class="card-label">Total Debt</div><div class="card-value red" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value green" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Interest Saved vs No Extras</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
+  </div>
+  <div class="loan-card">
+    <div class="loan-title">Loan <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
+    <div class="stat-grid">
+      <div><div class="stat-label">Balance</div><div class="stat-val red" id="m-bal-stat">&#8230;</div></div>
+      <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">&#8230;</div></div>
+      <div><div class="stat-label">Time Saved</div><div class="stat-val green" id="m-time-saved">&#8230;</div></div>
+      <div><div class="stat-label">Next Lump</div><div class="stat-val" id="m-next-lump" style="color:#2563eb">&#8230;</div></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" style="width:7%;background:linear-gradient(90deg,#2563eb,#93c5fd)"></div></div>
+    <div style="font-size:.72rem;color:#aaa;margin-top:4px;">&#8364;6,686 principal reduced &middot; &#8364;7,335 interest &middot; &#8364;2,912 extras so far</div>
+    <div class="plan-box">
+      <div class="plan-row"><span>Plan remaining interest</span><strong id="m-plan-int">&#8230;</strong></div>
+      <div class="plan-row"><span>No-extras interest</span><strong id="m-base-int">&#8230;</strong></div>
+      <div class="plan-row"><span>Interest saved</span><strong class="green" id="m-int-saved">&#8230;</strong></div>
+      <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">&#8230;</strong></div>
+    </div>
+    <div class="payoff-panel" id="payoff-panel">
+      <h3>Early Settlement Calculator</h3>
+      <div id="payoff-panel-body">
+        <p class="pp-na" id="payoff-panel-na">Available in Reduce Installment mode only.</p>
+        <div id="payoff-panel-content" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label>Target payoff month &rarr; required lump sum</label>
+              <select id="pp-month" style="width:100%;margin-bottom:6px" onchange="updatePayoffPanel()"></select>
+              <div>Required in <span id="pp-result-month-when" style="font-weight:600">&#8212;</span>: <span class="pp-result" id="pp-result-month">&mdash;</span> <button class="btn-link-reset" id="pp-apply-month" onclick="applyEarlySettlement('month')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
+            </div>
+            <div>
+              <label>One-time amount &rarr; earliest payoff month</label>
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                <input type="number" id="pp-amount" step="500" min="0" placeholder="e.g. 10,000" style="width:120px" oninput="updatePayoffPanel()">
+                <span style="font-size:.78rem;color:#555">&euro;</span>
+              </div>
+              <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span> <button class="btn-link-reset" id="pp-apply-amount" onclick="applyEarlySettlement('amount')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
+    <div class="chart-note">Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
+    <canvas id="balanceChart" height="120"></canvas>
+  </div>
+  <div class="txn-section">
+    <div class="txn-title">Payment Schedule (&Delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron;)</div>
+    <div class="budget-bar">
+      <label for="loan-budget"><strong>Monthly budget:</strong></label>
+      <input type="number" id="loan-budget" value="1000" step="10" min="0" onchange="refreshLoan()"> &euro;
+      <span id="budget-bar-note"></span>
+    </div>
+    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off payment. Highlighted rows have an auto scheduled lump sum.</div>
+    <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Installment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
+  </div>
+  <p class="footer" id="app-footer">Loading&hellip;</p>
+  <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
+  <p class="footer" style="margin-top:6px">If you find this useful &mdash; <a href="https://ko-fi.com/stel1os" target="_blank" rel="noopener" style="color:#aaa">buy me a coffee</a></p>
+  <p class="footer" id="version-line" style="margin-top:4px"></p>
+</div>
+
+<div class="modal-overlay" id="help-modal" onclick="if(event.target===this)closeHelp()">
+  <div class="modal" style="max-width:580px;max-height:82vh;overflow-y:auto">
+    <h2 class="modal-title">How to use Loan Tracker</h2>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">First-run setup</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter your loan details once: outstanding principal, remaining term, nominal annual interest rate, and any additional levy charged by your lender. Choose your rate type (fixed or variable) and, if fixed, the duration of the fixed period and the rate that applies after it expires. Click <strong>Save &amp; Apply</strong>. All settings can be changed at any time via <strong>Edit</strong>.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Monthly budget</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter the total amount you are willing to pay each month. The <strong>monthly surplus</strong> &mdash; your budget minus the regular instalment &mdash; accumulates and is paid as an annual lump-sum prepayment on the month you select. Increasing your budget accelerates principal reduction and brings your settlement date forward.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Payment schedule</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">The schedule shows the full amortisation table: each row is one month and displays the interest charge, the principal repayment, the total instalment, any lump-sum prepayment, and the remaining outstanding balance.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Lump-sum prepayments</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 4px">Each year, on your chosen month, accumulated surplus is paid as a lump-sum prepayment directly against principal. You can also add a one-off manual prepayment to any future row using the <strong>+</strong> button in the Lump Sum column.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 4px"><strong>Reduce Duration</strong> &mdash; the instalment stays roughly the same; each prepayment shortens the remaining term.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px"><strong>Reduce Instalment</strong> &mdash; the term stays fixed; each prepayment lowers the monthly instalment going forward.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Confirming actual payments</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">When a payment has been made, tick the <strong>Paid?</strong> checkbox. A dialog pre-fills the projected amounts; edit them if your lender charged differently. The row locks and will never be overwritten by recalculations. All future rows recalculate from the locked outstanding balance.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Early settlement calculator</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Available in Reduce Instalment mode. Enter a target settlement month to find the prepayment required to clear the outstanding balance, or enter a prepayment amount to find the earliest possible settlement month. Click <strong>Apply</strong> to insert it into the schedule.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Backup and restore</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Click <strong>Export</strong> to download a JSON backup of your loan configuration, confirmed actuals, budget, and manual prepayments. Click <strong>Import</strong> to restore from a backup on any browser or device. All data stays in your browser&rsquo;s local storage &mdash; nothing is sent to any server.</p>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeHelp()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit / Settings Modal -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal">
+    <div class="modal-title">Loan Edit</div>
+    <div class="modal-sub">Configure your loan details. Saved locally in your browser and used for all projections.</div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label" for="s-loan-bal">Opening Balance (&#8364;) *</label>
+        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100,000">
+        <div class="form-hint">Balance at start of projection</div>
+        <div class="form-err" id="err-loan-bal">Required &mdash; must be &gt; 0</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="s-loan-months">Remaining Term (months) *</label>
+        <input class="form-input" id="s-loan-months" type="number" step="1" min="1" placeholder="e.g. 240">
+        <div class="form-err" id="err-loan-months">Required &mdash; must be &ge; 1</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="s-loan-rate">Annual Interest Rate (%) *</label>
+        <input class="form-input" id="s-loan-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.5">
+        <div class="form-hint">Base nominal rate, before levy</div>
+        <div class="form-err" id="err-loan-rate">Required &mdash; must be &gt; 0</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="s-loan-levy">Additional Levy (%)</label>
+        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.1">
+        <div class="form-hint">Bank risk levy on top of base rate (leave 0 if none)</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="s-loan-rtype">Rate Type</label>
+        <select class="form-select" id="s-loan-rtype" onchange="toggleFixedPeriod()">
+          <option value="fixed">Fixed</option>
+          <option value="variable">Variable</option>
+        </select>
+        
+      </div>
+      <div class="form-group" id="s-fixedperiod-group">
+        <label class="form-label" for="s-loan-fixedperiod">Fixed period (months)</label>
+        <input class="form-input" id="s-loan-fixedperiod" type="number" step="1" min="0" placeholder="e.g. 120" oninput="toggleFixedPeriod()">
+        <div class="form-hint">Duration of fixed rate from loan start; sets a chart marker at expiry</div>
+      </div>
+      <div class="form-group" id="s-postrate-group" style="display:none">
+        <label class="form-label" for="s-loan-postrate">Rate after fixed period (%)</label>
+        <input class="form-input" id="s-loan-postrate" type="number" step="0.001" min="0" placeholder="e.g. 5.1" oninput="toggleFixedPeriod()">
+        <div class="form-hint">Applied from month <span id="s-postrate-hint-month">&#8212;</span> onwards; leave blank to continue at fixed rate</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Projection Start (month/year) *</label>
+        <div style="display:flex;gap:6px">
+          <select class="form-select" id="s-loan-startmon" style="flex:1">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+          <input class="form-input" id="s-loan-startyear" type="number" step="1" min="2020" max="2099" placeholder="Year" style="width:85px">
+        </div>
+        <div class="form-err" id="err-loan-start">Year is required</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="s-loan-lump-enabled" onchange="toggleLumpOptions()" style="width:auto">
+          Annual lump sum
+        </label>
+        <div id="s-lump-options" style="margin-top:6px;display:none">
+          <select class="form-select" id="s-loan-lumpmon">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8" selected>August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-hint">Accumulated yearly surplus paid once a year in selected month</div>
+      </div>
+    </div>
+
+
+    <div style="margin-bottom:18px">
+      <div class="form-label" style="margin-bottom:10px">Payoff Strategy</div>
+      <div class="form-grid" style="margin-bottom:0">
+        <div class="form-group">
+          <label class="form-label">After prepayment, lender recalculates</label>
+          <select class="form-select" id="s-loan-effect">
+            <option value="reduce-installment">Reduce installment (same term)</option>
+            <option value="reduce-duration">Reduce duration (same installment)</option>
+          </select>
+          <div class="form-hint">Applies to all future lump-sum prepayment rows</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="s-loan-balloon-enabled" onchange="toggleBalloonOptions()" style="width:auto">
+            Auto payoff at balance
+          </label>
+          <div id="s-balloon-options" style="display:none;margin-top:6px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:.78rem;color:#555">&#8804; &euro;</span>
+              <input class="form-input" id="s-loan-balloon" type="number" step="100" min="0" placeholder="5,000" style="width:90px">
+            </div>
+          </div>
+          <div class="form-err" id="err-loan-balloon">Threshold must be greater than 0</div>
+          <div class="form-hint">Pay off remaining balance when it drops to this amount</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div class="form-label" style="margin-bottom:6px">Target payoff by <span style="font-weight:400;color:#999">(optional)</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="form-select" id="s-loan-goalmon" style="width:auto">
+          <option value="">— Month —</option>
+          <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+          <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+          <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <input class="form-input" id="s-loan-goalyear" type="number" min="2024" max="2060" placeholder="Year" style="width:90px">
+      </div>
+      <div class="form-hint">Draws a goal marker on the balance chart</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-danger" onclick="resetApp()" style="margin-right:auto" id="setup-reset-btn">Reset all data</button>
+      <button class="btn-link-reset" id="setup-import-btn" onclick="triggerImport()" style="display:none;margin-right:auto;font-size:.82rem">Import from backup</button>
+      <button class="btn-link-reset" onclick="loadExample()" style="font-size:.82rem;margin-right:8px">Load example</button>
+      <button class="btn-secondary" id="setup-cancel-btn" onclick="closeSetup()">Cancel</button>
+      <button class="btn-primary" onclick="saveSetup()">Save &amp; Apply</button>
+    </div>
+  </div>
+</div>
+<!-- SCRIPTS -->
+</body>
+</html>
