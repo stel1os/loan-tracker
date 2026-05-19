@@ -110,6 +110,7 @@ table.txn tr:hover td{background:#fafbff}
     <button class="btn-settings" id="btn-export" onclick="exportData()" title="Download backup">&#8681; Export</button>
     <button class="btn-settings" onclick="triggerImport()" title="Restore from backup">&#8679; Import</button>
     <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
+    <button class="btn-settings" onclick="openHelp()">? Help</button>
   </div>
 </div>
 <div class="first-run-banner" id="first-run-banner">
@@ -184,6 +185,31 @@ table.txn tr:hover td{background:#fafbff}
   <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
   <p class="footer" style="margin-top:6px">If you find this useful &mdash; <a href="https://ko-fi.com/stel1os" target="_blank" rel="noopener" style="color:#aaa">buy me a coffee</a></p>
   <p class="footer" id="version-line" style="margin-top:4px"></p>
+</div>
+
+<div class="modal-overlay" id="help-modal" onclick="if(event.target===this)closeHelp()">
+  <div class="modal-content" style="max-width:580px;max-height:82vh;overflow-y:auto">
+    <h2 class="modal-title">How to use Loan Tracker</h2>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">First-run setup</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter your loan details once: outstanding principal, remaining term, nominal annual interest rate, and any additional levy charged by your lender. Choose your rate type (fixed or variable) and, if fixed, the duration of the fixed period and the rate that applies after it expires. Click <strong>Save &amp; Apply</strong>. All settings can be changed at any time via <strong>Edit</strong>.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Monthly budget</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter the total amount you are willing to pay each month. The <strong>monthly surplus</strong> &mdash; your budget minus the regular instalment &mdash; accumulates and is paid as an annual lump-sum prepayment on the month you select. Increasing your budget accelerates principal reduction and brings your settlement date forward.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Payment schedule</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">The schedule shows the full amortisation table: each row is one month and displays the interest charge, the principal repayment, the total instalment, any lump-sum prepayment, and the remaining outstanding balance.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Lump-sum prepayments</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 4px">Each year, on your chosen month, accumulated surplus is paid as a lump-sum prepayment directly against principal. You can also add a one-off manual prepayment to any future row using the <strong>+</strong> button in the Lump Sum column.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 4px"><strong>Reduce Duration</strong> &mdash; the instalment stays roughly the same; each prepayment shortens the remaining term.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px"><strong>Reduce Instalment</strong> &mdash; the term stays fixed; each prepayment lowers the monthly instalment going forward.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Confirming actual payments</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">When a payment has been made, tick the <strong>Paid?</strong> checkbox. A dialog pre-fills the projected amounts; edit them if your lender charged differently. The row locks and will never be overwritten by recalculations. All future rows recalculate from the locked outstanding balance.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Early settlement calculator</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Available in Reduce Instalment mode. Enter a target settlement month to find the prepayment required to clear the outstanding balance, or enter a prepayment amount to find the earliest possible settlement month. Click <strong>Apply</strong> to insert it into the schedule.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Backup and restore</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Click <strong>Export</strong> to download a JSON backup of your loan configuration, confirmed actuals, budget, and manual prepayments. Click <strong>Import</strong> to restore from a backup on any browser or device. All data stays in your browser&rsquo;s local storage &mdash; nothing is sent to any server.</p>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeHelp()">Close</button>
+    </div>
+  </div>
 </div>
 
 <!-- Edit / Settings Modal -->
@@ -268,12 +294,12 @@ table.txn tr:hover td{background:#fafbff}
       <div class="form-label" style="margin-bottom:10px">Payoff Strategy</div>
       <div class="form-grid" style="margin-bottom:0">
         <div class="form-group">
-          <label class="form-label">After lump sum, bank recalculates</label>
+          <label class="form-label">After prepayment, lender recalculates</label>
           <select class="form-select" id="s-loan-effect">
             <option value="reduce-installment">Reduce installment (same term)</option>
             <option value="reduce-duration">Reduce duration (same installment)</option>
           </select>
-          <div class="form-hint">Affects all future lump-sum rows in the projection</div>
+          <div class="form-hint">Applies to all future lump-sum prepayment rows</div>
         </div>
         <div class="form-group">
           <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -1012,6 +1038,8 @@ function loadExample(){
   toggleFixedPeriod();toggleLumpOptions();toggleBalloonOptions();
 }
 
+function openHelp(){document.getElementById('help-modal').classList.add('open');}
+function closeHelp(){document.getElementById('help-modal').classList.remove('open');}
 function setVersion(){const v=document.getElementById('version-line');if(v)v.textContent='Loan Tracker '+APP_VERSION;}
 setVersion();
 initApp();
