@@ -183,6 +183,7 @@ table.txn tr:hover td{background:#fafbff}
   <p class="footer" id="app-footer">Loading&hellip;</p>
   <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
   <p class="footer" style="margin-top:6px">If you find this useful &mdash; <a href="https://ko-fi.com/stel1os" target="_blank" rel="noopener" style="color:#aaa">buy me a coffee</a></p>
+  <p class="footer" id="version-line" style="margin-top:4px"></p>
 </div>
 
 <!-- Edit / Settings Modal -->
@@ -351,6 +352,7 @@ table.txn tr:hover td{background:#fafbff}
    lt_loans[0] and the old key deleted. Old mort_budget /
    mort_act are migrated to lt_budget_0 / confirmed_0_act.
 ───────────────────────────────────────── */
+const APP_VERSION='v1.1.0';
 const LS_LOANS='lt_loans';
 const LS_OLD_MORT='lt_loan_mort';
 
@@ -1010,6 +1012,8 @@ function loadExample(){
   toggleFixedPeriod();toggleLumpOptions();toggleBalloonOptions();
 }
 
+function setVersion(){const v=document.getElementById('version-line');if(v)v.textContent='Loan Tracker '+APP_VERSION;}
+setVersion();
 initApp();
 </script>
 </body>
