@@ -279,6 +279,7 @@ All data is stored exclusively in your browser's `localStorage`. Nothing is sent
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.1.2 | 2026-05-19 | Load example button added to Edit screen |
 | v1.1.1 | 2026-05-19 | Fix help modal invisible background |
 | v1.1.0 | 2026-05-19 | In-app help; load-example button on entry screen; version display in footer; reduce-instalment recalculation verified |
 | v1.0.0 | 2026-05-17 | Public release: configurable loan setup, annual lump-sum schedule, manual prepayments, reduce-duration / reduce-instalment modes, early settlement calculator, balloon payment, confirm actuals, export / import, balance chart |
