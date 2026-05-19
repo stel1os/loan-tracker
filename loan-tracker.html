@@ -334,6 +334,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="modal-actions">
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto" id="setup-reset-btn">Reset all data</button>
       <button class="btn-link-reset" id="setup-import-btn" onclick="triggerImport()" style="display:none;margin-right:auto;font-size:.82rem">Import from backup</button>
+      <button class="btn-link-reset" onclick="loadExample()" style="font-size:.82rem;margin-right:8px">Load example</button>
       <button class="btn-secondary" id="setup-cancel-btn" onclick="closeSetup()">Cancel</button>
       <button class="btn-primary" onclick="saveSetup()">Save &amp; Apply</button>
     </div>
@@ -378,7 +379,7 @@ table.txn tr:hover td{background:#fafbff}
    lt_loans[0] and the old key deleted. Old mort_budget /
    mort_act are migrated to lt_budget_0 / confirmed_0_act.
 ───────────────────────────────────────── */
-const APP_VERSION='v1.1.1';
+const APP_VERSION='v1.1.2';
 const LS_LOANS='lt_loans';
 const LS_OLD_MORT='lt_loan_mort';
 
