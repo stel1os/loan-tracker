@@ -145,7 +145,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="payoff-panel" id="payoff-panel">
       <h3>Early Settlement Calculator</h3>
       <div id="payoff-panel-body">
-        <p class="pp-na" id="payoff-panel-na">Available in Reduce Installment mode only.</p>
+        <p class="pp-na" id="payoff-panel-na">Available in Reduce Instalment mode only.</p>
         <div id="payoff-panel-content" style="display:none">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
@@ -178,8 +178,8 @@ table.txn tr:hover td{background:#fafbff}
       <input type="number" id="loan-budget" value="1000" step="10" min="0" onchange="refreshLoan()"> &euro;
       <span id="budget-bar-note"></span>
     </div>
-    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off payment. Highlighted rows have an auto scheduled lump sum.</div>
-    <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Installment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
+    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Highlighted rows have an auto scheduled lump sum.</div>
+    <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Instalment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>
   <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
@@ -237,9 +237,9 @@ table.txn tr:hover td{background:#fafbff}
         <div class="form-err" id="err-loan-rate">Required &mdash; must be &gt; 0</div>
       </div>
       <div class="form-group">
-        <label class="form-label" for="s-loan-levy">Additional Levy (%)</label>
-        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.1">
-        <div class="form-hint">Bank risk levy on top of base rate (leave 0 if none)</div>
+        <label class="form-label" for="s-loan-levy">Law 128/75 contribution (%)</label>
+        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="0.12">
+        <div class="form-hint">Law 128/75 contribution on top of base rate</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-rtype">Rate Type</label>
