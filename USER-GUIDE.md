@@ -16,6 +16,7 @@ A zero-install, browser-based loan tracker. Download `loan-tracker.html`, open i
 8. [Early Settlement Calculator](#8-early-settlement-calculator)
 9. [Backup and Restore](#9-backup-and-restore)
 10. [Settings and Reset](#10-settings-and-reset)
+11. [Version History](#11-version-history)
 
 ---
 
@@ -271,3 +272,13 @@ After reset, the app returns to the first-run state. You can set up a new loan o
 ## Data and Privacy
 
 All data is stored exclusively in your browser's `localStorage`. Nothing is sent to any server. The app works fully offline. Clearing your browser's storage or switching to a different browser will lose your data unless you have exported a backup.
+
+---
+
+## 11. Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1.1.0 | 2026-05-19 | In-app help; load-example button on entry screen; version display in footer; reduce-instalment recalculation verified |
+| v1.0.0 | 2026-05-17 | Public release: configurable loan setup, annual lump-sum schedule, manual prepayments, reduce-duration / reduce-instalment modes, early settlement calculator, balloon payment, confirm actuals, export / import, balance chart |
+| v0.1 | 2026-05-01 | Initial working prototype |
