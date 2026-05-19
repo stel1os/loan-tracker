@@ -2,6 +2,8 @@
 
 A zero-install, browser-based loan tracker. Open the HTML file in any browser — no server, no setup, no dependencies.
 
+**[Try it live](https://stel1os.github.io/loan-tracker/)**
+
 ## Screenshots
 
 ![Dashboard](Screenshots/dashboard.png)
