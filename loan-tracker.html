@@ -145,7 +145,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="payoff-panel" id="payoff-panel">
       <h3>Early Settlement Calculator</h3>
       <div id="payoff-panel-body">
-        <p class="pp-na" id="payoff-panel-na">Available in Reduce Installment mode only.</p>
+        <p class="pp-na" id="payoff-panel-na">Available in Reduce Instalment mode only.</p>
         <div id="payoff-panel-content" style="display:none">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
@@ -178,8 +178,8 @@ table.txn tr:hover td{background:#fafbff}
       <input type="number" id="loan-budget" value="1000" step="10" min="0" onchange="refreshLoan()"> &euro;
       <span id="budget-bar-note"></span>
     </div>
-    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off payment. Highlighted rows have an auto scheduled lump sum.</div>
-    <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Installment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
+    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Highlighted rows have an auto scheduled lump sum.</div>
+    <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Instalment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>
   <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
@@ -237,9 +237,9 @@ table.txn tr:hover td{background:#fafbff}
         <div class="form-err" id="err-loan-rate">Required &mdash; must be &gt; 0</div>
       </div>
       <div class="form-group">
-        <label class="form-label" for="s-loan-levy">Additional Levy (%)</label>
-        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="e.g. 0.1">
-        <div class="form-hint">Bank risk levy on top of base rate (leave 0 if none)</div>
+        <label class="form-label" for="s-loan-levy">Law 128/75 contribution (%)</label>
+        <input class="form-input" id="s-loan-levy" type="number" step="0.001" min="0" placeholder="0.12">
+        <div class="form-hint">Law 128/75 contribution on top of base rate</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-rtype">Rate Type</label>
@@ -341,6 +341,156 @@ table.txn tr:hover td{background:#fafbff}
   </div>
 </div>
 <script>
+// Pure calculation functions — no DOM, no localStorage
+function projEndMonth(s){
+  let ey=s.startYear,em=s.startMonth+s.months+1;
+  while(em>12){em-=12;ey++;}
+  return{ey,em};
+}
+
+function projFirstMonth(s){
+  let y=s.startYear,m=s.startMonth+1;
+  if(m>12){m=1;y++;}
+  return y+'-'+String(m).padStart(2,'0');
+}
+
+function calcPmt(b,r,m){return b*r/(1-Math.pow(1+r,-m));}
+
+function amortizeSimple(bal,rate,months){
+  const pmt=calcPmt(bal,rate,months);const out=[];let b=bal;
+  for(let m=0;m<months&&b>0.01;m++){const i=b*rate;b=Math.max(0,b-(pmt-i));out.push(+b.toFixed(2));}
+  return out;
+}
+
+function rowsToPlanMap(rows){const map={};rows.filter(r=>r.type==='inst').forEach(r=>{map[r.month]=r.bal;});return map;}
+
+function rowsToLumpMap(rows){const map={};rows.filter(r=>r.type==='extra').forEach(r=>{map[r.month]=r.inst;});return map;}
+
+
+function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lumpMonth,actuals,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,fixedPeriodMonths,postFixedRate){
+  const rows=[];const sched=[];let prev=startBal;
+  const recent=[];
+  manLumps=manLumps||{};
+  lumpMonth=lumpMonth||8;
+  actuals=actuals||{};
+  lumpEnabled=lumpEnabled!==false;
+  lumpEffect=lumpEffect||'reduce-installment';
+  balloonEnabled=!!balloonEnabled;
+  balloonThreshold=balloonThreshold||0;
+  fixedPeriodMonths=fixedPeriodMonths||0;
+  postFixedRate=postFixedRate||0;
+  let currentRate=rate;
+  let monthIdx=0;
+  const[sy,sm]=startMonthStr.split('-').map(Number);
+  const initRemM=(endYear-sy)*12+(endMon-sm);
+  const initM=calcPmt(startBal,rate,Math.max(1,initRemM));
+  let effEndYear=endYear,effEndMon=endMon;
+  let[y,mo]=startMonthStr.split('-').map(Number);
+  while(prev>0.5){
+    const month=y+'-'+String(mo).padStart(2,'0');
+    if((effEndYear-y)*12+(effEndMon-mo)<=0)break;
+    const act=actuals[month+'_inst'];
+    if(act&&act.saved){
+      // Confirmed actual: use saved figures verbatim; balance flows downstream
+      const aLump=act.lump||0,aInt=+(+act.int).toFixed(2),aInst=+(+act.inst).toFixed(2);
+      const aPrin=act.principal!=null?+(+act.principal).toFixed(2):+(aInst-aInt).toFixed(2);
+      const aBal=+(+act.bal).toFixed(2);
+      if(aLump>0)rows.push({month,type:'extra',inst:aLump,int:0,bal:Math.max(0,prev-aLump)});
+      rows.push({month,type:'inst',inst:aInst,int:aInt,bal:aBal});
+      sched.push({month,principal:aPrin,interest:aInt,inst:aInst,lump:aLump,autoLump:false,bal:aBal,confirmed:true});
+      recent.push(aInst);
+      if(recent.length>12)recent.shift();
+      prev=aBal;
+      monthIdx++;
+      mo++;if(mo>12){mo=1;y++;}
+      continue;
+    }
+    if(fixedPeriodMonths>0&&postFixedRate>0&&monthIdx>=fixedPeriodMonths){currentRate=postFixedRate;}
+    monthIdx++;
+    let lump=0,autoLump=false;
+    if(lumpEnabled&&mo===lumpMonth){
+      const sum12=recent.slice(-12).reduce((a,b)=>a+b,0);
+      lump=Math.round(Math.max(Math.min(12*budget-sum12,prev),0));
+      if(lump>0)autoLump=true;
+    }
+    const man=manLumps[month]||0;
+    if(man>0)lump+=man;
+    lump=Math.min(lump,prev);
+    const manualLump=Math.max(0,Math.min(man,prev));
+    // lump sum applied BEFORE installment of the month
+    const balPost=Math.max(0,prev-lump);
+    // reduce-duration: after a lump sum, solve for new remaining term so installment stays constant
+    if(lump>0&&lumpEffect==='reduce-duration'&&initM>0){
+      const rP=rate*balPost/initM;
+      if(rP>0&&rP<1){
+        const newN=Math.max(1,Math.ceil(-Math.log(1-rP)/Math.log(1+rate)));
+        let em=mo+newN,ey=y;
+        while(em>12){em-=12;ey++;}
+        effEndYear=ey;effEndMon=em;
+      }
+    }
+    const remM=(effEndYear-y)*12+(effEndMon-mo);
+    if(remM<=0)break;
+    const interest=+(balPost*currentRate).toFixed(2);
+    const inst=+(lumpEffect==='reduce-duration'?initM:calcPmt(balPost,currentRate,remM)).toFixed(2);
+    const endBal=+Math.max(0,balPost+interest-inst).toFixed(2);
+    const principal=+(inst-interest).toFixed(2);
+    // balloon: if balance after installment <= threshold, add payoff row and stop
+    if(balloonEnabled&&balloonThreshold>0&&endBal>0&&endBal<=balloonThreshold){
+      if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
+      rows.push({month,type:'inst',inst:inst+endBal,int:interest,bal:0});
+      sched.push({month,principal:principal+endBal,interest,inst:inst+endBal,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
+      mSchedule=sched;
+      return rows;
+    }
+    if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
+    rows.push({month,type:'inst',inst,int:interest,bal:endBal});
+    sched.push({month,principal,interest,inst,lump,autoLump,manualLump,bal:endBal,confirmed:false});
+    recent.push(inst);
+    if(recent.length>12)recent.shift();
+    prev=endBal;
+    mo++;if(mo>12){mo=1;y++;}
+  }
+  mSchedule=sched;
+  return rows;
+}
+const APP_VERSION='v1.2.0';
+const LS_LOANS='lt_loans';
+const LS_OLD_MORT='lt_loan_mort';
+
+function migrateV1(){
+  if(localStorage.getItem(LS_LOANS))return;
+  let old=null;
+  try{old=JSON.parse(localStorage.getItem(LS_OLD_MORT));}catch(e){old=null;}
+  if(!old)return;
+  const loan={
+    id:0,label:'Loan',
+    balance:old.balance,months:old.months,annualRate:old.annualRate,
+    levy:old.levy,rateType:old.rateType,startMonth:old.startMonth,
+    startYear:old.startYear,lumpMonth:old.lumpMonth||8,seedInstallments:old.seedInstallments
+  };
+  localStorage.setItem(LS_LOANS,JSON.stringify([loan]));
+  localStorage.removeItem(LS_OLD_MORT);
+  localStorage.removeItem('lt_loan_rep');
+  // migrate budget + actuals
+  const ob=localStorage.getItem('mort_budget');
+  if(ob!=null&&localStorage.getItem('lt_budget_0')==null)localStorage.setItem('lt_budget_0',ob);
+  const oa=localStorage.getItem('mort_act');
+  if(oa!=null&&localStorage.getItem('confirmed_0_act')==null)localStorage.setItem('confirmed_0_act',oa);
+  localStorage.removeItem('mort_budget');localStorage.removeItem('rep_budget');
+  localStorage.removeItem('mort_act');localStorage.removeItem('rep_act');
+}
+function loadLoans(){try{const a=JSON.parse(localStorage.getItem(LS_LOANS));return Array.isArray(a)?a:null;}catch(e){return null;}}
+function saveLoans(arr){localStorage.setItem(LS_LOANS,JSON.stringify(arr));}
+function loadLoan(idx){const a=loadLoans();return a&&a[idx]?a[idx]:null;}
+
+function manLumpKey(idx){return 'lt_manlump_'+idx;}
+function getManLumps(idx){try{return JSON.parse(localStorage.getItem(manLumpKey(idx))||'{}');}catch(e){return{};}}
+function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=amt;else delete m[month];localStorage.setItem(manLumpKey(idx),JSON.stringify(m));}
+
+function actKey(idx){return 'confirmed_'+idx+'_act';}
+function getActuals(idx){try{return JSON.parse(localStorage.getItem(actKey(idx))||'{}');}catch(e){return{};}}
+function saveActual(idx,key,data){const a=getActuals(idx);a[key]=data;localStorage.setItem(actKey(idx),JSON.stringify(a));}
 /* ─────────────────────────────────────────
    Setup modal helpers
 ───────────────────────────────────────── */
@@ -379,36 +529,8 @@ table.txn tr:hover td{background:#fafbff}
    lt_loans[0] and the old key deleted. Old mort_budget /
    mort_act are migrated to lt_budget_0 / confirmed_0_act.
 ───────────────────────────────────────── */
-const APP_VERSION='v1.1.2';
-const LS_LOANS='lt_loans';
-const LS_OLD_MORT='lt_loan_mort';
 
-function migrateV1(){
-  if(localStorage.getItem(LS_LOANS))return;
-  let old=null;
-  try{old=JSON.parse(localStorage.getItem(LS_OLD_MORT));}catch(e){old=null;}
-  if(!old)return;
-  const loan={
-    id:0,label:'Loan',
-    balance:old.balance,months:old.months,annualRate:old.annualRate,
-    levy:old.levy,rateType:old.rateType,startMonth:old.startMonth,
-    startYear:old.startYear,lumpMonth:old.lumpMonth||8,seedInstallments:old.seedInstallments
-  };
-  localStorage.setItem(LS_LOANS,JSON.stringify([loan]));
-  localStorage.removeItem(LS_OLD_MORT);
-  localStorage.removeItem('lt_loan_rep');
-  // migrate budget + actuals
-  const ob=localStorage.getItem('mort_budget');
-  if(ob!=null&&localStorage.getItem('lt_budget_0')==null)localStorage.setItem('lt_budget_0',ob);
-  const oa=localStorage.getItem('mort_act');
-  if(oa!=null&&localStorage.getItem('confirmed_0_act')==null)localStorage.setItem('confirmed_0_act',oa);
-  localStorage.removeItem('mort_budget');localStorage.removeItem('rep_budget');
-  localStorage.removeItem('mort_act');localStorage.removeItem('rep_act');
-}
 
-function loadLoans(){try{const a=JSON.parse(localStorage.getItem(LS_LOANS));return Array.isArray(a)?a:null;}catch(e){return null;}}
-function saveLoans(arr){localStorage.setItem(LS_LOANS,JSON.stringify(arr));}
-function loadLoan(idx){const a=loadLoans();return a&&a[idx]?a[idx]:null;}
 
 function populateForm(data){
   if(!data){
@@ -598,14 +720,6 @@ const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,m
 /* ─────────────────────────────────────────
    Projection engine
 ───────────────────────────────────────── */
-function calcPmt(b,r,m){return b*r/(1-Math.pow(1+r,-m));}
-function amortizeSimple(bal,rate,months){
-  const pmt=calcPmt(bal,rate,months);const out=[];let b=bal;
-  for(let m=0;m<months&&b>0.01;m++){const i=b*rate;b=Math.max(0,b-(pmt-i));out.push(+b.toFixed(2));}
-  return out;
-}
-function rowsToPlanMap(rows){const map={};rows.filter(r=>r.type==='inst').forEach(r=>{map[r.month]=r.bal;});return map;}
-function rowsToLumpMap(rows){const map={};rows.filter(r=>r.type==='extra').forEach(r=>{map[r.month]=r.inst;});return map;}
 
 function computePlanStats(mRows,mS){
   const LOAN_RATE=(mS.annualRate+mS.levy)/100/12;
@@ -702,105 +816,12 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
-function manLumpKey(idx){return 'lt_manlump_'+idx;}
-function getManLumps(idx){try{return JSON.parse(localStorage.getItem(manLumpKey(idx))||'{}');}catch(e){return{};}}
-function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=amt;else delete m[month];localStorage.setItem(manLumpKey(idx),JSON.stringify(m));}
 
 /* genProj returns inst/extra rows (chart + stats) AND mSchedule
    exposes a parallel per-month array of δοσολόγιο rows:
    {month,principal,interest,inst,lump,autoLump,manualLump,bal} */
 let mSchedule=[];
-function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lumpMonth,actuals,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,fixedPeriodMonths,postFixedRate){
-  const rows=[];const sched=[];let prev=startBal;
-  const recent=[];
-  manLumps=manLumps||{};
-  lumpMonth=lumpMonth||8;
-  actuals=actuals||{};
-  lumpEnabled=lumpEnabled!==false;
-  lumpEffect=lumpEffect||'reduce-installment';
-  balloonEnabled=!!balloonEnabled;
-  balloonThreshold=balloonThreshold||0;
-  fixedPeriodMonths=fixedPeriodMonths||0;
-  postFixedRate=postFixedRate||0;
-  let currentRate=rate;
-  let monthIdx=0;
-  const[sy,sm]=startMonthStr.split('-').map(Number);
-  const initRemM=(endYear-sy)*12+(endMon-sm);
-  const initM=calcPmt(startBal,rate,Math.max(1,initRemM));
-  let effEndYear=endYear,effEndMon=endMon;
-  let[y,mo]=startMonthStr.split('-').map(Number);
-  while(prev>0.5){
-    const month=y+'-'+String(mo).padStart(2,'0');
-    if((effEndYear-y)*12+(effEndMon-mo)<=0)break;
-    const act=actuals[month+'_inst'];
-    if(act&&act.saved){
-      // Confirmed actual: use saved figures verbatim; balance flows downstream
-      const aLump=act.lump||0,aInt=+(+act.int).toFixed(2),aInst=+(+act.inst).toFixed(2);
-      const aPrin=act.principal!=null?+(+act.principal).toFixed(2):+(aInst-aInt).toFixed(2);
-      const aBal=+(+act.bal).toFixed(2);
-      if(aLump>0)rows.push({month,type:'extra',inst:aLump,int:0,bal:Math.max(0,prev-aLump)});
-      rows.push({month,type:'inst',inst:aInst,int:aInt,bal:aBal});
-      sched.push({month,principal:aPrin,interest:aInt,inst:aInst,lump:aLump,autoLump:false,bal:aBal,confirmed:true});
-      recent.push(aInst);
-      if(recent.length>12)recent.shift();
-      prev=aBal;
-      monthIdx++;
-      mo++;if(mo>12){mo=1;y++;}
-      continue;
-    }
-    if(fixedPeriodMonths>0&&postFixedRate>0&&monthIdx>=fixedPeriodMonths){currentRate=postFixedRate;}
-    monthIdx++;
-    let lump=0,autoLump=false;
-    if(lumpEnabled&&mo===lumpMonth){
-      const sum12=recent.slice(-12).reduce((a,b)=>a+b,0);
-      lump=Math.round(Math.max(Math.min(12*budget-sum12,prev),0));
-      if(lump>0)autoLump=true;
-    }
-    const man=manLumps[month]||0;
-    if(man>0)lump+=man;
-    lump=Math.min(lump,prev);
-    const manualLump=Math.max(0,Math.min(man,prev));
-    // lump sum applied BEFORE installment of the month
-    const balPost=Math.max(0,prev-lump);
-    // reduce-duration: after a lump sum, solve for new remaining term so installment stays constant
-    if(lump>0&&lumpEffect==='reduce-duration'&&initM>0){
-      const rP=rate*balPost/initM;
-      if(rP>0&&rP<1){
-        const newN=Math.max(1,Math.ceil(-Math.log(1-rP)/Math.log(1+rate)));
-        let em=mo+newN,ey=y;
-        while(em>12){em-=12;ey++;}
-        effEndYear=ey;effEndMon=em;
-      }
-    }
-    const remM=(effEndYear-y)*12+(effEndMon-mo);
-    if(remM<=0)break;
-    const interest=+(balPost*currentRate).toFixed(2);
-    const inst=+(lumpEffect==='reduce-duration'?initM:calcPmt(balPost,currentRate,remM)).toFixed(2);
-    const endBal=+Math.max(0,balPost+interest-inst).toFixed(2);
-    const principal=+(inst-interest).toFixed(2);
-    // balloon: if balance after installment <= threshold, add payoff row and stop
-    if(balloonEnabled&&balloonThreshold>0&&endBal>0&&endBal<=balloonThreshold){
-      if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
-      rows.push({month,type:'inst',inst:inst+endBal,int:interest,bal:0});
-      sched.push({month,principal:principal+endBal,interest,inst:inst+endBal,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
-      mSchedule=sched;
-      return rows;
-    }
-    if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
-    rows.push({month,type:'inst',inst,int:interest,bal:endBal});
-    sched.push({month,principal,interest,inst,lump,autoLump,manualLump,bal:endBal,confirmed:false});
-    recent.push(inst);
-    if(recent.length>12)recent.shift();
-    prev=endBal;
-    mo++;if(mo>12){mo=1;y++;}
-  }
-  mSchedule=sched;
-  return rows;
-}
 
-function actKey(idx){return 'confirmed_'+idx+'_act';}
-function getActuals(idx){try{return JSON.parse(localStorage.getItem(actKey(idx))||'{}');}catch(e){return{};}}
-function saveActual(idx,key,data){const a=getActuals(idx);a[key]=data;localStorage.setItem(actKey(idx),JSON.stringify(a));}
 
 /* renders the unified δοσολόγιο from mSchedule */
 function renderProj(tbodyId,loanIdx){
@@ -958,17 +979,7 @@ function updatePayoffPanel(){
   }
 }
 
-function projEndMonth(s){
-  let ey=s.startYear,em=s.startMonth+s.months+1;
-  while(em>12){em-=12;ey++;}
-  return{ey,em};
-}
 
-function projFirstMonth(s){
-  let y=s.startYear,m=s.startMonth+1;
-  if(m>12){m=1;y++;}
-  return y+'-'+String(m).padStart(2,'0');
-}
 
 function refreshLoan(){
   if(!_mS)return;
