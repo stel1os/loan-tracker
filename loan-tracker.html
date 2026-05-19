@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -384,7 +384,7 @@ function populateForm(data){
   if(!data){
     ['s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy','s-loan-startmon','s-loan-startyear','s-loan-lumpmon','s-loan-fixedperiod','s-loan-postrate','s-loan-goalmon','s-loan-goalyear','s-loan-balloon'].forEach(function(id){document.getElementById(id).value='';});
     document.getElementById('s-loan-rtype').value='fixed';
-    document.getElementById('s-loan-lump-enabled').checked=true;
+    document.getElementById('s-loan-lump-enabled').checked=false;
     document.getElementById('s-loan-effect').value='reduce-installment';
     document.getElementById('s-loan-balloon-enabled').checked=false;
     toggleFixedPeriod();toggleLumpOptions();toggleBalloonOptions();
