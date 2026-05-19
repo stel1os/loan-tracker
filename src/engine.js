@@ -23,18 +23,6 @@ function rowsToPlanMap(rows){const map={};rows.filter(r=>r.type==='inst').forEac
 
 function rowsToLumpMap(rows){const map={};rows.filter(r=>r.type==='extra').forEach(r=>{map[r.month]=r.inst;});return map;}
 
-function computePlanStats(mRows,mS){
-  const LOAN_RATE=(mS.annualRate+mS.levy)/100/12;
-  const mBase=amortizeSimple(mS.balance,LOAN_RATE,mS.months);
-  let mBI=0,b=mS.balance;mBase.forEach(v=>{mBI+=b*LOAN_RATE;b=v;});
-  const mPI=mRows.filter(r=>r.type==='inst').reduce((s,r)=>s+r.int,0);
-  const mLT=mRows.filter(r=>r.type==='extra').reduce((s,r)=>s+r.inst,0);
-  const mLN=mRows.filter(r=>r.type==='extra').length;
-  const mSv=mBI-mPI;
-  const mInst=mRows.filter(r=>r.type==='inst');
-  const mPayoff=mInst.length?mInst[mInst.length-1].month:'---';
-  return{mBase};
-}
 
 function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lumpMonth,actuals,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,fixedPeriodMonths,postFixedRate){
   const rows=[];const sched=[];let prev=startBal;
