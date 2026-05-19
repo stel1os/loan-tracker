@@ -6,12 +6,14 @@ This file is read by every agent at spawn. It contains project context, agent ro
 
 ## Project
 
-Single-file HTML loan tracker. No server, no build step, no dependencies except Chart.js (CDN).
+Single-file HTML loan tracker. No server, no runtime dependencies except Chart.js (CDN).
 All state lives in `localStorage`. Open `loan-tracker.html` in any browser — that's it.
+
+Source files live in `src/`; `build.js` assembles them into `loan-tracker.html`.
 
 **Repo:** https://github.com/stel1os/loan-tracker (private)
 **Spec:** `artifacts/loan-tracker/SPEC.md` in the Obsidian Vault
-**Current version:** v0.1 — working prototype, personal data hardcoded, not yet published
+**Current version:** v1.2.0
 
 ---
 
@@ -73,13 +75,11 @@ To release: bump `package.json` version → `node build.js` → commit → PR �
 - `src/index.html` — HTML template with `<!-- STYLE -->` and `<!-- SCRIPTS -->` placeholders
 - `src/style.css` — all CSS
 
-### localStorage keys
-- `loanBudget` — mortgage monthly budget
-- `repairBudget` — repairs monthly budget
-- `confirmed_mort_*` — confirmed actual rows, mortgage
-- `confirmed_rep_*` — confirmed actual rows, repairs
-
-These will be refactored in v1.0 when loan setup becomes user-configurable.
+### localStorage keys (v1.x)
+- `lt_loans` — array of loan configs
+- `lt_budget_<id>` — monthly budget per loan
+- `confirmed_<id>_act` — confirmed actual rows per loan
+- `lt_manLump_<id>_<month>` — manual lump-sum entries
 
 ### Formatting quirks
 - `fmtE()` uses the literal `€` character via `textContent`, not `innerHTML` — do not change to `&#8364;`.
@@ -87,25 +87,9 @@ These will be refactored in v1.0 when loan setup becomes user-configurable.
   HTML entities **do not render on `<canvas>`**, so Chart.js callbacks (e.g. Y-axis tick formatter)
   must use the literal `'€'` character — that is correct and intentional, not a violation of this rule.
 - Greek locale (`el-GR`) throughout: thousands separator `.`, decimal `,`
-- This will become user-selectable in v1.0
 
-### Key constants (v0.1, hardcoded)
-```
-MORT_BAL    = 88314.11   // Apr 2026 closing balance
-REP_BAL     = 18619.01   // May 2026 closing balance
-RATE        = 0.003767   // 4.52% / 12
-MORT_MONTHS = 278        // remaining at May 2026
-REP_MONTHS  = 277        // remaining at Jun 2026
-
-Mortgage seed: [523.73, 523.72, 519.90, 514.97]
-Repairs seed:  [111.26, 111.26, 109.80, 108.36]
-```
-
-### Lump-sum formula
-```
-lump = ROUND(MAX(MIN(4 × budget − SUM(last 4 installments), balance), 0), 0)
-```
-Fires in April, August, December only (v0.1). User-configurable in v1.0.
+### Known coupling: mSchedule
+`genProj` in `src/engine.js` assigns to `mSchedule`, a module-level variable declared in `src/ui.js`. This works in non-strict mode (both files concatenated into one script) but violates engine/ui separation. Tracked for cleanup in a future sprint.
 
 ---
 
@@ -118,12 +102,6 @@ Fires in April, August, December only (v0.1). User-configurable in v1.0.
 
 ---
 
-## Build Order (v1.0 priority)
+## Build Order
 
-1. #7 — Loan setup (configurable parameters) — **blocker**
-2. #1 — Remove hardcoded data, wire to loan setup
-3. #8 — Budget input + flexible lump-sum month
-4. #9 — Lump-sum effect mode (duration vs installment)
-5. #10 — Final payoff planning
-6. #2 — Generalize README
-7. #3 — PWA packaging
+Check open issues: `gh issue list --state open`
