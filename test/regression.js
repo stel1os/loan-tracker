@@ -15,7 +15,9 @@ const UPDATE=process.argv.includes('--update-snapshots');
 // Parse a sample file (localStorage export JSON) into genProj arguments
 function parseSample(filePath){
   const raw=JSON.parse(fs.readFileSync(filePath,'utf8'));
-  const loan=JSON.parse(raw.lt_loans)[0];
+  const loans=JSON.parse(raw.lt_loans);
+  if(loans.length!==1)throw new Error(`parseSample: expected 1 loan, got ${loans.length} in ${filePath}`);
+  const loan=loans[0];
   const budget=parseFloat(raw[`lt_budget_${loan.id}`]||0);
   const actuals=JSON.parse(raw[`confirmed_${loan.id}_act`]||'{}');
   // Manual lumps stored as single JSON object at lt_manlump_<id>
@@ -40,7 +42,8 @@ function runEngine({loan,budget,actuals,manLumps}){
 }
 
 // Check structural invariants — these never need updating across bug fixes
-function checkInvariants(rows,loan){
+function checkInvariants(rows,loan,actuals){
+  actuals=actuals||{};
   const initRate=(loan.annualRate+loan.levy)/100/12;
   const postRate=(loan.postFixedRate&&loan.fixedPeriodMonths>0)
     ?((loan.postFixedRate+loan.levy)/100/12):0;
@@ -73,16 +76,20 @@ function checkInvariants(rows,loan){
     }
 
     if(row.type==='inst'){
-      // Determine effective rate for this month (changes after fixedPeriodMonths)
-      const effectiveRate=(postRate>0&&monthIdx>=loan.fixedPeriodMonths)?postRate:initRate;
-      // Interest ≈ prevBal × monthly rate (within 0.05 to allow bank rounding)
-      const expectedInt=+(prevBal*effectiveRate).toFixed(2);
-      assert.ok(Math.abs(row.int-expectedInt)<=0.05,
-        `Interest wrong in ${row.month}: got ${row.int}, expected ~${expectedInt} (bal=${prevBal}, rate=${effectiveRate})`);
-      // Balance arithmetic: bal ≈ prevBal + interest - installment (tolerance 0.5 for rounding)
-      const expectedBal=+(prevBal+row.int-row.inst).toFixed(2);
-      assert.ok(Math.abs(row.bal-expectedBal)<=0.5,
-        `Balance arithmetic wrong in ${row.month}: got ${row.bal}, expected ~${expectedBal}`);
+      // Skip arithmetic checks for confirmed actuals (user-entered bank data)
+      const isActual=!!(actuals[row.month+'_inst']&&actuals[row.month+'_inst'].saved);
+      if(!isActual){
+        // Determine effective rate for this month (changes after fixedPeriodMonths)
+        const effectiveRate=(postRate>0&&monthIdx>=loan.fixedPeriodMonths)?postRate:initRate;
+        // Interest ≈ prevBal × monthly rate (within 0.05 to allow bank rounding)
+        const expectedInt=+(prevBal*effectiveRate).toFixed(2);
+        assert.ok(Math.abs(row.int-expectedInt)<=0.05,
+          `Interest wrong in ${row.month}: got ${row.int}, expected ~${expectedInt} (bal=${prevBal}, rate=${effectiveRate})`);
+        // Balance arithmetic: bal ≈ prevBal + interest - installment (tolerance 0.5 for rounding)
+        const expectedBal=+(prevBal+row.int-row.inst).toFixed(2);
+        assert.ok(Math.abs(row.bal-expectedBal)<=0.5,
+          `Balance arithmetic wrong in ${row.month}: got ${row.bal}, expected ~${expectedBal}`);
+      }
       prevBal=row.bal;
       prevMonth=row.month;
       monthIdx++;
@@ -125,7 +132,7 @@ for(const file of sampleFiles){
   test(`${name}: invariants`,()=>{
     const parsed=parseSample(filePath);
     const{rows}=runEngine(parsed);
-    checkInvariants(rows,parsed.loan);
+    checkInvariants(rows,parsed.loan,parsed.actuals);
   });
 
   test(`${name}: snapshot`,()=>{
