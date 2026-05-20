@@ -1,0 +1,5 @@
+{
+  "lt_loans": "[{\"id\":0,\"label\":\"Loan\",\"balance\":200000,\"months\":360,\"annualRate\":4.2,\"levy\":0.12,\"rateType\":\"fixed\",\"startMonth\":1,\"startYear\":2026,\"lumpMonth\":10,\"fixedPeriodMonths\":120,\"postFixedRate\":4.2,\"targetPayoffDate\":\"2046-12\",\"lumpEnabled\":true,\"lumpEffect\":\"reduce-installment\",\"balloonEnabled\":true,\"balloonThreshold\":5000}]",
+  "lt_budget_0": "2000",
+  "_exported": "2026-05-19"
+}
