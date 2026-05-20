@@ -97,8 +97,8 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
       if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
       rows.push({month,type:'inst',inst:inst+endBal,int:interest,bal:0});
       sched.push({month,principal:principal+endBal,interest,inst:inst+endBal,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
-      mSchedule=sched;
-      return rows;
+      // return rows + sched together; caller assigns mSchedule (avoids global side-effect in Node)
+      return{rows,sched};
     }
     if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
     rows.push({month,type:'inst',inst,int:interest,bal:endBal});
@@ -108,6 +108,8 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     prev=endBal;
     mo++;if(mo>12){mo=1;y++;}
   }
-  mSchedule=sched;
-  return rows;
+  // return rows + sched together; caller assigns mSchedule (avoids global side-effect in Node)
+  return{rows,sched};
 }
+// Export for Node.js test runner; guard keeps browser build unaffected
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};

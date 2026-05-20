@@ -1,0 +1,6 @@
+{
+  "lt_loans": "[{\"id\":0,\"label\":\"Loan\",\"balance\":95000,\"months\":300,\"annualRate\":4.4,\"levy\":0.12,\"rateType\":\"fixed\",\"startMonth\":7,\"startYear\":2024,\"lumpMonth\":10,\"fixedPeriodMonths\":180,\"postFixedRate\":5,\"targetPayoffDate\":\"2030-12\",\"lumpEnabled\":false,\"lumpEffect\":\"reduce-installment\",\"balloonEnabled\":false,\"balloonThreshold\":5000}]",
+  "lt_budget_0": "1000",
+  "confirmed_0_act": "{\"2024-09_inst\":{\"principal\":174.97,\"int\":357.17,\"inst\":532.14,\"lump\":0,\"bal\":94650.7,\"saved\":true},\"2024-10_inst\":{\"principal\":175.61,\"int\":356.53,\"inst\":532.14,\"lump\":0,\"bal\":94475.09,\"saved\":true},\"2024-08_inst\":{\"principal\":174.33,\"int\":357.83,\"inst\":532.16,\"lump\":0,\"bal\":94825.67,\"saved\":true}}",
+  "_exported": "2026-05-19"
+}
