@@ -324,7 +324,7 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
 }
 
 
-/* genProj returns inst/extra rows (chart + stats) AND mSchedule
+/* mSchedule is assigned by the caller from genProj.sched
    exposes a parallel per-month array of δοσολόγιο rows:
    {month,principal,interest,inst,lump,autoLump,manualLump,bal} */
 let mSchedule=[];
