@@ -3,6 +3,8 @@
   "version": "1.2.0",
   "description": "Zero-install browser-based loan tracker",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "test": "node --test test/regression.js",
+    "test:update": "node test/regression.js --update-snapshots"
   }
 }
