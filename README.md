@@ -49,6 +49,10 @@ Click **Export** in the header to download a timestamped JSON file of your full 
 | `loan-tracker.html` | The entire app |
 | `README.md` | This file |
 
+## Development
+
+This project is built using [Spec-Driven Development (SDD)](https://github.com/stel1os/sdd-sop) — an AI-assisted software development methodology where every implementation task and test traces back to a numbered spec requirement.
+
 ## Support
 
 If you find this useful, you can buy me a coffee:
