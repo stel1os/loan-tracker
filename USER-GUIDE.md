@@ -279,6 +279,7 @@ All data is stored exclusively in your browser's `localStorage`. Nothing is sent
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.3.1 | 2026-05-21 | Docs: SDD SOP repo renamed to `ai-sdd-sop`; README link updated |
 | v1.3.0 | 2026-05-20 | Regression test suite with invariant checks and golden snapshots; GitHub Actions CI; bug #39 fixed (engine decoupled from UI layer) |
 | v1.2.0 | 2026-05-20 | Source split into src/ files with Node.js build script; Law 128/75 contribution label; instalment / prepayment spelling |
 | v1.1.2 | 2026-05-19 | Load example button added to Edit screen |
