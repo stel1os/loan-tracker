@@ -160,6 +160,66 @@ test('#43: mid-year start — first lump proportional to months elapsed', () => 
   );
 });
 
+// #44 — bug 1: payoff row inst must not be inflated with the settlement amount
+test('#44: balloon payoff row — inst is regular installment, settlement is separate field', () => {
+  // Loan balance 5100, rate 0.5%/month, no lump, balloon threshold 5000.
+  // After 1 normal month (5026.90 remaining), month 2 endBal ≈ 4954 ≤ 5000 → balloon fires.
+  const rate = 0.005;
+  const {rows, sched} = genProj(
+    0, 5100, '2025-01', rate, 2030, 1,
+    {}, 8, {}, false, 'reduce-installment',
+    true, 5000, 0, 0
+  );
+
+  const payoffRow = rows.find(r => r.type === 'inst' && r.bal === 0);
+  assert.ok(payoffRow, 'Expected a payoff row with bal=0');
+
+  const payoffSched = sched.find(s => s.payoff === true);
+  assert.ok(payoffSched, 'Expected a sched entry with payoff:true');
+  assert.ok(payoffSched.payoffAmt > 0, 'Expected non-zero settlement amount in sched');
+
+  // Payoff row must carry a separate settlement field
+  assert.ok('settlement' in payoffRow,
+    `Payoff row must have a settlement field separate from inst; got keys: ${Object.keys(payoffRow).join(', ')}`);
+
+  // inst must be the regular monthly payment only, not inst+settlement
+  assert.ok(payoffRow.inst < payoffRow.inst + payoffRow.settlement,
+    'Tautology guard — settlement must be positive');
+  assert.equal(payoffRow.settlement, payoffSched.payoffAmt,
+    'row.settlement must equal sched.payoffAmt');
+  const inflatedAmt = +(payoffRow.inst + payoffRow.settlement).toFixed(2);
+  assert.notEqual(payoffRow.inst, inflatedAmt,
+    `inst (${payoffRow.inst}) must not equal inst+settlement (${inflatedAmt})`);
+});
+
+// #44 — bug 2: when lump fires in balloon month, only one row for that month
+test('#44: lump + balloon in same month produces a single row', () => {
+  // Loan balance 5100, rate 0.5%/month, balloon threshold 5000, lump month February.
+  // Month 1 (Jan): normal installment, recent=[inst].
+  // Month 2 (Feb): lump fires (1 month surplus), balPost ≈ 4626, then endBal ≈ 4559 ≤ 5000 → balloon.
+  const rate = 0.005;
+  const budget = 500;
+  const {rows} = genProj(
+    budget, 5100, '2025-01', rate, 2030, 1,
+    {}, 2, {}, true, 'reduce-installment',
+    true, 5000, 0, 0
+  );
+
+  const payoffRow = rows.find(r => r.type === 'inst' && r.bal === 0);
+  assert.ok(payoffRow, 'Expected a payoff row with bal=0');
+  const payoffMonth = payoffRow.month;
+
+  const rowsInMonth = rows.filter(r => r.month === payoffMonth);
+  assert.equal(rowsInMonth.length, 1,
+    `Expected 1 row in payoff month ${payoffMonth}, got ${rowsInMonth.length}: ` +
+    rowsInMonth.map(r => `${r.type}(inst=${r.inst})`).join(', ')
+  );
+
+  // The single row must carry the lump amount
+  assert.ok(rowsInMonth[0].lump > 0,
+    `Payoff row must carry lump amount; got lump=${rowsInMonth[0].lump}`);
+});
+
 // --- Sample-based invariant + snapshot tests ---
 
 // One invariant test + one snapshot test per sample file
