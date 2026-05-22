@@ -114,6 +114,17 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
   // return rows + sched together; caller assigns mSchedule (avoids global side-effect in Node)
   return{rows,sched};
 }
+// Returns actuals-based progress stats derived from confirmed sched entries.
+function computeProgressStats(sched,startBal){
+  const confirmed=sched.filter(s=>s.confirmed);
+  const last=confirmed.length?confirmed[confirmed.length-1]:null;
+  const latestBal=last?last.bal:startBal;
+  const principalReduced=+Math.max(0,startBal-latestBal).toFixed(2);
+  const interestPaid=+confirmed.reduce((a,s)=>a+s.interest,0).toFixed(2);
+  const extrasSoFar=+confirmed.reduce((a,s)=>a+(s.lump||0),0).toFixed(2);
+  const progressPct=startBal>0?+(principalReduced/startBal*100).toFixed(4):0;
+  return{principalReduced,interestPaid,extrasSoFar,progressPct};
+}
 // Returns total interest on the no-extras baseline using the correct two-phase rate schedule.
 // Replaces single-rate amortizeSimple for interest-saved calculations on fixed-rate loans.
 function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeriodMonths,postFixedRate){
@@ -121,4 +132,4 @@ function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeri
   return sched.reduce((a,s)=>a+s.interest,0);
 }
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};
