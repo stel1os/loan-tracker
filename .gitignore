@@ -4,4 +4,4 @@ SESSION_SUMMARY.md
 CLAUDE.md
 .claude/
 loan-tracker-*.json
-!test/snapshots/
+test/
