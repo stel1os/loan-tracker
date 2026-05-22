@@ -230,8 +230,10 @@ const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,m
 
 function computePlanStats(mRows,mS){
   const LOAN_RATE=(mS.annualRate+mS.levy)/100/12;
+  const postRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
+  const{ey,em}=projEndMonth(mS);
+  const mBI=computeBaselineInterest(mS.balance,projFirstMonth(mS),LOAN_RATE,ey,em,mS.fixedPeriodMonths||0,postRate);
   const mBase=amortizeSimple(mS.balance,LOAN_RATE,mS.months);
-  let mBI=0,b=mS.balance;mBase.forEach(v=>{mBI+=b*LOAN_RATE;b=v;});
   const mPI=mRows.filter(r=>r.type==='inst').reduce((s,r)=>s+r.int,0);
   const mLT=mRows.filter(r=>r.type==='extra').reduce((s,r)=>s+r.inst,0);
   const mLN=mRows.filter(r=>r.type==='extra').length;

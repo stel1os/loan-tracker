@@ -114,5 +114,11 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
   // return rows + sched together; caller assigns mSchedule (avoids global side-effect in Node)
   return{rows,sched};
 }
+// Returns total interest on the no-extras baseline using the correct two-phase rate schedule.
+// Replaces single-rate amortizeSimple for interest-saved calculations on fixed-rate loans.
+function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeriodMonths,postFixedRate){
+  const{sched}=genProj(0,bal,startMonthStr,rate,endYear,endMon,{},1,{},false,'reduce-installment',false,0,fixedPeriodMonths||0,postFixedRate||0);
+  return sched.reduce((a,s)=>a+s.interest,0);
+}
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};

@@ -457,8 +457,14 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
   // return rows + sched together; caller assigns mSchedule (avoids global side-effect in Node)
   return{rows,sched};
 }
+// Returns total interest on the no-extras baseline using the correct two-phase rate schedule.
+// Replaces single-rate amortizeSimple for interest-saved calculations on fixed-rate loans.
+function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeriodMonths,postFixedRate){
+  const{sched}=genProj(0,bal,startMonthStr,rate,endYear,endMon,{},1,{},false,'reduce-installment',false,0,fixedPeriodMonths||0,postFixedRate||0);
+  return sched.reduce((a,s)=>a+s.interest,0);
+}
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};
 
 const APP_VERSION='v1.3.1';
 const LS_LOANS='lt_loans';
@@ -729,8 +735,10 @@ const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,m
 
 function computePlanStats(mRows,mS){
   const LOAN_RATE=(mS.annualRate+mS.levy)/100/12;
+  const postRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
+  const{ey,em}=projEndMonth(mS);
+  const mBI=computeBaselineInterest(mS.balance,projFirstMonth(mS),LOAN_RATE,ey,em,mS.fixedPeriodMonths||0,postRate);
   const mBase=amortizeSimple(mS.balance,LOAN_RATE,mS.months);
-  let mBI=0,b=mS.balance;mBase.forEach(v=>{mBI+=b*LOAN_RATE;b=v;});
   const mPI=mRows.filter(r=>r.type==='inst').reduce((s,r)=>s+r.int,0);
   const mLT=mRows.filter(r=>r.type==='extra').reduce((s,r)=>s+r.inst,0);
   const mLN=mRows.filter(r=>r.type==='extra').length;
