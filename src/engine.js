@@ -66,8 +66,10 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     monthIdx++;
     let lump=0,autoLump=false;
     if(lumpEnabled&&mo===lumpMonth){
-      const sum12=recent.slice(-12).reduce((a,b)=>a+b,0);
-      lump=Math.round(Math.max(Math.min(12*budget-sum12,prev),0));
+      const recent12=recent.slice(-12);
+      const n12=recent12.length;
+      const sum12=recent12.reduce((a,b)=>a+b,0);
+      lump=Math.round(Math.max(Math.min(n12*budget-sum12,prev),0));
       if(lump>0)autoLump=true;
     }
     const man=manLumps[month]||0;
