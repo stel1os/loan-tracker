@@ -122,6 +122,46 @@ function checkSnapshot(name,rows){
   assert.deepEqual(rows,expected,`Snapshot mismatch for ${name}`);
 }
 
+// --- Unit tests for specific bug fixes ---
+
+// #43: First annual lump sum must use actual months elapsed, not hardcoded 12
+test('#43: mid-year start — first lump proportional to months elapsed', () => {
+  // Loan starts August 2024, lump month April (mo=4).
+  // By April 2025: only 8 installments in `recent` (Aug–Mar), not 12.
+  const budget = 850;
+  const rate = (4.4 + 0.12) / 100 / 12;
+  const {rows} = genProj(
+    budget, 95000, '2024-08', rate, 2049, 8,
+    {}, 4, {}, true, 'reduce-installment', false, 0, 0, 0
+  );
+
+  // Collect inst rows strictly before the first lump month
+  const instsBeforeLump = [];
+  for (const r of rows) {
+    if (r.type === 'extra') break;
+    if (r.type === 'inst') instsBeforeLump.push(r);
+  }
+  const n = instsBeforeLump.length;
+  const sumN = instsBeforeLump.reduce((a, r) => a + r.inst, 0);
+  const prevBal = instsBeforeLump[n - 1].bal;
+
+  const firstExtra = rows.find(r => r.type === 'extra');
+  assert.ok(firstExtra, 'Expected at least one lump-sum row');
+  assert.equal(firstExtra.month, '2025-04', 'First lump must fire in April 2025');
+
+  assert.ok(n < 12, `Expected <12 installments before first lump (mid-year loan), got ${n}`);
+
+  // Correct formula uses n (actual months elapsed), not 12
+  const expectedLump = Math.round(Math.max(Math.min(n * budget - sumN, prevBal), 0));
+  assert.equal(
+    firstExtra.inst, expectedLump,
+    `First lump should be ${expectedLump} (n=${n} months of surplus), ` +
+    `not ${firstExtra.inst} (bugged 12-month value would be ${Math.round(Math.max(Math.min(12 * budget - sumN, prevBal), 0))})`
+  );
+});
+
+// --- Sample-based invariant + snapshot tests ---
+
 // One invariant test + one snapshot test per sample file
 const sampleFiles=fs.readdirSync(SAMPLES_DIR).filter(f=>f.endsWith('.json'));
 
