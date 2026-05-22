@@ -1149,16 +1149,11 @@
   },
   {
     "month": "2037-04",
-    "type": "extra",
-    "inst": 5879,
-    "int": 0,
-    "bal": 0.3599999999996726
-  },
-  {
-    "month": "2037-04",
     "type": "inst",
-    "inst": 0.36,
+    "inst": 0,
     "int": 0,
-    "bal": 0
+    "bal": 0,
+    "settlement": 0.36,
+    "lump": 5879
   }
 ]

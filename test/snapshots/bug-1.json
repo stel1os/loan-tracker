@@ -967,16 +967,11 @@
   },
   {
     "month": "2036-10",
-    "type": "extra",
-    "inst": 19112,
-    "int": 0,
-    "bal": 0.040000000000873115
-  },
-  {
-    "month": "2036-10",
     "type": "inst",
-    "inst": 0.04,
+    "inst": 0,
     "int": 0,
-    "bal": 0
+    "bal": 0,
+    "settlement": 0.04,
+    "lump": 19112
   }
 ]

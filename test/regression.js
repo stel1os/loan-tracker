@@ -79,14 +79,19 @@ function checkInvariants(rows,loan,actuals){
       // Skip arithmetic checks for confirmed actuals (user-entered bank data)
       const isActual=!!(actuals[row.month+'_inst']&&actuals[row.month+'_inst'].saved);
       if(!isActual){
+        // Payoff rows embed the lump in row.lump (no preceding 'extra' row).
+        // Interest is calculated on balPost = prevBal - embeddedLump.
+        const embeddedLump=row.lump||0;
+        const balForInterest=prevBal-embeddedLump;
         // Determine effective rate for this month (changes after fixedPeriodMonths)
         const effectiveRate=(postRate>0&&monthIdx>=loan.fixedPeriodMonths)?postRate:initRate;
-        // Interest ≈ prevBal × monthly rate (within 0.05 to allow bank rounding)
-        const expectedInt=+(prevBal*effectiveRate).toFixed(2);
+        // Interest ≈ balForInterest × monthly rate (within 0.05 to allow bank rounding)
+        const expectedInt=+(balForInterest*effectiveRate).toFixed(2);
         assert.ok(Math.abs(row.int-expectedInt)<=0.05,
-          `Interest wrong in ${row.month}: got ${row.int}, expected ~${expectedInt} (bal=${prevBal}, rate=${effectiveRate})`);
-        // Balance arithmetic: bal ≈ prevBal + interest - installment (tolerance 0.5 for rounding)
-        const expectedBal=+(prevBal+row.int-row.inst).toFixed(2);
+          `Interest wrong in ${row.month}: got ${row.int}, expected ~${expectedInt} (bal=${balForInterest}, rate=${effectiveRate})`);
+        // Balance arithmetic: for payoff rows total outflow = inst + settlement; bal must be 0
+        const totalPaid=row.inst+(row.settlement||0);
+        const expectedBal=+(balForInterest+row.int-totalPaid).toFixed(2);
         assert.ok(Math.abs(row.bal-expectedBal)<=0.5,
           `Balance arithmetic wrong in ${row.month}: got ${row.bal}, expected ~${expectedBal}`);
       }
@@ -187,9 +192,10 @@ test('#44: balloon payoff row — inst is regular installment, settlement is sep
     'Tautology guard — settlement must be positive');
   assert.equal(payoffRow.settlement, payoffSched.payoffAmt,
     'row.settlement must equal sched.payoffAmt');
-  const inflatedAmt = +(payoffRow.inst + payoffRow.settlement).toFixed(2);
-  assert.notEqual(payoffRow.inst, inflatedAmt,
-    `inst (${payoffRow.inst}) must not equal inst+settlement (${inflatedAmt})`);
+  // inst must be the regular installment only — much smaller than the remaining balance
+  assert.ok(payoffRow.inst < payoffRow.settlement,
+    `inst (${payoffRow.inst}) must be less than settlement (${payoffRow.settlement}); ` +
+    'inst appears inflated with settlement amount');
 });
 
 // #44 — bug 2: when lump fires in balloon month, only one row for that month
