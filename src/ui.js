@@ -260,6 +260,11 @@ function computePlanStats(mRows,mS){
   document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
   const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
   document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+MN[(mS.lumpMonth||8)-1]+' · Budget drives lump formula dynamically';
+  const ps=computeProgressStats(mSchedule,mS.balance);
+  const pfill=document.getElementById('m-progress-fill');
+  if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
+  const pstat=document.getElementById('m-so-far-stats');
+  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' principal reduced · '+fmtE(ps.interestPaid)+' interest · '+fmtE(ps.extrasSoFar)+' extras so far';
   return{mBase};
 }
 

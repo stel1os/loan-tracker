@@ -134,8 +134,8 @@ table.txn tr:hover td{background:#fafbff}
       <div><div class="stat-label">Time Saved</div><div class="stat-val green" id="m-time-saved">&#8230;</div></div>
       <div><div class="stat-label">Next Lump</div><div class="stat-val" id="m-next-lump" style="color:#2563eb">&#8230;</div></div>
     </div>
-    <div class="progress-track"><div class="progress-fill" style="width:7%;background:linear-gradient(90deg,#2563eb,#93c5fd)"></div></div>
-    <div style="font-size:.72rem;color:#aaa;margin-top:4px;">&#8364;6,686 principal reduced &middot; &#8364;7,335 interest &middot; &#8364;2,912 extras so far</div>
+    <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%;background:linear-gradient(90deg,#2563eb,#93c5fd)"></div></div>
+    <div id="m-so-far-stats" style="font-size:.72rem;color:#aaa;margin-top:4px;">&#8212;</div>
     <div class="plan-box">
       <div class="plan-row"><span>Plan remaining interest</span><strong id="m-plan-int">&#8230;</strong></div>
       <div class="plan-row"><span>No-extras interest</span><strong id="m-base-int">&#8230;</strong></div>
@@ -457,6 +457,17 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
   // return rows + sched together; caller assigns mSchedule (avoids global side-effect in Node)
   return{rows,sched};
 }
+// Returns actuals-based progress stats derived from confirmed sched entries.
+function computeProgressStats(sched,startBal){
+  const confirmed=sched.filter(s=>s.confirmed);
+  const last=confirmed.length?confirmed[confirmed.length-1]:null;
+  const latestBal=last?last.bal:startBal;
+  const principalReduced=+Math.max(0,startBal-latestBal).toFixed(2);
+  const interestPaid=+confirmed.reduce((a,s)=>a+s.interest,0).toFixed(2);
+  const extrasSoFar=+confirmed.reduce((a,s)=>a+(s.lump||0),0).toFixed(2);
+  const progressPct=startBal>0?+(principalReduced/startBal*100).toFixed(4):0;
+  return{principalReduced,interestPaid,extrasSoFar,progressPct};
+}
 // Returns total interest on the no-extras baseline using the correct two-phase rate schedule.
 // Replaces single-rate amortizeSimple for interest-saved calculations on fixed-rate loans.
 function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeriodMonths,postFixedRate){
@@ -464,7 +475,7 @@ function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeri
   return sched.reduce((a,s)=>a+s.interest,0);
 }
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};
 
 const APP_VERSION='v1.3.1';
 const LS_LOANS='lt_loans';
@@ -765,6 +776,11 @@ function computePlanStats(mRows,mS){
   document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
   const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
   document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+MN[(mS.lumpMonth||8)-1]+' · Budget drives lump formula dynamically';
+  const ps=computeProgressStats(mSchedule,mS.balance);
+  const pfill=document.getElementById('m-progress-fill');
+  if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
+  const pstat=document.getElementById('m-so-far-stats');
+  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' principal reduced · '+fmtE(ps.interestPaid)+' interest · '+fmtE(ps.extrasSoFar)+' extras so far';
   return{mBase};
 }
 
