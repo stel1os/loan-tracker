@@ -1626,8 +1626,10 @@
   {
     "month": "2045-06",
     "type": "inst",
-    "inst": 5267.37,
+    "inst": 670.17,
     "int": 26.64,
-    "bal": 0
+    "bal": 0,
+    "settlement": 4597.2,
+    "lump": 0
   }
 ]

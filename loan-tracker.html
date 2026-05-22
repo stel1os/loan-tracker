@@ -437,11 +437,12 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     const inst=+(lumpEffect==='reduce-duration'?initM:calcPmt(balPost,currentRate,remM)).toFixed(2);
     const endBal=+Math.max(0,balPost+interest-inst).toFixed(2);
     const principal=+(inst-interest).toFixed(2);
-    // balloon: if balance after installment <= threshold, add payoff row and stop
+    // balloon: if balance after installment <= threshold, emit single payoff row and stop.
+    // lump (if any) is embedded in the row rather than pushed as a separate 'extra' row.
+    // settlement holds the remaining balance so inst reflects only the regular payment.
     if(balloonEnabled&&balloonThreshold>0&&endBal>0&&endBal<=balloonThreshold){
-      if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
-      rows.push({month,type:'inst',inst:inst+endBal,int:interest,bal:0});
-      sched.push({month,principal:principal+endBal,interest,inst:inst+endBal,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
+      rows.push({month,type:'inst',inst,int:interest,bal:0,settlement:+endBal.toFixed(2),lump});
+      sched.push({month,principal,interest,inst,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
       // return rows + sched together; caller assigns mSchedule (avoids global side-effect in Node)
       return{rows,sched};
     }
