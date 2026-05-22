@@ -901,7 +901,7 @@ function renderProj(tbodyId,loanIdx){
 function unlockRow(loanIdx,idx){
   const row=mSchedule[idx];if(!row)return;
   const p=row.principal,it=row.interest,ins=row.inst,lm=row.lump||0;
-  document.getElementById(`pp-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="ap-${loanIdx}-${idx}" type="number" value="${(+p).toFixed(2)}" step="0.01">`;
+  document.getElementById(`pp-${loanIdx}-${idx}`).innerHTML=`<span class="act-input" style="display:inline-block;color:#aaa" title="Derived: instalment − interest">${(+Math.max(0,ins-it)).toFixed(2)}</span>`;
   document.getElementById(`pn-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="an-${loanIdx}-${idx}" type="number" value="${(+it).toFixed(2)}" step="0.01">`;
   document.getElementById(`pi-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="ai-${loanIdx}-${idx}" type="number" value="${(+ins).toFixed(2)}" step="0.01">`;
   document.getElementById(`pl-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="al-${loanIdx}-${idx}" type="number" value="${lm?(+lm).toFixed(2):''}" placeholder="0.00" step="0.01"> <button class="btn-save" onclick="confirmActual(${loanIdx},${idx},'${row.month}')">Save</button><button class="btn-cancel" onclick="refreshLoan()">Cancel</button>`;
@@ -920,9 +920,9 @@ function saveLumpEntry(loanIdx,idx,month){
 }
 
 function confirmActual(loanIdx,idx,month){
-  const principal=parseFloat(document.getElementById(`ap-${loanIdx}-${idx}`).value)||0;
   const interest=parseFloat(document.getElementById(`an-${loanIdx}-${idx}`).value)||0;
   const inst=parseFloat(document.getElementById(`ai-${loanIdx}-${idx}`).value)||0;
+  const principal=+Math.max(0,inst-interest).toFixed(2);
   const lump=parseFloat(document.getElementById(`al-${loanIdx}-${idx}`).value)||0;
   // Balance carried forward = (opening − lump) + interest − installment.
   // Opening balance for this month = previous row's closing balance,
