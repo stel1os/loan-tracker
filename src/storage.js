@@ -24,7 +24,7 @@ function migrateV1(){
   localStorage.removeItem('mort_budget');localStorage.removeItem('rep_budget');
   localStorage.removeItem('mort_act');localStorage.removeItem('rep_act');
 }
-function loadLoans(){try{const a=JSON.parse(localStorage.getItem(LS_LOANS));return Array.isArray(a)?a:null;}catch(e){return null;}}
+function loadLoans(){try{const a=JSON.parse(localStorage.getItem(LS_LOANS));if(!Array.isArray(a))return null;a.forEach(function(loan){if(loan&&!Array.isArray(loan.lumpMonths)){loan.lumpMonths=[loan.lumpMonth!=null?loan.lumpMonth:8];}if(loan)delete loan.lumpMonth;});return a;}catch(e){return null;}}
 function saveLoans(arr){localStorage.setItem(LS_LOANS,JSON.stringify(arr));}
 function loadLoan(idx){const a=loadLoans();return a&&a[idx]?a[idx]:null;}
 
