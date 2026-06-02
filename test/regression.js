@@ -49,6 +49,27 @@ function runCase(sampleName) {
   return { rows, snapshot };
 }
 
+// Run genProj from a sample with an explicit lumpMonths override (used by #48 tests)
+function runWithLumpMonths(sampleName, lumpMonths) {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, sampleName + '.json'), 'utf8'));
+  const loan = JSON.parse(sample.lt_loans)[0];
+  const budget = parseFloat(sample['lt_budget_0']);
+  const actuals = sample['confirmed_0_act'] ? JSON.parse(sample['confirmed_0_act']) : {};
+  const rate = (loan.annualRate + loan.levy) / 100 / 12;
+  const postRate = (loan.postFixedRate && loan.fixedPeriodMonths > 0)
+    ? (loan.postFixedRate + loan.levy) / 100 / 12 : 0;
+  const startKey = projFirstMonth(loan);
+  const { ey, em } = projEndMonth(loan);
+  return genProj(
+    budget, loan.balance, startKey, rate, ey, em,
+    {}, lumpMonths, actuals,
+    loan.lumpEnabled !== false,
+    loan.lumpEffect || 'reduce-installment',
+    !!loan.balloonEnabled, loan.balloonThreshold || 0,
+    loan.fixedPeriodMonths || 0, postRate
+  );
+}
+
 test('dummy-loan-95k-lump: row count matches snapshot', () => {
   const { rows, snapshot } = runCase('dummy-loan-95k-lump');
   assert.equal(rows.length, snapshot.length);
@@ -85,4 +106,64 @@ test('dummy-loan-95k-lump+payoff: rows match snapshot', () => {
     if (exp.settlement != null) assert.equal(got.settlement, exp.settlement, `row ${i} settlement`);
     if (exp.lump != null) assert.equal(got.lump, exp.lump, `row ${i} lump`);
   }
+});
+
+// --- #47: confirmed actuals bal must be derived from chain, not read from stored value ---
+
+test('#47 confirmed actuals: bal derived from chain, not stored (my-loan-95k)', () => {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'my-loan-95k.json'), 'utf8'));
+  const loan = JSON.parse(sample.lt_loans)[0];
+  const budget = parseFloat(sample['lt_budget_0']);
+  const actuals = JSON.parse(sample['confirmed_0_act']);
+  const rate = (loan.annualRate + loan.levy) / 100 / 12;
+  const postRate = (loan.postFixedRate && loan.fixedPeriodMonths > 0)
+    ? (loan.postFixedRate + loan.levy) / 100 / 12 : 0;
+  const startKey = projFirstMonth(loan);
+  const { ey, em } = projEndMonth(loan);
+
+  const { sched } = genProj(
+    budget, loan.balance, startKey, rate, ey, em,
+    {}, loan.lumpMonth, actuals,
+    loan.lumpEnabled !== false,
+    loan.lumpEffect || 'reduce-installment',
+    !!loan.balloonEnabled, loan.balloonThreshold || 0,
+    loan.fixedPeriodMonths || 0, postRate
+  );
+
+  // For every confirmed row: bal must equal prev − principal − lump (derived, not stored).
+  // prev tracks through sched using each row's actual bal so the check is per-row, not cascading.
+  let prev = loan.balance;
+  for (const row of sched) {
+    if (!row.confirmed) { prev = row.bal; continue; }
+    const expectedPrin = +(row.inst - row.interest).toFixed(2);
+    const expectedBal  = +Math.max(0, prev - expectedPrin - (row.lump || 0)).toFixed(2);
+    assert.strictEqual(
+      row.bal,
+      expectedBal,
+      `${row.month}: expected bal ${expectedBal} (prev=${prev} − prin=${expectedPrin} − lump=${row.lump || 0}), got ${row.bal}`
+    );
+    prev = row.bal;
+  }
+});
+
+// --- #48: multi-month lump sum ---
+
+test('#48 backwards-compat: lumpMonths:[4] fires same projection as lumpMonth:4', () => {
+  const { rows: rowsScalar } = runWithLumpMonths('dummy-loan-95k-lump', 4);    // scalar — current api
+  const { rows: rowsArray  } = runWithLumpMonths('dummy-loan-95k-lump', [4]); // array  — new api
+
+  assert.strictEqual(rowsArray.length, rowsScalar.length, 'row count must match');
+  for (let i = 0; i < rowsScalar.length; i++) {
+    assert.deepEqual(rowsArray[i], rowsScalar[i], `row ${i} (${rowsScalar[i].month}) must match`);
+  }
+});
+
+test('#48 multi-month: lumpMonths:[4,10] fires lumps in April and October only', () => {
+  const { rows } = runWithLumpMonths('dummy-loan-95k-lump', [4, 10]);
+
+  const firedMonths = [...new Set(
+    rows.filter(r => r.type === 'extra').map(r => parseInt(r.month.split('-')[1], 10))
+  )].sort((a, b) => a - b);
+
+  assert.deepEqual(firedMonths, [4, 10], 'Lump rows must appear in April (4) and October (10) only');
 });
