@@ -24,11 +24,11 @@ function rowsToPlanMap(rows){const map={};rows.filter(r=>r.type==='inst').forEac
 function rowsToLumpMap(rows){const map={};rows.filter(r=>r.type==='extra').forEach(r=>{map[r.month]=r.inst;});return map;}
 
 
-function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lumpMonth,actuals,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,fixedPeriodMonths,postFixedRate){
+function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lumpMonths,actuals,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,fixedPeriodMonths,postFixedRate){
   const rows=[];const sched=[];let prev=startBal;
   const recent=[];
   manLumps=manLumps||{};
-  lumpMonth=lumpMonth||8;
+  lumpMonths=Array.isArray(lumpMonths)?lumpMonths:(lumpMonths!=null?[lumpMonths]:[8]);
   actuals=actuals||{};
   lumpEnabled=lumpEnabled!==false;
   lumpEffect=lumpEffect||'reduce-installment';
@@ -65,7 +65,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     if(fixedPeriodMonths>0&&postFixedRate>0&&monthIdx>=fixedPeriodMonths){currentRate=postFixedRate;}
     monthIdx++;
     let lump=0,autoLump=false;
-    if(lumpEnabled&&mo===lumpMonth){
+    if(lumpEnabled&&lumpMonths.includes(mo)){
       const recent12=recent.slice(-12);
       const n12=recent12.length;
       const sum12=recent12.reduce((a,b)=>a+b,0);
