@@ -57,6 +57,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
       sched.push({month,principal:aPrin,interest:aInt,inst:aInst,lump:aLump,autoLump:false,bal:aBal,confirmed:true});
       recent.push(aInst);
       if(recent.length>12)recent.shift();
+      if(aLump>0){recent.length=0;recent.push(aInst);}
       prev=aBal;
       monthIdx++;
       mo++;if(mo>12){mo=1;y++;}
@@ -108,6 +109,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     sched.push({month,principal,interest,inst,lump,autoLump,manualLump,bal:endBal,confirmed:false});
     recent.push(inst);
     if(recent.length>12)recent.shift();
+    if(lump>0){recent.length=0;recent.push(inst);}
     prev=endBal;
     mo++;if(mo>12){mo=1;y++;}
   }
