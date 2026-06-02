@@ -20,7 +20,7 @@
      rateType:         'fixed'|'variable',
      startMonth:       number,   // 1–12
      startYear:        number,   // e.g. 2026
-     lumpMonth:        number,   // 1–12, month annual lump fires (default 8)
+     lumpMonths:       [number], // 1–12, months annual lump fires (default [8])
      seedInstallments: [n,n,n,n] // last 4 known installments, oldest→newest
    }
 
@@ -28,8 +28,9 @@
      lt_budget_0          — monthly budget for loan 0
      confirmed_0_act      — confirmed actual rows for loan 0
 
-   Migration: loans missing lumpMonth default to 8 (August)
-   via genProj param default and form fallbacks.
+   Migration: loans with the old scalar lumpMonth are migrated to
+   lumpMonths:[lumpMonth] on load (loadLoans); loans missing both
+   default to [8] (August).
 
    Migration (v1 → v2): if lt_loans is absent but the old
    single-loan key lt_loan_mort exists, it is migrated into
@@ -39,11 +40,19 @@
 
 
 
+function renderLumpMonthChecks(selected){
+  const sel=Array.isArray(selected)?selected:[];
+  document.getElementById('s-loan-lump-month-checks').innerHTML=MN.map(function(m,i){
+    return '<label style="font-size:0.85em"><input type="checkbox" value="'+(i+1)+'"'+(sel.includes(i+1)?' checked':'')+'> '+m+'</label>';
+  }).join('');
+}
+
 function populateForm(data){
   if(!data){
-    ['s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy','s-loan-startmon','s-loan-startyear','s-loan-lumpmon','s-loan-fixedperiod','s-loan-postrate','s-loan-goalmon','s-loan-goalyear','s-loan-balloon'].forEach(function(id){document.getElementById(id).value='';});
+    ['s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy','s-loan-startmon','s-loan-startyear','s-loan-fixedperiod','s-loan-postrate','s-loan-goalmon','s-loan-goalyear','s-loan-balloon'].forEach(function(id){document.getElementById(id).value='';});
     document.getElementById('s-loan-rtype').value='fixed';
     document.getElementById('s-loan-lump-enabled').checked=false;
+    renderLumpMonthChecks([]);
     document.getElementById('s-loan-effect').value='reduce-installment';
     document.getElementById('s-loan-balloon-enabled').checked=false;
     toggleFixedPeriod();toggleLumpOptions();toggleBalloonOptions();
@@ -56,7 +65,7 @@ function populateForm(data){
   document.getElementById('s-loan-rtype').value=data.rateType??'fixed';
   document.getElementById('s-loan-startmon').value=data.startMonth??'5';
   document.getElementById('s-loan-startyear').value=data.startYear??'';
-  document.getElementById('s-loan-lumpmon').value=data.lumpMonth??'8';
+  renderLumpMonthChecks(Array.isArray(data.lumpMonths)?data.lumpMonths:[data.lumpMonth!=null?data.lumpMonth:8]);
   document.getElementById('s-loan-fixedperiod').value=data.fixedPeriodMonths||'';
   document.getElementById('s-loan-postrate').value=data.postFixedRate||'';
   toggleFixedPeriod();
@@ -170,7 +179,7 @@ function readForm(){
   const rtype=document.getElementById('s-loan-rtype').value;
   const smon=parseInt(document.getElementById('s-loan-startmon').value,10);
   const syr=parseInt(document.getElementById('s-loan-startyear').value,10);
-  const lmon=parseInt(document.getElementById('s-loan-lumpmon').value,10)||8;
+  const lumpMonths=[...document.querySelectorAll('#s-loan-lump-month-checks input:checked')].map(cb=>parseInt(cb.value,10));
   const fixedPeriodMonths=parseInt(document.getElementById('s-loan-fixedperiod').value,10)||0;
   const postFixedRate=parseFloat(document.getElementById('s-loan-postrate').value)||null;
   const goalMon=document.getElementById('s-loan-goalmon').value;
@@ -180,7 +189,7 @@ function readForm(){
   const lumpEffect=document.getElementById('s-loan-effect').value;
   const balloonEnabled=document.getElementById('s-loan-balloon-enabled').checked;
   const balloonThreshold=parseFloat(document.getElementById('s-loan-balloon').value)||0;
-  return{bal,months,rate,levy,rtype,fixedPeriodMonths,postFixedRate,smon,syr,lmon,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,targetPayoffDate};
+  return{bal,months,rate,levy,rtype,fixedPeriodMonths,postFixedRate,smon,syr,lumpMonths,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,targetPayoffDate};
 }
 
 function validateForm(v){
@@ -191,6 +200,9 @@ function validateForm(v){
   if(!v.syr||isNaN(v.syr)){setErr('err-loan-start','s-loan-startyear');ok=false;}
   if(v.balloonEnabled&&(!v.balloonThreshold||v.balloonThreshold<=0)){
     setErr('err-loan-balloon','s-loan-balloon');ok=false;
+  }
+  if(v.lumpEnabled&&v.lumpMonths.length===0){
+    setErr('err-loan-lumpmonths');ok=false;
   }
   return ok;
 }
@@ -204,7 +216,7 @@ function saveSetup(){
   loans[0]={
     id:0,label:existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
-    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonth:v.lmon,
+    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonths:v.lumpMonths,
     fixedPeriodMonths:v.fixedPeriodMonths,postFixedRate:v.postFixedRate,targetPayoffDate:v.targetPayoffDate,
     lumpEnabled:v.lumpEnabled,lumpEffect:v.lumpEffect,
     balloonEnabled:v.balloonEnabled,balloonThreshold:v.balloonThreshold
@@ -259,7 +271,8 @@ function computePlanStats(mRows,mS){
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
   document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
   const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
-  document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+MN[(mS.lumpMonth||8)-1]+' · Budget drives lump formula dynamically';
+  const lumpMons=Array.isArray(mS.lumpMonths)?mS.lumpMonths:[mS.lumpMonth!=null?mS.lumpMonth:8];
+  document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+lumpMons.map(m=>MN[m-1]).join(', ')+' · Budget drives lump formula dynamically';
   const ps=computeProgressStats(mSchedule,mS.balance);
   const pfill=document.getElementById('m-progress-fill');
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
@@ -496,7 +509,7 @@ function refreshLoan(){
   const{ey,em}=projEndMonth(_mS);
   const postRate=(_mS.postFixedRate&&_mS.fixedPeriodMonths>0)?((_mS.postFixedRate+_mS.levy)/100/12):0;
   // destructure return value; assign rows + schedule from result object
-  const _r1=genProj(budget,_mS.balance,startKey,rate,ey,em,getManLumps(0),_mS.lumpMonth,getActuals(0),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',!!_mS.balloonEnabled,_mS.balloonThreshold||0,_mS.fixedPeriodMonths||0,postRate);mProjRows=_r1.rows;mSchedule=_r1.sched;
+  const _r1=genProj(budget,_mS.balance,startKey,rate,ey,em,getManLumps(0),_mS.lumpMonths,getActuals(0),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',!!_mS.balloonEnabled,_mS.balloonThreshold||0,_mS.fixedPeriodMonths||0,postRate);mProjRows=_r1.rows;mSchedule=_r1.sched;
   renderProj('m-proj-tbody',0);
   rebuildChart();
   refreshPayoffPanel();
@@ -528,7 +541,7 @@ function initApp(){
 
   const mPostRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
   // destructure return value; assign rows + schedule from result object
-  const _r2=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,getManLumps(0),mS.lumpMonth,getActuals(0),mS.lumpEnabled!==false,mS.lumpEffect||'reduce-installment',!!mS.balloonEnabled,mS.balloonThreshold||0,mS.fixedPeriodMonths||0,mPostRate);mProjRows=_r2.rows;mSchedule=_r2.sched;
+  const _r2=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,getManLumps(0),mS.lumpMonths,getActuals(0),mS.lumpEnabled!==false,mS.lumpEffect||'reduce-installment',!!mS.balloonEnabled,mS.balloonThreshold||0,mS.fixedPeriodMonths||0,mPostRate);mProjRows=_r2.rows;mSchedule=_r2.sched;
 
   renderProj('m-proj-tbody',0);
   rebuildChart();
@@ -548,7 +561,7 @@ function loadExample(){
   document.getElementById('s-loan-postrate').value='4.2';
   document.getElementById('s-loan-startmon').value='1';
   document.getElementById('s-loan-startyear').value='2026';
-  document.getElementById('s-loan-lumpmon').value='8';
+  renderLumpMonthChecks([8]);
   document.getElementById('s-loan-lump-enabled').checked=false;
   document.getElementById('s-loan-effect').value='reduce-installment';
   document.getElementById('s-loan-goalmon').value='12';
