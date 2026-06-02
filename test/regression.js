@@ -167,3 +167,33 @@ test('#48 multi-month: lumpMonths:[4,10] fires lumps in April and October only',
 
   assert.deepEqual(firedMonths, [4, 10], 'Lump rows must appear in April (4) and October (10) only');
 });
+
+// --- #51: lump accumulation must reset after each lump fires ---
+
+test('#51 lump reset: accumulation resets after each lump fires (my-loan-95k-multi-lump)', () => {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'my-loan-95k-multi-lump.json'), 'utf8'));
+  const loan = JSON.parse(sample.lt_loans)[0];
+  const budget = parseFloat(sample['lt_budget_0']);
+  const actuals = JSON.parse(sample['confirmed_0_act']);
+  const rate = (loan.annualRate + loan.levy) / 100 / 12;
+  const postRate = (loan.postFixedRate && loan.fixedPeriodMonths > 0)
+    ? (loan.postFixedRate + loan.levy) / 100 / 12 : 0;
+  const startKey = projFirstMonth(loan);
+  const { ey, em } = projEndMonth(loan);
+
+  const { rows } = genProj(
+    budget, loan.balance, startKey, rate, ey, em,
+    {}, loan.lumpMonths, actuals,
+    loan.lumpEnabled !== false,
+    loan.lumpEffect || 'reduce-installment',
+    !!loan.balloonEnabled, loan.balloonThreshold || 0,
+    loan.fixedPeriodMonths || 0, postRate
+  );
+
+  // Last confirmed lump: March 2026 (lump=1500). August 2026 is the next lump month.
+  // With reset fix: accumulates ~5 months (Mar→Jul) → lump = 176.
+  // Without reset:  accumulates 12 months (Jul 2025→Jul 2026) → lump = 337 (wrong).
+  const aug2026 = rows.find(r => r.month === '2026-08' && r.type === 'extra');
+  assert.ok(aug2026, '2026-08 must have a lump row');
+  assert.strictEqual(aug2026.inst, 176, '2026-08 lump should be 176 (reset after March lump), not 337');
+});
