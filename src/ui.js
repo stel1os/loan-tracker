@@ -406,16 +406,8 @@ function saveLumpEntry(loanIdx,idx,month){
 function confirmActual(loanIdx,idx,month){
   const interest=parseFloat(document.getElementById(`an-${loanIdx}-${idx}`).value)||0;
   const inst=parseFloat(document.getElementById(`ai-${loanIdx}-${idx}`).value)||0;
-  const principal=+Math.max(0,inst-interest).toFixed(2);
   const lump=parseFloat(document.getElementById(`al-${loanIdx}-${idx}`).value)||0;
-  // Balance carried forward = (opening − lump) + interest − installment.
-  // Opening balance for this month = previous row's closing balance,
-  // or the loan's opening balance for the very first row.
-  const prevBal=idx>0?mSchedule[idx-1].bal:(_mS?_mS.balance:0);
-  const bal=+Math.max(0,(prevBal-lump)+interest-inst).toFixed(2);
-  saveActual(loanIdx,month+'_inst',{principal,int:interest,inst,lump,bal,saved:true});
-  // Re-run the projection so every subsequent row recalculates from the
-  // confirmed actual balance flowing downstream.
+  saveActual(loanIdx,month+'_inst',{int:interest,inst,lump,saved:true});
   refreshLoan();
 }
 
