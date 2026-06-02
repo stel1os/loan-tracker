@@ -48,10 +48,10 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     if((effEndYear-y)*12+(effEndMon-mo)<=0)break;
     const act=actuals[month+'_inst'];
     if(act&&act.saved){
-      // Confirmed actual: use saved figures verbatim; balance flows downstream
+      // Confirmed actual: inst+int are user inputs; principal and bal always derived from chain
       const aLump=act.lump||0,aInt=+(+act.int).toFixed(2),aInst=+(+act.inst).toFixed(2);
-      const aPrin=act.principal!=null?+(+act.principal).toFixed(2):+(aInst-aInt).toFixed(2);
-      const aBal=+(+act.bal).toFixed(2);
+      const aPrin=+(aInst-aInt).toFixed(2);
+      const aBal=+Math.max(0,prev-aPrin-aLump).toFixed(2);
       if(aLump>0)rows.push({month,type:'extra',inst:aLump,int:0,bal:Math.max(0,prev-aLump)});
       rows.push({month,type:'inst',inst:aInst,int:aInt,bal:aBal});
       sched.push({month,principal:aPrin,interest:aInt,inst:aInst,lump:aLump,autoLump:false,bal:aBal,confirmed:true});
