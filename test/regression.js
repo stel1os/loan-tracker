@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { genProj, projEndMonth, projFirstMonth } = require('../src/engine.js');
+const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc } = require('../src/engine.js');
 
 const UPDATE = process.argv.includes('--update-snapshots');
 const SAMPLES_DIR = path.join(__dirname, '..', 'samples');
@@ -230,4 +230,27 @@ test('#53 lump visible when balloon payoff fires in same month as auto-lump', ()
   const extraRow = rows.find(r => r.month === payoff.month && r.type === 'extra');
   assert.ok(extraRow, `rows must contain an 'extra' entry for ${payoff.month} showing the lump`);
   assert.strictEqual(extraRow.inst, payoff.lump, 'extra row inst must equal the lump amount');
+});
+
+// --- #90-93: redistributeBudgetAlloc ---
+
+test('#90-93 redistributeBudgetAlloc: 2 loans — complement auto-adjusts', () => {
+  const result = redistributeBudgetAlloc({'0':70,'1':30}, '0', 60);
+  assert.strictEqual(result['0'], 60);
+  assert.strictEqual(result['1'], 40);
+  assert.strictEqual(result['0'] + result['1'], 100);
+});
+
+test('#90-93 redistributeBudgetAlloc: 3 loans — proportional redistribution sums to 100', () => {
+  // remaining 50 across {1:30,2:10} → proportional: 1 gets 37 or 38, 2 gets 12 or 13
+  const result = redistributeBudgetAlloc({'0':60,'1':30,'2':10}, '0', 50);
+  assert.strictEqual(result['0'], 50);
+  assert.strictEqual(result['1'] + result['2'], 50, 'others must sum to 50');
+  assert.strictEqual(result['0'] + result['1'] + result['2'], 100);
+});
+
+test('#90-93 redistributeBudgetAlloc: all-zero others — distributes evenly', () => {
+  const result = redistributeBudgetAlloc({'0':100,'1':0}, '0', 70);
+  assert.strictEqual(result['0'], 70);
+  assert.strictEqual(result['1'], 30);
 });
