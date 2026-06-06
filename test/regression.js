@@ -197,3 +197,37 @@ test('#51 lump reset: accumulation resets after each lump fires (my-loan-95k-mul
   assert.ok(aug2026, '2026-08 must have a lump row');
   assert.strictEqual(aug2026.inst, 176, '2026-08 lump should be 176 (reset after March lump), not 337');
 });
+
+// --- #53: lump must be visible when balloon payoff fires in the same month as auto-lump ---
+
+test('#53 lump visible when balloon payoff fires in same month as auto-lump', () => {
+  // dummy-loan-95k-lump+payoff: balloon fires in 2037-04 (April = lump month), lump=5879.
+  // The lump must appear as a separate 'extra' row so the UI can display it.
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'dummy-loan-95k-lump+payoff.json'), 'utf8'));
+  const loan = JSON.parse(sample.lt_loans)[0];
+  const budget = parseFloat(sample['lt_budget_0']);
+  const actuals = sample['confirmed_0_act'] ? JSON.parse(sample['confirmed_0_act']) : {};
+  const rate = (loan.annualRate + loan.levy) / 100 / 12;
+  const postRate = (loan.postFixedRate && loan.fixedPeriodMonths > 0)
+    ? (loan.postFixedRate + loan.levy) / 100 / 12
+    : 0;
+  const startKey = projFirstMonth(loan);
+  const { ey, em } = projEndMonth(loan);
+
+  const { rows, sched } = genProj(
+    budget, loan.balance, startKey, rate, ey, em,
+    {}, loan.lumpMonth, actuals,
+    loan.lumpEnabled !== false,
+    loan.lumpEffect || 'reduce-installment',
+    !!loan.balloonEnabled, loan.balloonThreshold || 0,
+    loan.fixedPeriodMonths || 0, postRate
+  );
+
+  const payoff = sched.find(s => s.payoff);
+  assert.ok(payoff, 'payoff sched entry must exist');
+  assert.ok(payoff.lump > 0, 'payoff month must have a lump (test setup: 2037-04)');
+
+  const extraRow = rows.find(r => r.month === payoff.month && r.type === 'extra');
+  assert.ok(extraRow, `rows must contain an 'extra' entry for ${payoff.month} showing the lump`);
+  assert.strictEqual(extraRow.inst, payoff.lump, 'extra row inst must equal the lump amount');
+});
