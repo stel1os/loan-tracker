@@ -365,6 +365,12 @@ function renderProj(tbodyId,loanIdx){
     const bal=row.bal;
     const yr=row.month.slice(0,4);
     if(yr!==prevYr){html+=`<tr class="tr-sep"><td colspan="7">${yr}</td></tr>`;prevYr=yr;}
+    // balloon payoff + lump same month: emit a separate lump row before the payoff row
+    if(row.payoff&&lump>0){
+      const balPost=+(row.payoffAmt+inst-interest).toFixed(2);
+      html+=`<tr class="tr-lump"><td style="color:#bbb;font-size:.7rem">${n}</td><td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num" style="color:#15803d">${f2x(lump)}</td><td class="bal-owed">${f2x(balPost)}</td></tr>`;
+      n++;
+    }
     const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
     const numCol=locked
       ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
