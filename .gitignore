@@ -3,4 +3,7 @@ SPRINT.md
 SESSION_SUMMARY.md
 CLAUDE.md
 .claude/
+.superpowers/
 loan-tracker-*.json
+samples/
+*.lnk
