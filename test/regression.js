@@ -208,6 +208,9 @@ test('#53 lump visible when balloon payoff fires in same month as auto-lump', ()
   const budget = parseFloat(sample['lt_budget_0']);
   const actuals = sample['confirmed_0_act'] ? JSON.parse(sample['confirmed_0_act']) : {};
   const rate = (loan.annualRate + loan.levy) / 100 / 12;
+  const postRate = (loan.postFixedRate && loan.fixedPeriodMonths > 0)
+    ? (loan.postFixedRate + loan.levy) / 100 / 12
+    : 0;
   const startKey = projFirstMonth(loan);
   const { ey, em } = projEndMonth(loan);
 
@@ -217,7 +220,7 @@ test('#53 lump visible when balloon payoff fires in same month as auto-lump', ()
     loan.lumpEnabled !== false,
     loan.lumpEffect || 'reduce-installment',
     !!loan.balloonEnabled, loan.balloonThreshold || 0,
-    loan.fixedPeriodMonths || 0, 0
+    loan.fixedPeriodMonths || 0, postRate
   );
 
   const payoff = sched.find(s => s.payoff);
