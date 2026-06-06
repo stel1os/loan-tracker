@@ -474,8 +474,29 @@ function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeri
   const{sched}=genProj(0,bal,startMonthStr,rate,endYear,endMon,{},1,{},false,'reduce-installment',false,0,fixedPeriodMonths||0,postFixedRate||0);
   return sched.reduce((a,s)=>a+s.interest,0);
 }
+function redistributeBudgetAlloc(alloc,changedId,newPct){
+  newPct=Math.max(0,Math.min(100,newPct));
+  const result={};Object.keys(alloc).forEach(k=>{result[k]=alloc[k];});
+  result[String(changedId)]=newPct;
+  const remaining=100-newPct;
+  const others=Object.keys(alloc).filter(k=>k!==String(changedId));
+  if(!others.length)return result;
+  const totalOther=others.reduce((s,k)=>s+(alloc[k]||0),0);
+  if(totalOther===0){
+    const share=Math.floor(remaining/others.length);
+    others.forEach(k=>{result[k]=share;});
+    result[others[0]]+=remaining-share*others.length;
+  }else{
+    let assigned=0;
+    others.forEach((k,i)=>{
+      if(i===others.length-1){result[k]=remaining-assigned;}
+      else{const s=Math.round(remaining*(alloc[k]||0)/totalOther);result[k]=s;assigned+=s;}
+    });
+  }
+  return result;
+}
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
 
 const APP_VERSION='v1.5.3';
 const LS_LOANS='lt_loans';
