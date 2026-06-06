@@ -234,7 +234,48 @@ const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec
 function ymFmt(t){const p=(t.dispDate||t.date).slice(0,7).split('-');return p[0]+' '+MN[+p[1]-1];}
 const fmtE=n=>'€'+Math.round(n).toLocaleString('el-GR');
 const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const LOAN_COLORS=['#2563eb','#15803d','#d97706'];
+let activeLoanIdx=0;
+let dashboardChart=null;
 
+/* ─────────────────────────────────────────
+   Tab bar and view switching
+───────────────────────────────────────── */
+function renderTabBar(){
+  const loans=loadLoans()||[];
+  const isMulti=loans.length>1;
+  const tb=document.getElementById('tab-bar');
+  if(!tb)return;
+  if(!isMulti){tb.style.display='none';tb.innerHTML='';return;}
+  tb.style.display='';
+  const activeId=activeLoanIdx;
+  let html='<button class="tab-btn'+(activeId==='dashboard'?' active':'')+'" onclick="showTab(\'dashboard\')">Dashboard</button>';
+  loans.forEach((loan,i)=>{
+    html+='<button class="tab-btn'+(activeId===i?' active':'')+'" onclick="showTab('+i+')">'+(loan.label||'Loan '+(i+1))+'</button>';
+  });
+  html+='<button class="tab-btn-add" onclick="startAddLoan()">+ Add</button>';
+  tb.innerHTML=html;
+}
+
+function showTab(id){
+  activeLoanIdx=id;
+  renderTabBar();
+  const dv=document.getElementById('dashboard-view');
+  const lv=document.getElementById('loan-view');
+  if(id==='dashboard'){
+    if(dv)dv.style.display='';
+    if(lv)lv.style.display='none';
+    renderDashboard();
+  }else{
+    if(dv)dv.style.display='none';
+    if(lv)lv.style.display='';
+    refreshLoan();
+  }
+}
+
+function renderDashboard(){
+  // stub — implemented in Task 8
+}
 
 /* ─────────────────────────────────────────
    Projection engine
