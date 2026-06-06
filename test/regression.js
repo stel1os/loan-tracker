@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc } = require('../src/engine.js');
 
 const UPDATE = process.argv.includes('--update-snapshots');
-const SAMPLES_DIR = path.join(__dirname, '..', 'samples');
+const SAMPLES_DIR = path.join(__dirname, 'fixtures');
 const SNAPSHOTS_DIR = path.join(__dirname, 'snapshots');
 
 function runCase(sampleName) {
@@ -110,8 +110,8 @@ test('dummy-loan-95k-lump+payoff: rows match snapshot', () => {
 
 // --- #47: confirmed actuals bal must be derived from chain, not read from stored value ---
 
-test('#47 confirmed actuals: bal derived from chain, not stored (my-loan-95k)', () => {
-  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'my-loan-95k.json'), 'utf8'));
+test('#47 confirmed actuals: bal derived from chain, not stored (loan-a-95k)', () => {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'loan-a-95k.json'), 'utf8'));
   const loan = JSON.parse(sample.lt_loans)[0];
   const budget = parseFloat(sample['lt_budget_0']);
   const actuals = JSON.parse(sample['confirmed_0_act']);
@@ -170,8 +170,8 @@ test('#48 multi-month: lumpMonths:[4,10] fires lumps in April and October only',
 
 // --- #51: lump accumulation must reset after each lump fires ---
 
-test('#51 lump reset: accumulation resets after each lump fires (my-loan-95k-multi-lump)', () => {
-  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'my-loan-95k-multi-lump.json'), 'utf8'));
+test('#51 lump reset: accumulation resets after each lump fires (loan-a-95k-multi-lump)', () => {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'loan-a-95k-multi-lump.json'), 'utf8'));
   const loan = JSON.parse(sample.lt_loans)[0];
   const budget = parseFloat(sample['lt_budget_0']);
   const actuals = JSON.parse(sample['confirmed_0_act']);
