@@ -439,6 +439,7 @@ function genProj(budget,startBal,startMonthStr,rate,endYear,endMon,manLumps,lump
     // lump (if any) is embedded in the row rather than pushed as a separate 'extra' row.
     // settlement holds the remaining balance so inst reflects only the regular payment.
     if(balloonEnabled&&balloonThreshold>0&&endBal>0&&endBal<=balloonThreshold){
+      if(lump>0)rows.push({month,type:'extra',inst:lump,int:0,bal:balPost});
       rows.push({month,type:'inst',inst,int:interest,bal:0,settlement:+endBal.toFixed(2),lump});
       sched.push({month,principal,interest,inst,lump,autoLump,manualLump,bal:0,confirmed:false,payoff:true,payoffAmt:+endBal.toFixed(2)});
       // return rows + sched together; caller assigns mSchedule (avoids global side-effect in Node)
