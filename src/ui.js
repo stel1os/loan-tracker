@@ -277,6 +277,10 @@ function renderDashboard(){
   // stub — implemented in Task 8
 }
 
+function startAddLoan(){
+  // stub — implemented in Task 6
+}
+
 /* ─────────────────────────────────────────
    Projection engine
 ───────────────────────────────────────── */
