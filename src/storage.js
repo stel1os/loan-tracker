@@ -35,3 +35,25 @@ function saveManLump(idx,month,amt){const m=getManLumps(idx);if(amt>0)m[month]=a
 function actKey(idx){return 'confirmed_'+idx+'_act';}
 function getActuals(idx){try{return JSON.parse(localStorage.getItem(actKey(idx))||'{}');}catch(e){return{};}}
 function saveActual(idx,key,data){const a=getActuals(idx);a[key]=data;localStorage.setItem(actKey(idx),JSON.stringify(a));}
+
+// Multi-loan budget: shared pool + per-loan allocation
+function getBudgetTotal(){return parseFloat(localStorage.getItem('lt_budget_total'))||0;}
+function setBudgetTotal(v){localStorage.setItem('lt_budget_total',v);}
+function getBudgetAlloc(){try{return JSON.parse(localStorage.getItem('lt_budget_alloc')||'null')||null;}catch(e){return null;}}
+function setBudgetAlloc(obj){localStorage.setItem('lt_budget_alloc',JSON.stringify(obj));}
+
+// Called once when the second loan is first added.
+// Reads lt_budget_0 → writes lt_budget_total + lt_budget_alloc{"0":100}.
+function migrateToBudgetTotal(){
+  if(getBudgetTotal()>0)return; // already migrated
+  const b0=parseFloat(localStorage.getItem('lt_budget_0'))||1000;
+  setBudgetTotal(b0);
+  setBudgetAlloc({'0':100});
+}
+
+// Effective budget for one loan: total × alloc% / 100
+function effectiveBudget(loanId){
+  const alloc=getBudgetAlloc();
+  if(!alloc)return parseFloat(localStorage.getItem('lt_budget_'+loanId))||1000;
+  return getBudgetTotal()*(alloc[String(loanId)]||0)/100;
+}
