@@ -234,6 +234,54 @@ function saveSetup(){
   initApp();
 }
 
+function startAddLoan(){
+  closeSetup();
+  // open the form in "add new loan" mode
+  populateForm(null); // blank form
+  clearErrors();
+  document.getElementById('setup-cancel-btn').style.display='';
+  document.getElementById('setup-reset-btn').style.display='none';
+  document.getElementById('setup-import-btn').style.display='none';
+  document.getElementById('btn-add-loan').style.display='none';
+  document.getElementById('btn-delete-loan').style.display='none';
+  document.querySelector('#setup-modal .modal-title').textContent='Add New Loan';
+  // swap Save button to call saveNewLoan
+  const saveBtn=document.querySelector('#setup-modal .btn-primary');
+  saveBtn.setAttribute('onclick','saveNewLoan()');
+  document.getElementById('setup-modal').classList.add('open');
+}
+
+function saveNewLoan(){
+  clearErrors();
+  const v=readForm();
+  if(!validateForm(v))return;
+  const loans=loadLoans()||[];
+  const newId=loans.length>0?Math.max(...loans.map(l=>l.id))+1:0;
+  loans.push({
+    id:newId,label:'Loan '+(newId+1),
+    balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
+    rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonths:v.lumpMonths,
+    fixedPeriodMonths:v.fixedPeriodMonths,postFixedRate:v.postFixedRate,
+    targetPayoffDate:v.targetPayoffDate,lumpEnabled:v.lumpEnabled,
+    lumpEffect:v.lumpEffect,balloonEnabled:v.balloonEnabled,
+    balloonThreshold:v.balloonThreshold
+  });
+  saveLoans(loans);
+  // first multi-loan: migrate budget to shared pool
+  if(loans.length===2)migrateToBudgetTotal();
+  // new loan starts at 0% allocation — user sets it on Dashboard
+  const alloc=getBudgetAlloc()||{};
+  alloc[String(newId)]=0;
+  setBudgetAlloc(alloc);
+  // restore Save button onclick
+  document.querySelector('#setup-modal .btn-primary').setAttribute('onclick','saveSetup()');
+  closeSetup();
+  activeLoanIdx='dashboard';
+  document.getElementById('first-run-banner').classList.remove('show');
+  initApp();
+  showTab('dashboard');
+}
+
 /* ─────────────────────────────────────────
    Utilities
 ───────────────────────────────────────── */
@@ -282,10 +330,6 @@ function showTab(id){
 
 function renderDashboard(){
   // stub — implemented in Task 8
-}
-
-function startAddLoan(){
-  // stub — implemented in Task 6
 }
 
 /* ─────────────────────────────────────────
