@@ -81,7 +81,13 @@ function populateForm(data){
 }
 
 function openSetup(firstRun){
-  populateForm(loadLoan(0));
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  populateForm(loadLoan(loanId));
+  const loans=loadLoans()||[];
+  const isMulti=loans.length>1;
+  document.getElementById('btn-add-loan').style.display=isMulti?'none':'';
+  document.getElementById('btn-delete-loan').style.display=(isMulti&&!firstRun)?'':'none';
+  document.querySelector('#setup-modal .modal-title').textContent=firstRun?'Loan Setup':'Edit — '+(loans[loanId]&&loans[loanId].label||'Loan');
   clearErrors();
   document.getElementById('setup-cancel-btn').style.display=firstRun?'none':'';
   document.getElementById('setup-reset-btn').style.display=firstRun?'none':'';
@@ -212,9 +218,10 @@ function saveSetup(){
   const v=readForm();
   if(!validateForm(v))return;
   const loans=loadLoans()||[];
-  const existing=loans[0]||{};
-  loans[0]={
-    id:0,label:existing.label||'Loan',
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const existing=loans[loanId]||{};
+  loans[loanId]={
+    id:loanId,label:existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
     rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonths:v.lumpMonths,
     fixedPeriodMonths:v.fixedPeriodMonths,postFixedRate:v.postFixedRate,targetPayoffDate:v.targetPayoffDate,
@@ -553,15 +560,17 @@ function updatePayoffPanel(){
 
 function refreshLoan(){
   if(!_mS)return;
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
   const budget=parseFloat(document.getElementById('loan-budget').value)||1000;
-  localStorage.setItem('lt_budget_0',budget);
+  // single-loan: persist to lt_budget_<id>; multi-loan total is managed via Dashboard
+  localStorage.setItem('lt_budget_'+loanId,budget);
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
   const postRate=(_mS.postFixedRate&&_mS.fixedPeriodMonths>0)?((_mS.postFixedRate+_mS.levy)/100/12):0;
   // destructure return value; assign rows + schedule from result object
-  const _r1=genProj(budget,_mS.balance,startKey,rate,ey,em,getManLumps(0),_mS.lumpMonths,getActuals(0),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',!!_mS.balloonEnabled,_mS.balloonThreshold||0,_mS.fixedPeriodMonths||0,postRate);mProjRows=_r1.rows;mSchedule=_r1.sched;
-  renderProj('m-proj-tbody',0);
+  const _r1=genProj(budget,_mS.balance,startKey,rate,ey,em,getManLumps(loanId),_mS.lumpMonths,getActuals(loanId),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',!!_mS.balloonEnabled,_mS.balloonThreshold||0,_mS.fixedPeriodMonths||0,postRate);mProjRows=_r1.rows;mSchedule=_r1.sched;
+  renderProj('m-proj-tbody',loanId);
   rebuildChart();
   refreshPayoffPanel();
   const bnEl=document.getElementById('budget-bar-note');
@@ -573,7 +582,8 @@ function refreshLoan(){
 ───────────────────────────────────────── */
 function initApp(){
   migrateV1();
-  const mS=loadLoan(0);
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const mS=loadLoan(loanId);
 
   if(!mS){
     document.getElementById('first-run-banner').classList.add('show');
@@ -587,18 +597,23 @@ function initApp(){
   const mStartKey=projFirstMonth(mS);
   const{ey:mEy,em:mEm}=projEndMonth(mS);
 
-  const mB=parseFloat(localStorage.getItem('lt_budget_0'))||1000;
+  const mB=effectiveBudget(loanId)||parseFloat(localStorage.getItem('lt_budget_'+loanId))||1000;
   document.getElementById('loan-budget').value=mB;
 
   const mPostRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
   // destructure return value; assign rows + schedule from result object
-  const _r2=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,getManLumps(0),mS.lumpMonths,getActuals(0),mS.lumpEnabled!==false,mS.lumpEffect||'reduce-installment',!!mS.balloonEnabled,mS.balloonThreshold||0,mS.fixedPeriodMonths||0,mPostRate);mProjRows=_r2.rows;mSchedule=_r2.sched;
+  const _r2=genProj(mB,mS.balance,mStartKey,LOAN_RATE,mEy,mEm,getManLumps(loanId),mS.lumpMonths,getActuals(loanId),mS.lumpEnabled!==false,mS.lumpEffect||'reduce-installment',!!mS.balloonEnabled,mS.balloonThreshold||0,mS.fixedPeriodMonths||0,mPostRate);mProjRows=_r2.rows;mSchedule=_r2.sched;
 
-  renderProj('m-proj-tbody',0);
+  renderProj('m-proj-tbody',loanId);
   rebuildChart();
   refreshPayoffPanel();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
+  renderTabBar();
+  const loans=loadLoans()||[];
+  if(loans.length>1){
+    document.getElementById('tab-bar').style.display='';
+  }
 }
 
 function loadExample(){
