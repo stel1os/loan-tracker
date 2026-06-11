@@ -1434,9 +1434,10 @@ function applyEarlySettlement(mode){
   }
   if(!threshold)return;
   const loans=loadLoans()||[];
-  loans[0]={...loans[0],balloonEnabled:true,balloonThreshold:threshold};
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  loans[loanId]={...loans[loanId],balloonEnabled:true,balloonThreshold:threshold};
   saveLoans(loans);
-  _mS=loans[0];
+  _mS=loans[loanId];
   refreshLoan();
 }
 function updatePayoffPanel(){
