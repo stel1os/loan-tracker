@@ -279,6 +279,14 @@ All data is stored exclusively in your browser's `localStorage`. Nothing is sent
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.8.0 | 2026-06-11 | Editable loan name field (shown on tab + card); tab labels HTML-escaped (XSS fix) |
+| v1.7.0 | 2026-06-11 | Input-screen UX overhaul: live summary (effective rate / term in years / est. instalment), responsive single-column form on mobile, grouped sections with an Advanced-options collapse, keyboard shortcuts (autofocus / Esc / Enter / backdrop close) |
+| v1.6.0 | 2026-06-11 | Multi-loan support (FR-090–093): Dashboard tab aggregating balance & payoff, per-loan projection tabs, shared monthly budget with auto-redistributing sliders, collapsible annual schedule; fixes — dashboard current-balance (#57), lingering import banner (#58), loan-tab switch showing wrong loan (#59) |
+| v1.5.3 | 2026-06-07 | Bug #53: render a separate lump row in the table when a balloon payoff fires the same month as an auto lump |
+| v1.5.2 | 2026-06-02 | Bug #53: emit an extra row for the lump when balloon payoff coincides with the auto-lump month |
+| v1.5.1 | 2026-06-02 | Bug #51: reset lump-sum accumulation after each lump fires |
+| v1.5.0 | 2026-06-02 | Multi-month lump sum (#48): `lumpMonths` array with month checkboxes; #47 confirmed-actuals chain fix; regression tests wired into CI |
+| v1.4.0 | 2026-05-23 | Bug fixes: progress bar & so-far stats wired to actuals (#40), two-phase baseline interest on fixed-rate loans (#41), auto-derived principal in confirm-actual dialog (#42), balloon payoff settlement row (#44); anonymised sample files |
 | v1.3.1 | 2026-05-21 | Docs: SDD SOP repo renamed to `ai-sdd-sop`; README link updated |
 | v1.3.0 | 2026-05-20 | Regression test suite with invariant checks and golden snapshots; GitHub Actions CI; bug #39 fixed (engine decoupled from UI layer) |
 | v1.2.0 | 2026-05-20 | Source split into src/ files with Node.js build script; Law 128/75 contribution label; instalment / prepayment spelling |
