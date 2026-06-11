@@ -899,6 +899,8 @@ function initApp(){
     openSetup(true);
     return;
   }
+  // a loan exists — ensure the first-run banner is cleared (e.g. after import)
+  document.getElementById('first-run-banner').classList.remove('show');
 
   _mS=mS;
 
