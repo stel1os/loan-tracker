@@ -81,6 +81,7 @@ function populateForm(data){
 }
 
 function openSetup(firstRun){
+  document.querySelector('#setup-modal .btn-primary').setAttribute('onclick','saveSetup()');
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
   populateForm(loadLoan(loanId));
   const loans=loadLoans()||[];
