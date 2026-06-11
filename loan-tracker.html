@@ -990,9 +990,9 @@ function computeAllLoansData(){
     const postRate=(loan.postFixedRate&&loan.fixedPeriodMonths>0)?((loan.postFixedRate+loan.levy)/100/12):0;
     const startKey=projFirstMonth(loan);
     const{ey,em}=projEndMonth(loan);
-    const budget=effectiveBudget(loan.id||i);
+    const budget=effectiveBudget(i);
     const{rows,sched}=genProj(budget,loan.balance,startKey,rate,ey,em,
-      getManLumps(loan.id||i),loan.lumpMonths,getActuals(loan.id||i),
+      getManLumps(i),loan.lumpMonths,getActuals(i),
       loan.lumpEnabled!==false,loan.lumpEffect||'reduce-installment',
       !!loan.balloonEnabled,loan.balloonThreshold||0,loan.fixedPeriodMonths||0,postRate);
     const instRows=rows.filter(r=>r.type==='inst');
