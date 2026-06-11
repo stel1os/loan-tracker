@@ -49,7 +49,7 @@ function renderLumpMonthChecks(selected){
 
 function populateForm(data){
   if(!data){
-    ['s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy','s-loan-startmon','s-loan-startyear','s-loan-fixedperiod','s-loan-postrate','s-loan-goalmon','s-loan-goalyear','s-loan-balloon'].forEach(function(id){document.getElementById(id).value='';});
+    ['s-loan-label','s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy','s-loan-startmon','s-loan-startyear','s-loan-fixedperiod','s-loan-postrate','s-loan-goalmon','s-loan-goalyear','s-loan-balloon'].forEach(function(id){document.getElementById(id).value='';});
     document.getElementById('s-loan-rtype').value='fixed';
     document.getElementById('s-loan-lump-enabled').checked=false;
     renderLumpMonthChecks([]);
@@ -58,6 +58,7 @@ function populateForm(data){
     toggleFixedPeriod();toggleLumpOptions();toggleBalloonOptions();
     return;
   }
+  document.getElementById('s-loan-label').value=data.label??'';
   document.getElementById('s-loan-bal').value=data.balance??'';
   document.getElementById('s-loan-months').value=data.months??'';
   document.getElementById('s-loan-rate').value=data.annualRate??'';
@@ -246,7 +247,8 @@ function readForm(){
   const lumpEffect=document.getElementById('s-loan-effect').value;
   const balloonEnabled=document.getElementById('s-loan-balloon-enabled').checked;
   const balloonThreshold=parseFloat(document.getElementById('s-loan-balloon').value)||0;
-  return{bal,months,rate,levy,rtype,fixedPeriodMonths,postFixedRate,smon,syr,lumpMonths,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,targetPayoffDate};
+  const label=document.getElementById('s-loan-label').value.trim();
+  return{label,bal,months,rate,levy,rtype,fixedPeriodMonths,postFixedRate,smon,syr,lumpMonths,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,targetPayoffDate};
 }
 
 function validateForm(v){
@@ -272,7 +274,7 @@ function saveSetup(){
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
   const existing=loans[loanId]||{};
   loans[loanId]={
-    id:loanId,label:existing.label||'Loan',
+    id:loanId,label:v.label||existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
     rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonths:v.lumpMonths,
     fixedPeriodMonths:v.fixedPeriodMonths,postFixedRate:v.postFixedRate,targetPayoffDate:v.targetPayoffDate,
@@ -310,7 +312,7 @@ function saveNewLoan(){
   const loans=loadLoans()||[];
   const newId=loans.length>0?Math.max(...loans.map(l=>l.id))+1:0;
   loans.push({
-    id:newId,label:'Loan '+(newId+1),
+    id:newId,label:v.label||('Loan '+(newId+1)),
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
     rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonths:v.lumpMonths,
     fixedPeriodMonths:v.fixedPeriodMonths,postFixedRate:v.postFixedRate,
@@ -406,7 +408,7 @@ function renderTabBar(){
   const activeId=activeLoanIdx;
   let html='<button class="tab-btn'+(activeId==='dashboard'?' active':'')+'" onclick="showTab(\'dashboard\')">Dashboard</button>';
   loans.forEach((loan,i)=>{
-    html+='<button class="tab-btn'+(activeId===i?' active':'')+'" onclick="showTab('+i+')">'+(loan.label||'Loan '+(i+1))+'</button>';
+    html+='<button class="tab-btn'+(activeId===i?' active':'')+'" onclick="showTab('+i+')">'+escHtml(loan.label||'Loan '+(i+1))+'</button>';
   });
   html+='<button class="tab-btn-add" onclick="startAddLoan()">+ Add</button>';
   tb.innerHTML=html;
@@ -677,6 +679,7 @@ function computePlanStats(mRows,mS){
   document.getElementById('card-total-debt').textContent=fmtE(mS.balance);
   document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
   document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
+  document.getElementById('m-loan-title').textContent=mS.label||'Loan';
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
   if(typeof activeLoanIdx==='number'){
     document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;

@@ -172,7 +172,7 @@ table.txn tr:hover td{background:#fafbff}
     <div class="card"><div class="card-label">Interest Saved vs No Extras</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
   </div>
   <div class="loan-card">
-    <div class="loan-title">Loan <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
+    <div class="loan-title"><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
     <div class="stat-grid">
       <div><div class="stat-label">Balance</div><div class="stat-val red" id="m-bal-stat">&#8230;</div></div>
       <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">&#8230;</div></div>
@@ -265,6 +265,11 @@ table.txn tr:hover td{background:#fafbff}
 
     <div class="form-section-title">Loan basics</div>
     <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label" for="s-loan-label">Loan name <span style="font-weight:400;color:#999">(optional)</span></label>
+        <input class="form-input" id="s-loan-label" type="text" maxlength="40" placeholder="e.g. Mortgage, Home repairs">
+        <div class="form-hint">Shown on the loan tab and card</div>
+      </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-bal">Opening Balance (&#8364;) *</label>
         <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100000">
@@ -556,7 +561,7 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
 // Export for Node.js test runner; guard keeps browser build unaffected
 if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
 
-const APP_VERSION='v1.7.0';
+const APP_VERSION='v1.8.0';
 const LS_LOANS='lt_loans';
 const LS_OLD_MORT='lt_loan_mort';
 
@@ -666,7 +671,7 @@ function renderLumpMonthChecks(selected){
 
 function populateForm(data){
   if(!data){
-    ['s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy','s-loan-startmon','s-loan-startyear','s-loan-fixedperiod','s-loan-postrate','s-loan-goalmon','s-loan-goalyear','s-loan-balloon'].forEach(function(id){document.getElementById(id).value='';});
+    ['s-loan-label','s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy','s-loan-startmon','s-loan-startyear','s-loan-fixedperiod','s-loan-postrate','s-loan-goalmon','s-loan-goalyear','s-loan-balloon'].forEach(function(id){document.getElementById(id).value='';});
     document.getElementById('s-loan-rtype').value='fixed';
     document.getElementById('s-loan-lump-enabled').checked=false;
     renderLumpMonthChecks([]);
@@ -675,6 +680,7 @@ function populateForm(data){
     toggleFixedPeriod();toggleLumpOptions();toggleBalloonOptions();
     return;
   }
+  document.getElementById('s-loan-label').value=data.label??'';
   document.getElementById('s-loan-bal').value=data.balance??'';
   document.getElementById('s-loan-months').value=data.months??'';
   document.getElementById('s-loan-rate').value=data.annualRate??'';
@@ -863,7 +869,8 @@ function readForm(){
   const lumpEffect=document.getElementById('s-loan-effect').value;
   const balloonEnabled=document.getElementById('s-loan-balloon-enabled').checked;
   const balloonThreshold=parseFloat(document.getElementById('s-loan-balloon').value)||0;
-  return{bal,months,rate,levy,rtype,fixedPeriodMonths,postFixedRate,smon,syr,lumpMonths,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,targetPayoffDate};
+  const label=document.getElementById('s-loan-label').value.trim();
+  return{label,bal,months,rate,levy,rtype,fixedPeriodMonths,postFixedRate,smon,syr,lumpMonths,lumpEnabled,lumpEffect,balloonEnabled,balloonThreshold,targetPayoffDate};
 }
 
 function validateForm(v){
@@ -889,7 +896,7 @@ function saveSetup(){
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
   const existing=loans[loanId]||{};
   loans[loanId]={
-    id:loanId,label:existing.label||'Loan',
+    id:loanId,label:v.label||existing.label||'Loan',
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
     rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonths:v.lumpMonths,
     fixedPeriodMonths:v.fixedPeriodMonths,postFixedRate:v.postFixedRate,targetPayoffDate:v.targetPayoffDate,
@@ -927,7 +934,7 @@ function saveNewLoan(){
   const loans=loadLoans()||[];
   const newId=loans.length>0?Math.max(...loans.map(l=>l.id))+1:0;
   loans.push({
-    id:newId,label:'Loan '+(newId+1),
+    id:newId,label:v.label||('Loan '+(newId+1)),
     balance:v.bal,months:v.months,annualRate:v.rate,levy:v.levy,
     rateType:v.rtype,startMonth:v.smon,startYear:v.syr,lumpMonths:v.lumpMonths,
     fixedPeriodMonths:v.fixedPeriodMonths,postFixedRate:v.postFixedRate,
@@ -1023,7 +1030,7 @@ function renderTabBar(){
   const activeId=activeLoanIdx;
   let html='<button class="tab-btn'+(activeId==='dashboard'?' active':'')+'" onclick="showTab(\'dashboard\')">Dashboard</button>';
   loans.forEach((loan,i)=>{
-    html+='<button class="tab-btn'+(activeId===i?' active':'')+'" onclick="showTab('+i+')">'+(loan.label||'Loan '+(i+1))+'</button>';
+    html+='<button class="tab-btn'+(activeId===i?' active':'')+'" onclick="showTab('+i+')">'+escHtml(loan.label||'Loan '+(i+1))+'</button>';
   });
   html+='<button class="tab-btn-add" onclick="startAddLoan()">+ Add</button>';
   tb.innerHTML=html;
@@ -1294,6 +1301,7 @@ function computePlanStats(mRows,mS){
   document.getElementById('card-total-debt').textContent=fmtE(mS.balance);
   document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
   document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
+  document.getElementById('m-loan-title').textContent=mS.label||'Loan';
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
   if(typeof activeLoanIdx==='number'){
     document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
