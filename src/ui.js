@@ -369,6 +369,8 @@ function showTab(id){
   if(id==='dashboard'){
     if(dv)dv.style.display='';
     if(lv)lv.style.display='none';
+    const sub=document.getElementById('app-subtitle');
+    if(sub)sub.textContent='Dashboard · '+((loadLoans()||[]).length)+' loans';
     renderDashboard();
   }else{
     if(dv)dv.style.display='none';
@@ -416,7 +418,7 @@ function renderDashboard(){
 }
 
 function renderDashboardStats(data){
-  const totalBal=data.reduce((s,d)=>s+(d.sched.length?d.sched[d.sched.length-1].bal:d.loan.balance),0);
+  const totalBal=data.reduce((s,d)=>s+computeProgressStats(d.sched,d.loan.balance).latestBal,0);
   const totalSaved=data.reduce((s,d)=>s+d.intSaved,0);
   const payoffs=data.map(d=>d.payoffMonth).filter(m=>m!=='---').sort();
   const earliest=payoffs[0]||'---';
@@ -446,7 +448,7 @@ function renderDashboardLoanCards(data){
   data.forEach((d,i)=>{
     const color=LOAN_COLORS[i%LOAN_COLORS.length];
     const ps=computeProgressStats(d.sched,d.loan.balance);
-    const bal=d.sched.length?d.sched[d.sched.length-1].bal:d.loan.balance;
+    const bal=ps.latestBal;
     html+='<div class="dash-loan-card" onclick="showTab('+d.loanIdx+')" style="border-top:3px solid '+color+'">'+
       '<div class="dash-loan-card-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</div>'+
       '<div class="dash-loan-card-balance">'+fmtE(bal)+'</div>'+
