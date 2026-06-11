@@ -126,7 +126,7 @@ function computeProgressStats(sched,startBal){
   const interestPaid=+confirmed.reduce((a,s)=>a+s.interest,0).toFixed(2);
   const extrasSoFar=+confirmed.reduce((a,s)=>a+(s.lump||0),0).toFixed(2);
   const progressPct=startBal>0?+(principalReduced/startBal*100).toFixed(4):0;
-  return{principalReduced,interestPaid,extrasSoFar,progressPct};
+  return{principalReduced,interestPaid,extrasSoFar,progressPct,latestBal};
 }
 // Returns total interest on the no-extras baseline using the correct two-phase rate schedule.
 // Replaces single-rate amortizeSimple for interest-saved calculations on fixed-rate loans.
