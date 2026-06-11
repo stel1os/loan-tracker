@@ -1057,8 +1057,67 @@ function renderDashboardLoanCards(data){
   document.getElementById('dash-loan-cards').innerHTML=html;
 }
 
-// Safe stubs — implemented in Tasks 9/10. Present so renderDashboard doesn't throw.
-function renderDashboardBudget(data){}
+function renderDashboardBudget(data){
+  const total=getBudgetTotal()||1000;
+  const alloc=getBudgetAlloc()||{};
+  let html='<div class="dash-budget-title">Monthly Budget</div>'+
+    '<div class="dash-budget-row">'+
+    '<span class="dash-budget-label">Total</span>'+
+    '<input type="number" id="dash-total-budget" value="'+total+'" step="10" min="0" style="width:90px;border:1px solid #cbd5e1;border-radius:4px;padding:3px 6px" onchange="onDashBudgetTotalChange(this.value)">'+
+    '&nbsp;<span style="font-size:.82rem;color:#64748b">€ / month</span></div>';
+  data.forEach((d,i)=>{
+    const color=LOAN_COLORS[i%LOAN_COLORS.length];
+    const pct=alloc[String(i)]||0;
+    const eur=Math.round(total*pct/100);
+    html+='<div class="dash-budget-row">'+
+      '<span class="dash-budget-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</span>'+
+      '<input type="range" min="0" max="100" step="5" value="'+pct+'" style="flex:1;accent-color:'+color+'" oninput="onDashAllocChange(\''+String(i)+'\',+this.value,this)">'+
+      '<input type="number" min="0" max="100" value="'+pct+'" class="dash-budget-pct" id="dash-pct-'+String(i)+'" onchange="onDashAllocChange(\''+String(i)+'\',+this.value,null)">'+
+      '<span style="font-size:.78rem;color:#64748b">%&nbsp;=&nbsp;</span>'+
+      '<span class="dash-budget-eur" id="dash-eur-'+String(i)+'">'+fmtE(eur)+'</span>'+
+      '</div>';
+  });
+  html+='<div class="dash-budget-warn" id="dash-budget-warn">⚠ Allocations must sum to 100%</div>';
+  document.getElementById('dash-budget').innerHTML=html;
+  checkBudgetSum();
+}
+
+function onDashBudgetTotalChange(val){
+  const v=parseFloat(val)||0;
+  setBudgetTotal(v);
+  renderDashboard();
+}
+
+function onDashAllocChange(loanId,newPct,sliderEl){
+  newPct=Math.max(0,Math.min(100,Math.round(newPct)));
+  const alloc=getBudgetAlloc()||{};
+  const newAlloc=redistributeBudgetAlloc(alloc,loanId,newPct);
+  setBudgetAlloc(newAlloc);
+  const total=getBudgetTotal()||1000;
+  Object.keys(newAlloc).forEach(id=>{
+    const pctEl=document.getElementById('dash-pct-'+id);
+    const eurEl=document.getElementById('dash-eur-'+id);
+    if(pctEl)pctEl.value=newAlloc[id];
+    if(eurEl)eurEl.textContent=fmtE(Math.round(total*newAlloc[id]/100));
+    if(sliderEl){
+      const rows=document.querySelectorAll('#dash-budget .dash-budget-row input[type=range]');
+      rows.forEach(r=>{
+        const pctSib=r.nextElementSibling;
+        if(pctSib&&pctSib.id==='dash-pct-'+id)r.value=newAlloc[id];
+      });
+    }
+  });
+  checkBudgetSum();
+}
+
+function checkBudgetSum(){
+  const alloc=getBudgetAlloc()||{};
+  const sum=Object.values(alloc).reduce((s,v)=>s+v,0);
+  const warn=document.getElementById('dash-budget-warn');
+  if(warn)warn.style.display=(sum!==100)?'':'none';
+}
+
+// Safe stub — implemented in Task 10. Present so renderDashboard doesn't throw.
 function renderDashboardChart(data){}
 
 /* ─────────────────────────────────────────
