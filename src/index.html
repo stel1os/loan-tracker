@@ -27,7 +27,22 @@
   <button class="btn-link-reset" onclick="loadExample()" style="margin-left:10px;font-size:.82rem">Load example</button>
   <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
 </div>
-<div id="tab-dashboard">
+<div id="tab-bar" style="display:none"></div>
+<div id="dashboard-view" style="display:none">
+  <div id="dash-stats" class="summary-row"></div>
+  <div id="dash-next-month" class="dash-next-month"></div>
+  <div class="chart-card">
+    <div class="chart-title">Combined Balance</div>
+    <canvas id="dashboardChart" height="110"></canvas>
+  </div>
+  <div id="dash-loan-cards" class="dash-loan-cards"></div>
+  <div id="dash-budget" class="dash-budget-section"></div>
+  <div class="dash-annual-wrap">
+    <button class="btn-link-reset dash-annual-toggle" onclick="toggleAnnualSchedule()">&#9654; Annual schedule</button>
+    <div id="dash-annual" style="display:none"></div>
+  </div>
+</div>
+<div id="loan-view">
   <div class="summary-row">
     <div class="card"><div class="card-label">Total Debt</div><div class="card-value red" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
     <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value green" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
@@ -239,6 +254,8 @@
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto" id="setup-reset-btn">Reset all data</button>
       <button class="btn-link-reset" id="setup-import-btn" onclick="triggerImport()" style="display:none;margin-right:auto;font-size:.82rem">Import from backup</button>
       <button class="btn-link-reset" onclick="loadExample()" style="font-size:.82rem;margin-right:8px">Load example</button>
+      <button class="btn-link-reset" id="btn-add-loan" onclick="startAddLoan()" style="font-size:.82rem;margin-right:8px;display:none">+ Add loan</button>
+      <button class="btn-danger" id="btn-delete-loan" onclick="confirmDeleteLoan()" style="display:none">Delete this loan</button>
       <button class="btn-secondary" id="setup-cancel-btn" onclick="closeSetup()">Cancel</button>
       <button class="btn-primary" onclick="saveSetup()">Save &amp; Apply</button>
     </div>

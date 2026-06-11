@@ -90,3 +90,27 @@ table.txn tr:hover td{background:#fafbff}
 .btn-danger:hover{background:#b91c1c}
 .btn-link-reset{background:none;border:none;padding:0;cursor:pointer;font-size:.75rem;color:#9ca3af;text-decoration:underline}
 .btn-link-reset:hover{color:#dc2626}
+
+/* ── Tab bar ── */
+.tab-bar{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:16px;overflow-x:auto}
+.tab-btn{padding:8px 18px;border:none;background:none;cursor:pointer;font-size:.88rem;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tab-btn.active{color:#2563eb;border-bottom-color:#2563eb;font-weight:600}
+.tab-btn-add{padding:8px 14px;border:none;background:none;cursor:pointer;font-size:.88rem;color:#2563eb;margin-bottom:-2px}
+
+/* ── Dashboard ── */
+.dash-next-month{font-size:.84rem;color:#475569;margin:-6px 0 14px;padding:8px 12px;background:#f8fafc;border-radius:6px}
+.dash-loan-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.dash-loan-card{flex:1;min-width:180px;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:box-shadow .15s}
+.dash-loan-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.dash-loan-card-label{font-weight:700;font-size:.9rem;margin-bottom:4px}
+.dash-loan-card-balance{font-size:1.1rem;font-weight:700;margin-bottom:2px}
+.dash-loan-card-payoff{font-size:.78rem;color:#64748b;margin-bottom:6px}
+.dash-budget-section{background:#f8fafc;border-radius:8px;padding:14px 16px;margin-bottom:16px}
+.dash-budget-title{font-weight:600;font-size:.88rem;margin-bottom:10px}
+.dash-budget-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.dash-budget-label{min-width:100px;font-size:.84rem;font-weight:600}
+.dash-budget-pct{width:44px;text-align:center;border:1px solid #cbd5e1;border-radius:4px;padding:2px 4px;font-size:.84rem}
+.dash-budget-eur{min-width:60px;font-size:.82rem;color:#64748b}
+.dash-budget-warn{color:#dc2626;font-size:.78rem;margin-top:4px;display:none}
+.dash-annual-wrap{margin-top:8px}
+.dash-annual-toggle{font-size:.84rem;color:#64748b;margin-bottom:8px}

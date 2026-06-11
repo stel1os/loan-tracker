@@ -3,10 +3,10 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { genProj, projEndMonth, projFirstMonth } = require('../src/engine.js');
+const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc } = require('../src/engine.js');
 
 const UPDATE = process.argv.includes('--update-snapshots');
-const SAMPLES_DIR = path.join(__dirname, '..', 'samples');
+const SAMPLES_DIR = path.join(__dirname, 'fixtures');
 const SNAPSHOTS_DIR = path.join(__dirname, 'snapshots');
 
 function runCase(sampleName) {
@@ -110,8 +110,8 @@ test('dummy-loan-95k-lump+payoff: rows match snapshot', () => {
 
 // --- #47: confirmed actuals bal must be derived from chain, not read from stored value ---
 
-test('#47 confirmed actuals: bal derived from chain, not stored (my-loan-95k)', () => {
-  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'my-loan-95k.json'), 'utf8'));
+test('#47 confirmed actuals: bal derived from chain, not stored (loan-a-95k)', () => {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'loan-a-95k.json'), 'utf8'));
   const loan = JSON.parse(sample.lt_loans)[0];
   const budget = parseFloat(sample['lt_budget_0']);
   const actuals = JSON.parse(sample['confirmed_0_act']);
@@ -170,8 +170,8 @@ test('#48 multi-month: lumpMonths:[4,10] fires lumps in April and October only',
 
 // --- #51: lump accumulation must reset after each lump fires ---
 
-test('#51 lump reset: accumulation resets after each lump fires (my-loan-95k-multi-lump)', () => {
-  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'my-loan-95k-multi-lump.json'), 'utf8'));
+test('#51 lump reset: accumulation resets after each lump fires (loan-a-95k-multi-lump)', () => {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'loan-a-95k-multi-lump.json'), 'utf8'));
   const loan = JSON.parse(sample.lt_loans)[0];
   const budget = parseFloat(sample['lt_budget_0']);
   const actuals = JSON.parse(sample['confirmed_0_act']);
@@ -230,4 +230,27 @@ test('#53 lump visible when balloon payoff fires in same month as auto-lump', ()
   const extraRow = rows.find(r => r.month === payoff.month && r.type === 'extra');
   assert.ok(extraRow, `rows must contain an 'extra' entry for ${payoff.month} showing the lump`);
   assert.strictEqual(extraRow.inst, payoff.lump, 'extra row inst must equal the lump amount');
+});
+
+// --- #90-93: redistributeBudgetAlloc ---
+
+test('#90-93 redistributeBudgetAlloc: 2 loans — complement auto-adjusts', () => {
+  const result = redistributeBudgetAlloc({'0':70,'1':30}, '0', 60);
+  assert.strictEqual(result['0'], 60);
+  assert.strictEqual(result['1'], 40);
+  assert.strictEqual(result['0'] + result['1'], 100);
+});
+
+test('#90-93 redistributeBudgetAlloc: 3 loans — proportional redistribution sums to 100', () => {
+  // remaining 50 across {1:30,2:10} → proportional: 1 gets 37 or 38, 2 gets 12 or 13
+  const result = redistributeBudgetAlloc({'0':60,'1':30,'2':10}, '0', 50);
+  assert.strictEqual(result['0'], 50);
+  assert.strictEqual(result['1'] + result['2'], 50, 'others must sum to 50');
+  assert.strictEqual(result['0'] + result['1'] + result['2'], 100);
+});
+
+test('#90-93 redistributeBudgetAlloc: all-zero others — distributes evenly', () => {
+  const result = redistributeBudgetAlloc({'0':100,'1':0}, '0', 70);
+  assert.strictEqual(result['0'], 70);
+  assert.strictEqual(result['1'], 30);
 });
