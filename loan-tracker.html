@@ -88,6 +88,12 @@ table.txn tr:hover td{background:#fafbff}
 .form-hint{font-size:.68rem;color:#999;margin-top:1px}
 .form-err{font-size:.7rem;color:#dc2626;margin-top:2px;display:none}
 .form-err.show{display:block}
+@media (max-width:560px){.form-grid{grid-template-columns:1fr}}
+.form-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:.78rem;color:#475569;margin:-2px 0 18px;line-height:1.6}
+.form-preview strong{color:#1e293b;font-weight:700}
+.form-section-title{font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:2px 0 10px;padding-bottom:5px;border-bottom:1px solid #eef2f7}
+.form-advanced-toggle{background:none;border:none;padding:4px 0;cursor:pointer;font-size:.78rem;color:#2563eb;font-weight:600}
+.form-advanced-toggle:hover{text-decoration:underline}
 
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #eee;padding-top:16px;margin-top:4px}
 .btn-primary{background:#2563eb;color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
@@ -252,23 +258,43 @@ table.txn tr:hover td{background:#fafbff}
 </div>
 
 <!-- Edit / Settings Modal -->
-<div class="modal-overlay" id="setup-modal">
+<div class="modal-overlay" id="setup-modal" onclick="onSetupBackdrop(event)">
   <div class="modal">
     <div class="modal-title">Loan Edit</div>
-    <div class="modal-sub">Configure your loan details. Saved locally in your browser and used for all projections.</div>
+    <div class="modal-sub">Configure your loan details. Saved locally in your browser and used for all projections. <span style="color:#94a3b8">Fields marked * are required.</span></div>
 
+    <div class="form-section-title">Loan basics</div>
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="s-loan-bal">Opening Balance (&#8364;) *</label>
-        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100,000">
-        <div class="form-hint">Balance at start of projection</div>
+        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100000">
+        <div class="form-hint">Outstanding balance as of the projection-start month below &mdash; not the original loan amount</div>
         <div class="form-err" id="err-loan-bal">Required &mdash; must be &gt; 0</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-months">Remaining Term (months) *</label>
         <input class="form-input" id="s-loan-months" type="number" step="1" min="1" placeholder="e.g. 240">
+        <div class="form-hint">Months left on the loan (see live summary for years)</div>
         <div class="form-err" id="err-loan-months">Required &mdash; must be &ge; 1</div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Projection Start (month/year) *</label>
+        <div style="display:flex;gap:6px">
+          <select class="form-select" id="s-loan-startmon" style="flex:1">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+          <input class="form-input" id="s-loan-startyear" type="number" step="1" min="2020" max="2099" placeholder="Year" style="width:85px">
+        </div>
+        <div class="form-hint">The month figures are measured from &mdash; usually your first instalment</div>
+        <div class="form-err" id="err-loan-start">Year is required</div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Interest rate</div>
+    <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="s-loan-rate">Annual Interest Rate (%) *</label>
         <input class="form-input" id="s-loan-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.5">
@@ -286,7 +312,6 @@ table.txn tr:hover td{background:#fafbff}
           <option value="fixed">Fixed</option>
           <option value="variable">Variable</option>
         </select>
-        
       </div>
       <div class="form-group" id="s-fixedperiod-group">
         <label class="form-label" for="s-loan-fixedperiod">Fixed period (months)</label>
@@ -298,19 +323,12 @@ table.txn tr:hover td{background:#fafbff}
         <input class="form-input" id="s-loan-postrate" type="number" step="0.001" min="0" placeholder="e.g. 5.1" oninput="toggleFixedPeriod()">
         <div class="form-hint">Applied from month <span id="s-postrate-hint-month">&#8212;</span> onwards; leave blank to continue at fixed rate</div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Projection Start (month/year) *</label>
-        <div style="display:flex;gap:6px">
-          <select class="form-select" id="s-loan-startmon" style="flex:1">
-            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
-            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-          </select>
-          <input class="form-input" id="s-loan-startyear" type="number" step="1" min="2020" max="2099" placeholder="Year" style="width:85px">
-        </div>
-        <div class="form-err" id="err-loan-start">Year is required</div>
-      </div>
+    </div>
+
+    <div class="form-preview" id="form-preview"></div>
+
+    <div class="form-section-title">Repayment strategy</div>
+    <div class="form-grid">
       <div class="form-group">
         <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
           <input type="checkbox" id="s-loan-lump-enabled" onchange="toggleLumpOptions()" style="width:auto">
@@ -323,20 +341,19 @@ table.txn tr:hover td{background:#fafbff}
         </div>
         <div class="form-hint">Accumulated surplus paid as a lump sum in each selected month</div>
       </div>
+      <div class="form-group">
+        <label class="form-label">After prepayment, lender recalculates</label>
+        <select class="form-select" id="s-loan-effect">
+          <option value="reduce-installment">Reduce installment (same term)</option>
+          <option value="reduce-duration">Reduce duration (same installment)</option>
+        </select>
+        <div class="form-hint">Applies to all future lump-sum prepayment rows</div>
+      </div>
     </div>
 
-
-    <div style="margin-bottom:18px">
-      <div class="form-label" style="margin-bottom:10px">Payoff Strategy</div>
-      <div class="form-grid" style="margin-bottom:0">
-        <div class="form-group">
-          <label class="form-label">After prepayment, lender recalculates</label>
-          <select class="form-select" id="s-loan-effect">
-            <option value="reduce-installment">Reduce installment (same term)</option>
-            <option value="reduce-duration">Reduce duration (same installment)</option>
-          </select>
-          <div class="form-hint">Applies to all future lump-sum prepayment rows</div>
-        </div>
+    <button type="button" class="form-advanced-toggle" id="adv-toggle" onclick="toggleAdvanced()">&#9656; Advanced options</button>
+    <div id="adv-options" style="display:none;margin-top:10px">
+      <div class="form-grid">
         <div class="form-group">
           <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="s-loan-balloon-enabled" onchange="toggleBalloonOptions()" style="width:auto">
@@ -345,27 +362,27 @@ table.txn tr:hover td{background:#fafbff}
           <div id="s-balloon-options" style="display:none;margin-top:6px">
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:.78rem;color:#555">&#8804; &euro;</span>
-              <input class="form-input" id="s-loan-balloon" type="number" step="100" min="0" placeholder="5,000" style="width:90px">
+              <input class="form-input" id="s-loan-balloon" type="number" step="100" min="0" placeholder="5000" style="width:90px">
             </div>
           </div>
           <div class="form-err" id="err-loan-balloon">Threshold must be greater than 0</div>
           <div class="form-hint">Pay off remaining balance when it drops to this amount</div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Target payoff by <span style="font-weight:400;color:#999">(optional)</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="form-select" id="s-loan-goalmon" style="width:auto">
+              <option value="">— Month —</option>
+              <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+              <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+              <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+            <input class="form-input" id="s-loan-goalyear" type="number" min="2024" max="2060" placeholder="Year" style="width:90px">
+          </div>
+          <div class="form-hint">Draws a goal marker on the balance chart</div>
+        </div>
       </div>
-    </div>
-    <div style="margin-bottom:18px">
-      <div class="form-label" style="margin-bottom:6px">Target payoff by <span style="font-weight:400;color:#999">(optional)</span></div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select class="form-select" id="s-loan-goalmon" style="width:auto">
-          <option value="">— Month —</option>
-          <option value="01">January</option><option value="02">February</option><option value="03">March</option>
-          <option value="04">April</option><option value="05">May</option><option value="06">June</option>
-          <option value="07">July</option><option value="08">August</option><option value="09">September</option>
-          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-        </select>
-        <input class="form-input" id="s-loan-goalyear" type="number" min="2024" max="2060" placeholder="Year" style="width:90px">
-      </div>
-      <div class="form-hint">Draws a goal marker on the balance chart</div>
     </div>
     <div class="modal-actions">
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto" id="setup-reset-btn">Reset all data</button>
@@ -539,7 +556,7 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
 // Export for Node.js test runner; guard keeps browser build unaffected
 if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
 
-const APP_VERSION='v1.6.0';
+const APP_VERSION='v1.7.0';
 const LS_LOANS='lt_loans';
 const LS_OLD_MORT='lt_loan_mort';
 
@@ -694,9 +711,59 @@ function openSetup(firstRun){
   document.getElementById('setup-reset-btn').style.display=firstRun?'none':'';
   document.getElementById('setup-import-btn').style.display=firstRun?'':'none';
   document.getElementById('setup-modal').classList.add('open');
+  wireSetupModal();
+}
+
+// Post-open wiring shared by openSetup (edit) and startAddLoan (new): live preview,
+// Advanced expand/collapse, keyboard shortcuts, and initial focus.
+function wireSetupModal(){
+  const modal=document.getElementById('setup-modal');
+  ['s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy'].forEach(id=>{document.getElementById(id).oninput=updateFormPreview;});
+  updateFormPreview();
+  // expand Advanced only when an advanced option is already in use, so configured values aren't hidden
+  const advUsed=document.getElementById('s-loan-balloon-enabled').checked||!!document.getElementById('s-loan-goalmon').value;
+  document.getElementById('adv-options').style.display=advUsed?'':'none';
+  document.getElementById('adv-toggle').textContent=(advUsed?'▾':'▸')+' Advanced options';
+  // keyboard: Esc cancels (when a Cancel button is available), Enter saves
+  modal.onkeydown=function(e){
+    if(e.key==='Escape'){if(document.getElementById('setup-cancel-btn').style.display!=='none')closeSetup();}
+    else if(e.key==='Enter'&&e.target.tagName!=='SELECT'&&e.target.type!=='checkbox'){e.preventDefault();modal.querySelector('.btn-primary').click();}
+  };
+  setTimeout(()=>{const f=document.getElementById('s-loan-bal');if(f)f.focus();},30);
 }
 
 function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+// Close the setup modal when the backdrop is clicked — but not during first-run
+// (no loan yet, so there's nothing to fall back to).
+function onSetupBackdrop(e){
+  if(e.target!==document.getElementById('setup-modal'))return;
+  if(document.getElementById('setup-cancel-btn').style.display==='none')return;
+  closeSetup();
+}
+
+// Live summary of the core figures: effective rate, term in years, est. instalment.
+function updateFormPreview(){
+  const box=document.getElementById('form-preview');
+  if(!box)return;
+  const bal=parseFloat(document.getElementById('s-loan-bal').value);
+  const months=parseInt(document.getElementById('s-loan-months').value,10);
+  const rate=parseFloat(document.getElementById('s-loan-rate').value);
+  const levy=parseFloat(document.getElementById('s-loan-levy').value)||0;
+  const parts=[];
+  if(!isNaN(rate))parts.push('Effective rate <strong>'+(rate+levy).toFixed(2)+'%</strong>');
+  if(months>0){const y=Math.floor(months/12),m=months%12;let t=y?y+' yr'+(y!==1?'s':''):'';if(m)t+=(t?' ':'')+m+' mo';parts.push('Term <strong>'+(t||months+' mo')+'</strong>');}
+  if(bal>0&&months>0&&!isNaN(rate)){const r=(rate+levy)/100/12;const inst=r>0?bal*r/(1-Math.pow(1+r,-months)):bal/months;parts.push('Est. instalment <strong>'+fmtE(inst)+'</strong>/mo');}
+  box.innerHTML=parts.length?parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;'):'Enter balance, term and rate to see a live summary.';
+}
+
+// Advanced-options section toggle (collapsed by default).
+function toggleAdvanced(){
+  const el=document.getElementById('adv-options');
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'';
+  document.getElementById('adv-toggle').textContent=(open?'▸':'▾')+' Advanced options';
+}
 
 function triggerImport(){document.getElementById('import-file').click();}
 
@@ -850,6 +917,7 @@ function startAddLoan(){
   const saveBtn=document.querySelector('#setup-modal .btn-primary');
   saveBtn.setAttribute('onclick','saveNewLoan()');
   document.getElementById('setup-modal').classList.add('open');
+  wireSetupModal();
 }
 
 function saveNewLoan(){

@@ -135,23 +135,43 @@
 </div>
 
 <!-- Edit / Settings Modal -->
-<div class="modal-overlay" id="setup-modal">
+<div class="modal-overlay" id="setup-modal" onclick="onSetupBackdrop(event)">
   <div class="modal">
     <div class="modal-title">Loan Edit</div>
-    <div class="modal-sub">Configure your loan details. Saved locally in your browser and used for all projections.</div>
+    <div class="modal-sub">Configure your loan details. Saved locally in your browser and used for all projections. <span style="color:#94a3b8">Fields marked * are required.</span></div>
 
+    <div class="form-section-title">Loan basics</div>
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="s-loan-bal">Opening Balance (&#8364;) *</label>
-        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100,000">
-        <div class="form-hint">Balance at start of projection</div>
+        <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100000">
+        <div class="form-hint">Outstanding balance as of the projection-start month below &mdash; not the original loan amount</div>
         <div class="form-err" id="err-loan-bal">Required &mdash; must be &gt; 0</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-months">Remaining Term (months) *</label>
         <input class="form-input" id="s-loan-months" type="number" step="1" min="1" placeholder="e.g. 240">
+        <div class="form-hint">Months left on the loan (see live summary for years)</div>
         <div class="form-err" id="err-loan-months">Required &mdash; must be &ge; 1</div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Projection Start (month/year) *</label>
+        <div style="display:flex;gap:6px">
+          <select class="form-select" id="s-loan-startmon" style="flex:1">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+          <input class="form-input" id="s-loan-startyear" type="number" step="1" min="2020" max="2099" placeholder="Year" style="width:85px">
+        </div>
+        <div class="form-hint">The month figures are measured from &mdash; usually your first instalment</div>
+        <div class="form-err" id="err-loan-start">Year is required</div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Interest rate</div>
+    <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="s-loan-rate">Annual Interest Rate (%) *</label>
         <input class="form-input" id="s-loan-rate" type="number" step="0.001" min="0" placeholder="e.g. 4.5">
@@ -169,7 +189,6 @@
           <option value="fixed">Fixed</option>
           <option value="variable">Variable</option>
         </select>
-        
       </div>
       <div class="form-group" id="s-fixedperiod-group">
         <label class="form-label" for="s-loan-fixedperiod">Fixed period (months)</label>
@@ -181,19 +200,12 @@
         <input class="form-input" id="s-loan-postrate" type="number" step="0.001" min="0" placeholder="e.g. 5.1" oninput="toggleFixedPeriod()">
         <div class="form-hint">Applied from month <span id="s-postrate-hint-month">&#8212;</span> onwards; leave blank to continue at fixed rate</div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Projection Start (month/year) *</label>
-        <div style="display:flex;gap:6px">
-          <select class="form-select" id="s-loan-startmon" style="flex:1">
-            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
-            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-          </select>
-          <input class="form-input" id="s-loan-startyear" type="number" step="1" min="2020" max="2099" placeholder="Year" style="width:85px">
-        </div>
-        <div class="form-err" id="err-loan-start">Year is required</div>
-      </div>
+    </div>
+
+    <div class="form-preview" id="form-preview"></div>
+
+    <div class="form-section-title">Repayment strategy</div>
+    <div class="form-grid">
       <div class="form-group">
         <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
           <input type="checkbox" id="s-loan-lump-enabled" onchange="toggleLumpOptions()" style="width:auto">
@@ -206,20 +218,19 @@
         </div>
         <div class="form-hint">Accumulated surplus paid as a lump sum in each selected month</div>
       </div>
+      <div class="form-group">
+        <label class="form-label">After prepayment, lender recalculates</label>
+        <select class="form-select" id="s-loan-effect">
+          <option value="reduce-installment">Reduce installment (same term)</option>
+          <option value="reduce-duration">Reduce duration (same installment)</option>
+        </select>
+        <div class="form-hint">Applies to all future lump-sum prepayment rows</div>
+      </div>
     </div>
 
-
-    <div style="margin-bottom:18px">
-      <div class="form-label" style="margin-bottom:10px">Payoff Strategy</div>
-      <div class="form-grid" style="margin-bottom:0">
-        <div class="form-group">
-          <label class="form-label">After prepayment, lender recalculates</label>
-          <select class="form-select" id="s-loan-effect">
-            <option value="reduce-installment">Reduce installment (same term)</option>
-            <option value="reduce-duration">Reduce duration (same installment)</option>
-          </select>
-          <div class="form-hint">Applies to all future lump-sum prepayment rows</div>
-        </div>
+    <button type="button" class="form-advanced-toggle" id="adv-toggle" onclick="toggleAdvanced()">&#9656; Advanced options</button>
+    <div id="adv-options" style="display:none;margin-top:10px">
+      <div class="form-grid">
         <div class="form-group">
           <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="s-loan-balloon-enabled" onchange="toggleBalloonOptions()" style="width:auto">
@@ -228,27 +239,27 @@
           <div id="s-balloon-options" style="display:none;margin-top:6px">
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:.78rem;color:#555">&#8804; &euro;</span>
-              <input class="form-input" id="s-loan-balloon" type="number" step="100" min="0" placeholder="5,000" style="width:90px">
+              <input class="form-input" id="s-loan-balloon" type="number" step="100" min="0" placeholder="5000" style="width:90px">
             </div>
           </div>
           <div class="form-err" id="err-loan-balloon">Threshold must be greater than 0</div>
           <div class="form-hint">Pay off remaining balance when it drops to this amount</div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Target payoff by <span style="font-weight:400;color:#999">(optional)</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="form-select" id="s-loan-goalmon" style="width:auto">
+              <option value="">— Month —</option>
+              <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+              <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+              <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+            <input class="form-input" id="s-loan-goalyear" type="number" min="2024" max="2060" placeholder="Year" style="width:90px">
+          </div>
+          <div class="form-hint">Draws a goal marker on the balance chart</div>
+        </div>
       </div>
-    </div>
-    <div style="margin-bottom:18px">
-      <div class="form-label" style="margin-bottom:6px">Target payoff by <span style="font-weight:400;color:#999">(optional)</span></div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select class="form-select" id="s-loan-goalmon" style="width:auto">
-          <option value="">— Month —</option>
-          <option value="01">January</option><option value="02">February</option><option value="03">March</option>
-          <option value="04">April</option><option value="05">May</option><option value="06">June</option>
-          <option value="07">July</option><option value="08">August</option><option value="09">September</option>
-          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-        </select>
-        <input class="form-input" id="s-loan-goalyear" type="number" min="2024" max="2060" placeholder="Year" style="width:90px">
-      </div>
-      <div class="form-hint">Draws a goal marker on the balance chart</div>
     </div>
     <div class="modal-actions">
       <button class="btn-danger" onclick="resetApp()" style="margin-right:auto" id="setup-reset-btn">Reset all data</button>
