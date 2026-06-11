@@ -977,9 +977,89 @@ function showTab(id){
   }
 }
 
-function renderDashboard(){
-  // stub — implemented in Task 8
+/* ─────────────────────────────────────────
+   Dashboard (multi-loan overview)
+───────────────────────────────────────── */
+function escHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));}
+
+// Computes projection data for all loans. Returns array of {loan,rows,sched,payoffMonth,intSaved,budget,nextUnconf,loanIdx}.
+function computeAllLoansData(){
+  const loans=loadLoans()||[];
+  return loans.map((loan,i)=>{
+    const rate=(loan.annualRate+loan.levy)/100/12;
+    const postRate=(loan.postFixedRate&&loan.fixedPeriodMonths>0)?((loan.postFixedRate+loan.levy)/100/12):0;
+    const startKey=projFirstMonth(loan);
+    const{ey,em}=projEndMonth(loan);
+    const budget=effectiveBudget(loan.id||i);
+    const{rows,sched}=genProj(budget,loan.balance,startKey,rate,ey,em,
+      getManLumps(loan.id||i),loan.lumpMonths,getActuals(loan.id||i),
+      loan.lumpEnabled!==false,loan.lumpEffect||'reduce-installment',
+      !!loan.balloonEnabled,loan.balloonThreshold||0,loan.fixedPeriodMonths||0,postRate);
+    const instRows=rows.filter(r=>r.type==='inst');
+    const payoffMonth=instRows.length?instRows[instRows.length-1].month:'---';
+    const baseInt=computeBaselineInterest(loan.balance,startKey,rate,ey,em,loan.fixedPeriodMonths||0,postRate);
+    const planInt=instRows.reduce((s,r)=>s+r.int,0);
+    const intSaved=baseInt-planInt;
+    const nextUnconf=sched.find(r=>!r.confirmed&&!r.payoff);
+    return{loan,rows,sched,payoffMonth,intSaved,budget,nextUnconf,loanIdx:i};
+  });
 }
+
+function renderDashboard(){
+  const data=computeAllLoansData();
+  renderDashboardStats(data);
+  renderDashboardNextMonth(data);
+  renderDashboardLoanCards(data);
+  renderDashboardBudget(data);
+  renderDashboardChart(data);
+  // annual schedule rendered on-demand via toggleAnnualSchedule()
+}
+
+function renderDashboardStats(data){
+  const totalBal=data.reduce((s,d)=>s+(d.sched.length?d.sched[d.sched.length-1].bal:d.loan.balance),0);
+  const totalSaved=data.reduce((s,d)=>s+d.intSaved,0);
+  const payoffs=data.map(d=>d.payoffMonth).filter(m=>m!=='---').sort();
+  const earliest=payoffs[0]||'---';
+  const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  document.getElementById('dash-stats').innerHTML=
+    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value red">'+fmtE(totalBal)+'</div></div>'+
+    '<div class="card"><div class="card-label">Total Interest Saved</div><div class="card-value green">'+fmtE(totalSaved)+'</div></div>'+
+    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value green">'+fmtMon(earliest)+'</div></div>';
+}
+
+function renderDashboardNextMonth(data){
+  const fmtMon=m=>{if(!m)return '';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  const nextMonths=data.map(d=>d.nextUnconf?d.nextUnconf.month:null).filter(Boolean).sort();
+  const nextMon=nextMonths[0]||null;
+  if(!nextMon){document.getElementById('dash-next-month').textContent='';return;}
+  let parts=[];let total=0;
+  data.forEach(d=>{
+    const row=d.sched.find(r=>r.month===nextMon&&!r.confirmed);
+    if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.inst+(row.lump||0)));total+=row.inst+(row.lump||0);}
+  });
+  document.getElementById('dash-next-month').innerHTML='<strong>'+fmtMon(nextMon)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
+}
+
+function renderDashboardLoanCards(data){
+  const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  let html='';
+  data.forEach((d,i)=>{
+    const color=LOAN_COLORS[i%LOAN_COLORS.length];
+    const ps=computeProgressStats(d.sched,d.loan.balance);
+    const bal=d.sched.length?d.sched[d.sched.length-1].bal:d.loan.balance;
+    html+='<div class="dash-loan-card" onclick="showTab('+d.loanIdx+')" style="border-top:3px solid '+color+'">'+
+      '<div class="dash-loan-card-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</div>'+
+      '<div class="dash-loan-card-balance">'+fmtE(bal)+'</div>'+
+      '<div class="dash-loan-card-payoff">Payoff: '+fmtMon(d.payoffMonth)+'</div>'+
+      '<div class="progress-track" style="margin:4px 0 0"><div class="progress-fill" style="width:'+ps.progressPct.toFixed(1)+'%;background:'+color+'"></div></div>'+
+      '</div>';
+  });
+  document.getElementById('dash-loan-cards').innerHTML=html;
+}
+
+// Safe stubs — implemented in Tasks 9/10. Present so renderDashboard doesn't throw.
+function renderDashboardBudget(data){}
+function renderDashboardChart(data){}
 
 /* ─────────────────────────────────────────
    Projection engine
