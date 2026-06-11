@@ -289,28 +289,36 @@ function confirmDeleteLoan(){
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
   const label=loans[loanId]&&loans[loanId].label||'this loan';
   if(!confirm('Delete "'+label+'"?\n\nThis permanently removes all confirmed actuals and manual lump entries for this loan. This cannot be undone.'))return;
-  // remove loan
-  loans.splice(loanId,1);
-  // re-number ids sequentially
-  loans.forEach((l,i)=>{l.id=i;});
-  saveLoans(loans);
-  // clean up per-loan keys
-  localStorage.removeItem('confirmed_'+loanId+'_act');
-  localStorage.removeItem(manLumpKey(loanId));
-  // clean up budget alloc; add freed % to first remaining loan
   const alloc=getBudgetAlloc()||{};
   const freed=alloc[String(loanId)]||0;
-  delete alloc[String(loanId)];
-  // rebuild alloc with new sequential ids
+  // remove the deleted loan from the array
+  loans.splice(loanId,1);
+  // build new alloc using each surviving loan's PRE-renumber id, before renumbering
   const newAlloc={};
-  loans.forEach((l,i)=>{
-    // map old id to new sequential id
-    const oldId=l.id; // already re-numbered above
-    newAlloc[String(i)]=alloc[String(i)]||0;
-  });
+  loans.forEach((l,newIdx)=>{newAlloc[String(newIdx)]=alloc[String(l.id)]||0;});
+  // shift per-loan localStorage keys (actuals + manual lumps) down for loans
+  // that were above the deleted index; ascending order is safe (deleted slot already freed)
+  localStorage.removeItem(actKey(loanId));
+  localStorage.removeItem(manLumpKey(loanId));
+  for(let newIdx=loanId;newIdx<loans.length;newIdx++){
+    const oldIdx=newIdx+1;
+    const act=localStorage.getItem(actKey(oldIdx));
+    if(act!==null)localStorage.setItem(actKey(newIdx),act);else localStorage.removeItem(actKey(newIdx));
+    const lump=localStorage.getItem(manLumpKey(oldIdx));
+    if(lump!==null)localStorage.setItem(manLumpKey(newIdx),lump);else localStorage.removeItem(manLumpKey(newIdx));
+  }
+  // remove the now-stale top keys (the former last loan's old index)
+  if(loans.length>loanId){
+    localStorage.removeItem(actKey(loans.length));
+    localStorage.removeItem(manLumpKey(loans.length));
+  }
+  // renumber ids sequentially
+  loans.forEach((l,i)=>{l.id=i;});
+  saveLoans(loans);
+  // add freed allocation % to the first remaining loan
   if(loans.length>0)newAlloc['0']=(newAlloc['0']||0)+freed;
   if(loans.length===1){
-    // back to single-loan: restore lt_budget_0
+    // back to single-loan: restore lt_budget_0 from the shared pool
     localStorage.setItem('lt_budget_0',getBudgetTotal());
     localStorage.removeItem('lt_budget_total');
     localStorage.removeItem('lt_budget_alloc');
