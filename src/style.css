@@ -80,6 +80,12 @@ table.txn tr:hover td{background:#fafbff}
 .form-hint{font-size:.68rem;color:#999;margin-top:1px}
 .form-err{font-size:.7rem;color:#dc2626;margin-top:2px;display:none}
 .form-err.show{display:block}
+@media (max-width:560px){.form-grid{grid-template-columns:1fr}}
+.form-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:.78rem;color:#475569;margin:-2px 0 18px;line-height:1.6}
+.form-preview strong{color:#1e293b;font-weight:700}
+.form-section-title{font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:2px 0 10px;padding-bottom:5px;border-bottom:1px solid #eef2f7}
+.form-advanced-toggle{background:none;border:none;padding:4px 0;cursor:pointer;font-size:.78rem;color:#2563eb;font-weight:600}
+.form-advanced-toggle:hover{text-decoration:underline}
 
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #eee;padding-top:16px;margin-top:4px}
 .btn-primary{background:#2563eb;color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}

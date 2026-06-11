@@ -94,9 +94,59 @@ function openSetup(firstRun){
   document.getElementById('setup-reset-btn').style.display=firstRun?'none':'';
   document.getElementById('setup-import-btn').style.display=firstRun?'':'none';
   document.getElementById('setup-modal').classList.add('open');
+  wireSetupModal();
+}
+
+// Post-open wiring shared by openSetup (edit) and startAddLoan (new): live preview,
+// Advanced expand/collapse, keyboard shortcuts, and initial focus.
+function wireSetupModal(){
+  const modal=document.getElementById('setup-modal');
+  ['s-loan-bal','s-loan-months','s-loan-rate','s-loan-levy'].forEach(id=>{document.getElementById(id).oninput=updateFormPreview;});
+  updateFormPreview();
+  // expand Advanced only when an advanced option is already in use, so configured values aren't hidden
+  const advUsed=document.getElementById('s-loan-balloon-enabled').checked||!!document.getElementById('s-loan-goalmon').value;
+  document.getElementById('adv-options').style.display=advUsed?'':'none';
+  document.getElementById('adv-toggle').textContent=(advUsed?'▾':'▸')+' Advanced options';
+  // keyboard: Esc cancels (when a Cancel button is available), Enter saves
+  modal.onkeydown=function(e){
+    if(e.key==='Escape'){if(document.getElementById('setup-cancel-btn').style.display!=='none')closeSetup();}
+    else if(e.key==='Enter'&&e.target.tagName!=='SELECT'&&e.target.type!=='checkbox'){e.preventDefault();modal.querySelector('.btn-primary').click();}
+  };
+  setTimeout(()=>{const f=document.getElementById('s-loan-bal');if(f)f.focus();},30);
 }
 
 function closeSetup(){document.getElementById('setup-modal').classList.remove('open');}
+
+// Close the setup modal when the backdrop is clicked — but not during first-run
+// (no loan yet, so there's nothing to fall back to).
+function onSetupBackdrop(e){
+  if(e.target!==document.getElementById('setup-modal'))return;
+  if(document.getElementById('setup-cancel-btn').style.display==='none')return;
+  closeSetup();
+}
+
+// Live summary of the core figures: effective rate, term in years, est. instalment.
+function updateFormPreview(){
+  const box=document.getElementById('form-preview');
+  if(!box)return;
+  const bal=parseFloat(document.getElementById('s-loan-bal').value);
+  const months=parseInt(document.getElementById('s-loan-months').value,10);
+  const rate=parseFloat(document.getElementById('s-loan-rate').value);
+  const levy=parseFloat(document.getElementById('s-loan-levy').value)||0;
+  const parts=[];
+  if(!isNaN(rate))parts.push('Effective rate <strong>'+(rate+levy).toFixed(2)+'%</strong>');
+  if(months>0){const y=Math.floor(months/12),m=months%12;let t=y?y+' yr'+(y!==1?'s':''):'';if(m)t+=(t?' ':'')+m+' mo';parts.push('Term <strong>'+(t||months+' mo')+'</strong>');}
+  if(bal>0&&months>0&&!isNaN(rate)){const r=(rate+levy)/100/12;const inst=r>0?bal*r/(1-Math.pow(1+r,-months)):bal/months;parts.push('Est. instalment <strong>'+fmtE(inst)+'</strong>/mo');}
+  box.innerHTML=parts.length?parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;'):'Enter balance, term and rate to see a live summary.';
+}
+
+// Advanced-options section toggle (collapsed by default).
+function toggleAdvanced(){
+  const el=document.getElementById('adv-options');
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'';
+  document.getElementById('adv-toggle').textContent=(open?'▸':'▾')+' Advanced options';
+}
 
 function triggerImport(){document.getElementById('import-file').click();}
 
@@ -250,6 +300,7 @@ function startAddLoan(){
   const saveBtn=document.querySelector('#setup-modal .btn-primary');
   saveBtn.setAttribute('onclick','saveNewLoan()');
   document.getElementById('setup-modal').classList.add('open');
+  wireSetupModal();
 }
 
 function saveNewLoan(){
