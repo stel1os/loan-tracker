@@ -1117,8 +1117,80 @@ function checkBudgetSum(){
   if(warn)warn.style.display=(sum!==100)?'':'none';
 }
 
-// Safe stub — implemented in Task 10. Present so renderDashboard doesn't throw.
-function renderDashboardChart(data){}
+function renderDashboardChart(data){
+  if(dashboardChart){dashboardChart.destroy();dashboardChart=null;}
+  if(!data.length)return;
+  const allMonths=new Set();
+  data.forEach(d=>d.rows.filter(r=>r.type==='inst').forEach(r=>allMonths.add(r.month)));
+  const labels=[...allMonths].sort();
+  const datasets=data.map((d,i)=>{
+    const color=LOAN_COLORS[i%LOAN_COLORS.length];
+    const balMap={};d.rows.filter(r=>r.type==='inst').forEach(r=>{balMap[r.month]=r.bal;});
+    return{
+      label:d.loan.label||'Loan '+(i+1),
+      data:labels.map(m=>balMap[m]!=null?balMap[m]:null),
+      borderColor:color,tension:.3,pointRadius:0,borderWidth:2,fill:false,spanGaps:false
+    };
+  });
+  const ctx=document.getElementById('dashboardChart');
+  if(!ctx)return;
+  dashboardChart=new Chart(ctx.getContext('2d'),{type:'line',data:{labels,datasets},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}},
+      scales:{
+        x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},
+        y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}
+      }
+    }
+  });
+}
+
+let _annualOpen=false;
+function toggleAnnualSchedule(){
+  _annualOpen=!_annualOpen;
+  const el=document.getElementById('dash-annual');
+  const btn=document.querySelector('.dash-annual-toggle');
+  if(!el)return;
+  el.style.display=_annualOpen?'':'none';
+  if(btn)btn.innerHTML=(_annualOpen?'&#9660;':'&#9654;')+' Annual schedule';
+  if(_annualOpen)renderAnnualSchedule();
+}
+
+function renderAnnualSchedule(){
+  const data=computeAllLoansData();
+  const byYear={};
+  data.forEach(d=>{
+    d.rows.forEach(r=>{
+      const yr=r.month.slice(0,4);
+      if(!byYear[yr])byYear[yr]={inst:0,int:0,prin:0,lump:0,bal:0};
+      if(r.type==='inst'){byYear[yr].inst+=r.inst;byYear[yr].int+=r.int;byYear[yr].prin+=r.inst-r.int;byYear[yr].bal=r.bal;}
+      if(r.type==='extra'){byYear[yr].lump+=r.inst;}
+    });
+  });
+  const balByYear={};
+  Object.keys(byYear).forEach(yr=>{balByYear[yr]=0;});
+  data.forEach(d=>{
+    const yearBals={};
+    d.rows.filter(r=>r.type==='inst').forEach(r=>{yearBals[r.month.slice(0,4)]=r.bal;});
+    Object.keys(yearBals).forEach(yr=>{balByYear[yr]=(balByYear[yr]||0)+yearBals[yr];});
+  });
+
+  const years=Object.keys(byYear).sort();
+  let html='<div class="tbl-wrap"><table class="txn"><thead><tr>'+
+    '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Balance</th>'+
+    '</tr></thead><tbody>';
+  years.forEach(yr=>{
+    const r=byYear[yr];
+    html+='<tr><td>'+yr+'</td>'+
+      '<td class="num">'+f2x(r.inst)+'</td>'+
+      '<td class="num" style="color:#c2410c">'+f2x(r.int)+'</td>'+
+      '<td class="num" style="color:#16a34a">'+f2x(r.prin)+'</td>'+
+      '<td class="num" style="color:#2563eb">'+f2x(r.lump)+'</td>'+
+      '<td class="num bal-owed">'+f2x(balByYear[yr]||0)+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('dash-annual').innerHTML=html;
+}
 
 /* ─────────────────────────────────────────
    Projection engine
