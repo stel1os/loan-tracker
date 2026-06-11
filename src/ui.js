@@ -375,7 +375,7 @@ function showTab(id){
   }else{
     if(dv)dv.style.display='none';
     if(lv)lv.style.display='';
-    refreshLoan();
+    initApp(); // full reload for the active loan (reloads _mS + per-loan budget); refreshLoan alone keeps stale _mS
   }
 }
 
