@@ -49,7 +49,7 @@
     <div class="card"><div class="card-label">Interest Saved vs No Extras</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
   </div>
   <div class="loan-card">
-    <div class="loan-title">Loan <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
+    <div class="loan-title"><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
     <div class="stat-grid">
       <div><div class="stat-label">Balance</div><div class="stat-val red" id="m-bal-stat">&#8230;</div></div>
       <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">&#8230;</div></div>
@@ -142,6 +142,11 @@
 
     <div class="form-section-title">Loan basics</div>
     <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label" for="s-loan-label">Loan name <span style="font-weight:400;color:#999">(optional)</span></label>
+        <input class="form-input" id="s-loan-label" type="text" maxlength="40" placeholder="e.g. Mortgage, Home repairs">
+        <div class="form-hint">Shown on the loan tab and card</div>
+      </div>
       <div class="form-group">
         <label class="form-label" for="s-loan-bal">Opening Balance (&#8364;) *</label>
         <input class="form-input" id="s-loan-bal" type="number" step="0.01" min="0" placeholder="e.g. 100000">
