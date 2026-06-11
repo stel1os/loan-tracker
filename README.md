@@ -13,7 +13,8 @@ A zero-install, browser-based loan tracker. Open the HTML file in any browser �
 
 ## What it does
 
-- Configure your loan once (balance, term, rate, start date)
+- Configure each loan once (balance, term, rate, start date) — name it whatever you like
+- Track multiple loans (e.g. mortgage + home repair): a Dashboard aggregates balance and payoff across all of them, each loan gets its own tab, and a shared monthly budget is split across loans with auto-redistributing sliders
 - Set a monthly budget — see exactly when you'll be debt-free
 - Schedule an annual lump-sum payment month; accumulated surplus pays against principal automatically
 - Add one-off manual lump-sum payments to any future row
