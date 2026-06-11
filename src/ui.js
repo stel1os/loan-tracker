@@ -547,10 +547,10 @@ function renderDashboardChart(data){
 
 let _annualOpen=false;
 function toggleAnnualSchedule(){
-  _annualOpen=!_annualOpen;
   const el=document.getElementById('dash-annual');
   const btn=document.querySelector('.dash-annual-toggle');
   if(!el)return;
+  _annualOpen=!_annualOpen;
   el.style.display=_annualOpen?'':'none';
   if(btn)btn.innerHTML=(_annualOpen?'&#9660;':'&#9654;')+' Annual schedule';
   if(_annualOpen)renderAnnualSchedule();
@@ -625,7 +625,9 @@ function computePlanStats(mRows,mS){
   document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
   document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
-  document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
+  if(typeof activeLoanIdx==='number'){
+    document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
+  }
   const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
   const lumpMons=Array.isArray(mS.lumpMonths)?mS.lumpMonths:[mS.lumpMonth!=null?mS.lumpMonth:8];
   document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+lumpMons.map(m=>MN[m-1]).join(', ')+' · Budget drives lump formula dynamically';
