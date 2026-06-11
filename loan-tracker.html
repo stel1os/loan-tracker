@@ -883,6 +883,46 @@ function saveNewLoan(){
   showTab('dashboard');
 }
 
+function confirmDeleteLoan(){
+  const loans=loadLoans()||[];
+  if(loans.length<=1)return; // guard
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const label=loans[loanId]&&loans[loanId].label||'this loan';
+  if(!confirm('Delete "'+label+'"?\n\nThis permanently removes all confirmed actuals and manual lump entries for this loan. This cannot be undone.'))return;
+  // remove loan
+  loans.splice(loanId,1);
+  // re-number ids sequentially
+  loans.forEach((l,i)=>{l.id=i;});
+  saveLoans(loans);
+  // clean up per-loan keys
+  localStorage.removeItem('confirmed_'+loanId+'_act');
+  localStorage.removeItem(manLumpKey(loanId));
+  // clean up budget alloc; add freed % to first remaining loan
+  const alloc=getBudgetAlloc()||{};
+  const freed=alloc[String(loanId)]||0;
+  delete alloc[String(loanId)];
+  // rebuild alloc with new sequential ids
+  const newAlloc={};
+  loans.forEach((l,i)=>{
+    // map old id to new sequential id
+    const oldId=l.id; // already re-numbered above
+    newAlloc[String(i)]=alloc[String(i)]||0;
+  });
+  if(loans.length>0)newAlloc['0']=(newAlloc['0']||0)+freed;
+  if(loans.length===1){
+    // back to single-loan: restore lt_budget_0
+    localStorage.setItem('lt_budget_0',getBudgetTotal());
+    localStorage.removeItem('lt_budget_total');
+    localStorage.removeItem('lt_budget_alloc');
+  }else{
+    setBudgetAlloc(newAlloc);
+  }
+  closeSetup();
+  activeLoanIdx=0;
+  initApp();
+  if(loans.length>1)showTab('dashboard');
+}
+
 /* ─────────────────────────────────────────
    Utilities
 ───────────────────────────────────────── */
