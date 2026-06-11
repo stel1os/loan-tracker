@@ -1,6 +1,6 @@
 {
   "name": "loan-tracker",
-  "version": "1.5.3",
+  "version": "1.6.0",
   "description": "Zero-install browser-based loan tracker",
   "scripts": {
     "build": "node build.js",
