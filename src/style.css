@@ -1,7 +1,17 @@
-:root{color-scheme:light}*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f6fa;color:#1a1a2e;min-height:100vh;padding:20px}
-h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
-.subtitle{font-size:.82rem;color:#666;margin-bottom:16px}
+:root{
+  color-scheme:light;
+  --bg:#f5f6f8; --surface:#fff; --ink:#0f172a; --muted:#94a3b8;
+  --hairline:#f1f5f9; --accent:#4f46e5; --accent-soft:#eef2ff;
+  --positive:#16a34a; --amber:#b45309; --amber-soft:#fef3c7;
+  --payoff:#7c3aed; --payoff-soft:#f5f3ff;
+  --radius-card:14px; --radius-ctl:9px;
+  --shadow:0 1px 3px rgba(15,23,42,.06);
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;padding:20px}
+h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-spacing:-.01em}
+.subtitle{font-size:.82rem;color:var(--muted);margin-bottom:16px}
 .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
 .card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .card-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:6px}
