@@ -391,7 +391,7 @@ const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec
 function ymFmt(t){const p=(t.dispDate||t.date).slice(0,7).split('-');return p[0]+' '+MN[+p[1]-1];}
 const fmtE=n=>'€'+Math.round(n).toLocaleString('el-GR');
 const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const LOAN_COLORS=['#2563eb','#15803d','#d97706'];
+const LOAN_COLORS=['#4f46e5','#0d9488','#d97706'];
 let activeLoanIdx=0;
 let dashboardChart=null;
 
@@ -467,6 +467,7 @@ function renderDashboard(){
   renderDashboardLoanCards(data);
   renderDashboardBudget(data);
   renderDashboardChart(data);
+  applyPanelState('dashChart','panel-dashchart');
   // annual schedule rendered on-demand via toggleAnnualSchedule()
 }
 
@@ -477,9 +478,9 @@ function renderDashboardStats(data){
   const earliest=payoffs[0]||'---';
   const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
   document.getElementById('dash-stats').innerHTML=
-    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value red">'+fmtE(totalBal)+'</div></div>'+
+    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value">'+fmtE(totalBal)+'</div></div>'+
     '<div class="card"><div class="card-label">Total Interest Saved</div><div class="card-value green">'+fmtE(totalSaved)+'</div></div>'+
-    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value green">'+fmtMon(earliest)+'</div></div>';
+    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value accent">'+fmtMon(earliest)+'</div></div>';
 }
 
 function renderDashboardNextMonth(data){
@@ -638,9 +639,9 @@ function renderAnnualSchedule(){
     const r=byYear[yr];
     html+='<tr><td>'+yr+'</td>'+
       '<td class="num">'+f2x(r.inst)+'</td>'+
-      '<td class="num" style="color:#c2410c">'+f2x(r.int)+'</td>'+
-      '<td class="num" style="color:#16a34a">'+f2x(r.prin)+'</td>'+
-      '<td class="num" style="color:#2563eb">'+f2x(r.lump)+'</td>'+
+      '<td class="num" style="color:var(--muted)">'+f2x(r.int)+'</td>'+
+      '<td class="num">'+f2x(r.prin)+'</td>'+
+      '<td class="num" style="color:var(--accent)">'+f2x(r.lump)+'</td>'+
       '<td class="num bal-owed">'+f2x(balByYear[yr]||0)+'</td></tr>';
   });
   html+='</tbody></table></div>';
@@ -909,7 +910,10 @@ function applyPanelState(key,panelId){
   body.style.display=open?'':'none';
   const tog=head.querySelector('.collapsible-toggle');
   if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
-  if(open&&key==='chart')rebuildChart();
+  if(open){
+    if(key==='chart')rebuildChart();
+    if(key==='dashChart')renderDashboardChart(computeAllLoansData());
+  }
 }
 function applyPanelStates(){
   applyPanelState('chart','panel-chart');
