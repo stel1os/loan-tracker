@@ -17,7 +17,18 @@
   --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;padding:20px}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);height:100vh;padding:20px;display:flex;flex-direction:column;overflow:hidden}
+.hdr-row,.first-run-banner,#tab-bar{flex-shrink:0}
+#loan-view{flex:1;min-height:0;display:flex;flex-direction:column}
+.loan-pinned{flex-shrink:0}
+.loan-scroll{flex:1;min-height:0;overflow-y:auto}
+.loan-scroll .tbl-wrap{overflow:visible}
+#dashboard-view{flex:1;min-height:0;overflow-y:auto}
+@media (max-height:680px){
+  body{height:auto;min-height:100vh;overflow:visible}
+  #loan-view{display:block}
+  .loan-scroll,#dashboard-view{overflow:visible}
+}
 h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-spacing:-.01em}
 .subtitle{font-size:.82rem;color:var(--muted);margin-bottom:16px}
 .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
@@ -205,6 +216,7 @@ table.txn tr:hover td{background:#fafbff}
   </div>
 </div>
 <div id="loan-view">
+  <div class="loan-pinned">
   <div class="summary-row">
     <div class="card"><div class="card-label">Outstanding</div><div class="card-value" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
     <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value accent" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
@@ -274,6 +286,8 @@ table.txn tr:hover td{background:#fafbff}
       </div>
     </div>
   </div>
+  </div>
+  <div class="loan-scroll">
   <div class="txn-section">
     <div class="txn-title">Payment Schedule (&Delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron;)</div>
     <div class="budget-bar">
@@ -288,6 +302,7 @@ table.txn tr:hover td{background:#fafbff}
   <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
   <p class="footer" style="margin-top:6px">If you find this useful &mdash; <a href="https://ko-fi.com/stel1os" target="_blank" rel="noopener" style="color:#aaa">buy me a coffee</a></p>
   <p class="footer" id="version-line" style="margin-top:4px"></p>
+  </div>
 </div>
 
 <div class="modal-overlay" id="help-modal" onclick="if(event.target===this)closeHelp()">
