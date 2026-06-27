@@ -60,24 +60,30 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .txn-note{font-size:.78rem;color:#666;margin-bottom:14px;line-height:1.5}
 .tbl-wrap{overflow-x:auto}
 table.txn{width:100%;border-collapse:collapse;font-size:.79rem}
-table.txn th{background:#f8f9fb;text-align:left;padding:8px 10px;font-size:.68rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e0e0e0;white-space:nowrap;position:sticky;top:0;z-index:2}
+table.txn th{background:var(--surface);text-align:left;padding:9px 10px;font-size:.64rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--hairline);white-space:nowrap;position:sticky;top:0;z-index:2}
 table.txn th.num{text-align:right}
-table.txn td{padding:7px 10px;border-bottom:1px solid #f3f3f3;vertical-align:middle}
+table.txn td{padding:8px 10px;border-bottom:1px solid var(--hairline);vertical-align:middle}
 table.txn tr:last-child td{border-bottom:none}
 table.txn tr:hover td{background:#fafbff}
-.tr-confirmed td{background:#f0fff4}
+.tr-confirmed td{background:#f6fdf9}
 .tr-lump td{background:#fefce8}
 .tr-lump:hover td{background:#fef9c3}
 .tr-payoff td{background:#fdf2ff;border-top:2px solid #d8b4fe!important}
 .tr-payoff:hover td{background:#f5e8ff}
-.tr-sep td{background:#e8eaf6;font-size:.72rem;font-weight:700;color:#3730a3;letter-spacing:.04em;padding:5px 10px;position:sticky;top:30px;z-index:1}
+.tr-sep td{background:#f8fafc;font-size:.7rem;font-weight:700;color:var(--accent);letter-spacing:.02em;padding:6px 10px;position:sticky;top:31px;z-index:1}
 .lock-ic{cursor:pointer;font-size:.85rem}
-.lump-add{cursor:pointer;color:#2563eb;font-weight:700;font-size:.95rem;border:1px dashed #93c5fd;border-radius:4px;padding:0 6px;background:#eff6ff}
-.lump-add:hover{background:#dbeafe}
-.lump-set{color:#15803d;border-color:#86efac;background:#f0fdf4;border-style:solid}
-.lump-set:hover{background:#dcfce7}
-.num{font-family:'SF Mono',monospace;text-align:right}
-.bal-owed{font-weight:700;color:#dc2626;font-family:'SF Mono',monospace;text-align:right}
+.num-cell{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.num-n{color:var(--muted)}
+.confirm-dot{display:inline-block;width:15px;height:15px;border:1.5px solid #cbd5e1;border-radius:99px;cursor:pointer;vertical-align:middle}
+.confirm-dot:hover{border-color:var(--accent)}
+.lump-add{cursor:pointer;color:var(--accent);font-weight:700;font-size:.95rem;border:1px dashed #c7d2fe;border-radius:6px;padding:0 6px;background:var(--accent-soft)}
+.lump-add:hover{background:#e0e7ff}
+.lump-pill{font-weight:600;font-size:.72rem;padding:1px 7px;border-radius:6px;cursor:pointer;display:inline-block}
+.lump-manual{background:var(--accent-soft);color:var(--accent)}
+.lump-auto{background:var(--amber-soft);color:var(--amber)}
+.lump-done{background:#dcfce7;color:#15803d;cursor:default}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.bal-owed{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
 .totals-row td{font-weight:700;border-top:2px solid #d0d0d0!important;background:#f8f9fb!important}
 .act-input{width:78px;font-size:.78rem;padding:2px 4px;border:1px solid #93c5fd;border-radius:4px;font-family:SF Mono,monospace;text-align:right}
 .btn-save{background:#16a34a;color:#fff;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.74rem;font-weight:600}
