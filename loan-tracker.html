@@ -6,22 +6,59 @@
 <title>Loan Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
 <style>
-:root{color-scheme:light}*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f6fa;color:#1a1a2e;min-height:100vh;padding:20px}
-h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
-.subtitle{font-size:.82rem;color:#666;margin-bottom:16px}
+:root{
+  color-scheme:light;
+  --bg:#f5f6f8; --surface:#fff; --ink:#0f172a; --muted:#94a3b8;
+  --hairline:#f1f5f9; --accent:#4f46e5; --accent-soft:#eef2ff;
+  --positive:#16a34a; --amber:#b45309; --amber-soft:#fef3c7;
+  --payoff:#7c3aed; --payoff-soft:#f5f3ff;
+  --radius-card:14px; --radius-ctl:9px;
+  --shadow:0 1px 3px rgba(15,23,42,.06);
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);height:100vh;padding:20px;display:flex;flex-direction:column;overflow:hidden}
+.hdr-row,.first-run-banner,#tab-bar{flex-shrink:0}
+#loan-view{flex:1;min-height:0;display:flex;flex-direction:column}
+.loan-pinned{flex-shrink:0}
+.loan-scroll{flex:1;min-height:0;overflow-y:auto}
+.loan-scroll .tbl-wrap{overflow:visible}
+#dashboard-view{flex:1;min-height:0;overflow-y:auto}
+@media (max-height:680px){
+  body{height:auto;min-height:100vh;overflow:visible}
+  #loan-view{display:block}
+  .loan-scroll,#dashboard-view{overflow:visible}
+}
+h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-spacing:-.01em}
+.subtitle{font-size:.82rem;color:var(--muted);margin-bottom:16px}
 .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
-.card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.card-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:6px}
-.card-value{font-size:1.6rem;font-weight:700}
-.card-sub{font-size:.78rem;color:#888;margin-top:4px}
-.green{color:#16a34a}.red{color:#dc2626}.orange{color:#ea580c}
-.progress-track{background:#e5e7eb;border-radius:99px;height:8px;margin-top:8px;overflow:hidden}
-.progress-fill{height:100%;border-radius:99px}
-.loan-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
-.loan-title{font-size:.9rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card{background:var(--surface);border-radius:var(--radius-card);padding:16px 18px;box-shadow:var(--shadow)}
+.card-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.card-value{font-size:1.5rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.card-sub{font-size:.74rem;color:var(--muted);margin-top:4px}
+.green{color:var(--positive)}.red{color:#dc2626}.orange{color:#ea580c}.accent{color:var(--accent)}
+.progress-track{background:#eef2f7;border-radius:99px;height:10px;margin-top:0;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#6366f1,var(--accent))}
+.loan-card{background:var(--surface);border-radius:var(--radius-card);padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.loan-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.accent-dot{width:9px;height:9px;border-radius:99px;background:var(--accent);display:inline-block;flex-shrink:0}
+.time-left{font-size:.78rem;color:#475569;font-weight:600;white-space:nowrap}
+.progress-cap{display:flex;justify-content:space-between;gap:10px;font-size:.72rem;color:var(--muted);margin-top:6px}
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin:14px 0}
+.metric-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.metric-val{font-size:1rem;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+.cmp-title{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#64748b;margin-bottom:10px}
+.cmp-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cmp-name{width:74px;font-size:.7rem;color:var(--muted)}
+.cmp-track{flex:1;height:18px;background:var(--hairline);border-radius:6px;overflow:hidden}
+.cmp-fill{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:.65rem;font-weight:600;box-sizing:border-box;white-space:nowrap}
+.cmp-base{background:#cbd5e1;color:#475569}
+.cmp-plan{background:var(--accent);color:#fff}
+.cmp-saved{text-align:right;font-size:.74rem;color:var(--positive);font-weight:600;margin-top:10px}
+.cmp-lumps{text-align:right;font-size:.7rem;color:var(--muted);margin-top:3px}
+.loan-title{font-size:.92rem;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase}
-.badge-blue{background:#dbeafe;color:#1d4ed8}.badge-amber{background:#fef3c7;color:#b45309}
+.badge-blue{background:var(--accent-soft);color:var(--accent)}.badge-amber{background:var(--amber-soft);color:var(--amber)}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat-label{font-size:.68rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .stat-val{font-size:1.05rem;font-weight:700;margin-top:1px}
@@ -37,30 +74,43 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
 .chart-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
 .chart-title{font-size:.88rem;font-weight:700;margin-bottom:4px;color:#333}
 .chart-note{font-size:.72rem;color:#999;margin-bottom:12px}
+.collapsible{background:var(--surface);border-radius:var(--radius-card);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.collapsible-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;user-select:none}
+.collapsible-title{font-size:.88rem;font-weight:700;color:var(--ink)}
+.collapsible-toggle{font-size:.78rem;font-weight:600;color:var(--accent);white-space:nowrap}
+.collapsible-body{padding:0 18px 18px}
+.collapsible-body .chart-card{box-shadow:none;background:transparent;padding:0;margin:0;border-radius:0}
+.collapsible-body .payoff-panel{margin:0}
 .txn-section{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
 .txn-title{font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f0f0f0}
 .txn-note{font-size:.78rem;color:#666;margin-bottom:14px;line-height:1.5}
 .tbl-wrap{overflow-x:auto}
 table.txn{width:100%;border-collapse:collapse;font-size:.79rem}
-table.txn th{background:#f8f9fb;text-align:left;padding:8px 10px;font-size:.68rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e0e0e0;white-space:nowrap;position:sticky;top:0;z-index:2}
+table.txn th{background:var(--surface);text-align:left;padding:9px 10px;font-size:.64rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--hairline);white-space:nowrap;position:sticky;top:0;z-index:2}
 table.txn th.num{text-align:right}
-table.txn td{padding:7px 10px;border-bottom:1px solid #f3f3f3;vertical-align:middle}
+table.txn td{padding:8px 10px;border-bottom:1px solid var(--hairline);vertical-align:middle}
 table.txn tr:last-child td{border-bottom:none}
 table.txn tr:hover td{background:#fafbff}
-.tr-confirmed td{background:#f0fff4}
+.tr-confirmed td{background:#f6fdf9}
 .tr-lump td{background:#fefce8}
 .tr-lump:hover td{background:#fef9c3}
 .tr-payoff td{background:#fdf2ff;border-top:2px solid #d8b4fe!important}
 .tr-payoff:hover td{background:#f5e8ff}
-.tr-sep td{background:#e8eaf6;font-size:.72rem;font-weight:700;color:#3730a3;letter-spacing:.04em;padding:5px 10px;position:sticky;top:30px;z-index:1}
+.tr-sep td{background:#f8fafc;font-size:.7rem;font-weight:700;color:var(--accent);letter-spacing:.02em;padding:6px 10px;position:sticky;top:31px;z-index:1}
 .lock-ic{cursor:pointer;font-size:.85rem}
-.lump-add{cursor:pointer;color:#2563eb;font-weight:700;font-size:.95rem;border:1px dashed #93c5fd;border-radius:4px;padding:0 6px;background:#eff6ff}
-.lump-add:hover{background:#dbeafe}
-.lump-set{color:#15803d;border-color:#86efac;background:#f0fdf4;border-style:solid}
-.lump-set:hover{background:#dcfce7}
-.num{font-family:'SF Mono',monospace;text-align:right}
-.bal-owed{font-weight:700;color:#dc2626;font-family:'SF Mono',monospace;text-align:right}
-.totals-row td{font-weight:700;border-top:2px solid #d0d0d0!important;background:#f8f9fb!important}
+.num-cell{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.num-n{color:var(--muted)}
+.confirm-dot{display:inline-block;width:15px;height:15px;border:1.5px solid #cbd5e1;border-radius:99px;cursor:pointer;vertical-align:middle}
+.confirm-dot:hover{border-color:var(--accent)}
+.lump-add{cursor:pointer;color:var(--accent);font-weight:700;font-size:.95rem;border:1px dashed #c7d2fe;border-radius:6px;padding:0 6px;background:var(--accent-soft)}
+.lump-add:hover{background:#e0e7ff}
+.lump-pill{font-weight:600;font-size:.72rem;padding:1px 7px;border-radius:6px;cursor:pointer;display:inline-block}
+.lump-manual{background:var(--accent-soft);color:var(--accent)}
+.lump-auto{background:var(--amber-soft);color:var(--amber)}
+.lump-done{background:#dcfce7;color:#15803d;cursor:default}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.bal-owed{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+.totals-row td{font-weight:700;border-top:1px solid #cbd5e1!important;background:#f8fafc!important;position:sticky;bottom:0}
 .act-input{width:78px;font-size:.78rem;padding:2px 4px;border:1px solid #93c5fd;border-radius:4px;font-family:SF Mono,monospace;text-align:right}
 .btn-save{background:#16a34a;color:#fff;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.74rem;font-weight:600}
 .btn-cancel{margin-left:4px;font-size:.72rem;border:none;background:none;cursor:pointer;color:#666}
@@ -82,7 +132,8 @@ table.txn tr:hover td{background:#fafbff}
 .form-group{display:flex;flex-direction:column;gap:4px}
 .form-label{font-size:.72rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
 .form-input{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.85rem;font-family:inherit;width:100%}
-.form-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.15)}
+.form-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.15)}
 .form-input.err{border-color:#dc2626;box-shadow:0 0 0 2px rgba(220,38,38,.12)}
 .form-select{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.85rem;font-family:inherit;width:100%;background:#fff}
 .form-hint{font-size:.68rem;color:#999;margin-top:1px}
@@ -92,12 +143,12 @@ table.txn tr:hover td{background:#fafbff}
 .form-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:.78rem;color:#475569;margin:-2px 0 18px;line-height:1.6}
 .form-preview strong{color:#1e293b;font-weight:700}
 .form-section-title{font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:2px 0 10px;padding-bottom:5px;border-bottom:1px solid #eef2f7}
-.form-advanced-toggle{background:none;border:none;padding:4px 0;cursor:pointer;font-size:.78rem;color:#2563eb;font-weight:600}
+.form-advanced-toggle{background:none;border:none;padding:4px 0;cursor:pointer;font-size:.78rem;color:var(--accent);font-weight:600}
 .form-advanced-toggle:hover{text-decoration:underline}
 
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #eee;padding-top:16px;margin-top:4px}
-.btn-primary{background:#2563eb;color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
-.btn-primary:hover{background:#1d4ed8}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
+.btn-primary:hover{background:#4338ca}
 .btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
 .btn-secondary:hover{background:#e5e7eb}
 .btn-danger{background:#dc2626;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
@@ -106,20 +157,21 @@ table.txn tr:hover td{background:#fafbff}
 .btn-link-reset:hover{color:#dc2626}
 
 /* ── Tab bar ── */
-.tab-bar{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:16px;overflow-x:auto}
-.tab-btn{padding:8px 18px;border:none;background:none;cursor:pointer;font-size:.88rem;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap}
-.tab-btn.active{color:#2563eb;border-bottom-color:#2563eb;font-weight:600}
-.tab-btn-add{padding:8px 14px;border:none;background:none;cursor:pointer;font-size:.88rem;color:#2563eb;margin-bottom:-2px}
+#tab-bar{display:flex;gap:3px;background:#eceef2;padding:3px;border-radius:10px;margin-bottom:16px;width:fit-content;max-width:100%;overflow-x:auto}
+.tab-btn{padding:6px 14px;border:none;background:none;cursor:pointer;font-size:.82rem;color:#64748b;border-radius:7px;white-space:nowrap;font-weight:500}
+.tab-btn.active{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.tab-btn-add{padding:6px 12px;border:none;background:none;cursor:pointer;font-size:.82rem;color:var(--accent);border-radius:7px;font-weight:600}
+.tab-btn-add:hover{background:var(--accent-soft)}
 
 /* ── Dashboard ── */
 .dash-next-month{font-size:.84rem;color:#475569;margin:-6px 0 14px;padding:8px 12px;background:#f8fafc;border-radius:6px}
 .dash-loan-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.dash-loan-card{flex:1;min-width:180px;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:box-shadow .15s}
+.dash-loan-card{flex:1;min-width:180px;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-card);padding:14px 16px;cursor:pointer;box-shadow:var(--shadow);transition:box-shadow .15s}
 .dash-loan-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .dash-loan-card-label{font-weight:700;font-size:.9rem;margin-bottom:4px}
-.dash-loan-card-balance{font-size:1.1rem;font-weight:700;margin-bottom:2px}
+.dash-loan-card-balance{font-size:1.2rem;font-weight:700;margin-bottom:2px;font-variant-numeric:tabular-nums}
 .dash-loan-card-payoff{font-size:.78rem;color:#64748b;margin-bottom:6px}
-.dash-budget-section{background:#f8fafc;border-radius:8px;padding:14px 16px;margin-bottom:16px}
+.dash-budget-section{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
 .dash-budget-title{font-weight:600;font-size:.88rem;margin-bottom:10px}
 .dash-budget-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .dash-budget-label{min-width:100px;font-size:.84rem;font-weight:600}
@@ -154,9 +206,18 @@ table.txn tr:hover td{background:#fafbff}
 <div id="dashboard-view" style="display:none">
   <div id="dash-stats" class="summary-row"></div>
   <div id="dash-next-month" class="dash-next-month"></div>
-  <div class="chart-card">
-    <div class="chart-title">Combined Balance</div>
-    <canvas id="dashboardChart" height="110"></canvas>
+  <div id="dash-next-lump" class="dash-next-month"></div>
+  <div class="collapsible" id="panel-dashchart">
+    <div class="collapsible-head" onclick="togglePanel('dashChart',this)">
+      <span class="collapsible-title">Combined balance chart</span>
+      <span class="collapsible-toggle">Show &#9660;</span>
+    </div>
+    <div class="collapsible-body" style="display:none">
+      <div class="chart-card">
+        <div class="chart-title">Combined Balance</div>
+        <canvas id="dashboardChart" height="110"></canvas>
+      </div>
+    </div>
   </div>
   <div id="dash-loan-cards" class="dash-loan-cards"></div>
   <div id="dash-budget" class="dash-budget-section"></div>
@@ -166,56 +227,78 @@ table.txn tr:hover td{background:#fafbff}
   </div>
 </div>
 <div id="loan-view">
+  <div class="loan-pinned">
   <div class="summary-row">
-    <div class="card"><div class="card-label">Total Debt</div><div class="card-value red" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
-    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value green" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
-    <div class="card"><div class="card-label">Interest Saved vs No Extras</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Outstanding</div><div class="card-value" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value accent" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Interest Saved</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
   </div>
   <div class="loan-card">
-    <div class="loan-title"><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
-    <div class="stat-grid">
-      <div><div class="stat-label">Balance</div><div class="stat-val red" id="m-bal-stat">&#8230;</div></div>
-      <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">&#8230;</div></div>
-      <div><div class="stat-label">Time Saved</div><div class="stat-val green" id="m-time-saved">&#8230;</div></div>
-      <div><div class="stat-label">Next Lump</div><div class="stat-val" id="m-next-lump" style="color:#2563eb">&#8230;</div></div>
+    <div class="loan-card-head">
+      <div class="loan-title"><span class="accent-dot"></span><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
+      <div class="time-left" id="m-time-left">&#8230;</div>
     </div>
-    <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%;background:linear-gradient(90deg,#2563eb,#93c5fd)"></div></div>
-    <div id="m-so-far-stats" style="font-size:.72rem;color:#aaa;margin-top:4px;">&#8212;</div>
-    <div class="plan-box">
-      <div class="plan-row"><span>Plan remaining interest</span><strong id="m-plan-int">&#8230;</strong></div>
-      <div class="plan-row"><span>No-extras interest</span><strong id="m-base-int">&#8230;</strong></div>
-      <div class="plan-row"><span>Interest saved</span><strong class="green" id="m-int-saved">&#8230;</strong></div>
-      <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">&#8230;</strong></div>
+    <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%"></div></div>
+    <div class="progress-cap"><span id="m-so-far-stats">&#8212;</span><span id="m-payoff-cap">&#8230;</span></div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">Borrowed</div><div class="metric-val" id="m-borrowed">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Interest left</div><div class="metric-val" id="m-int-left">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Next lump</div><div class="metric-val" id="m-next-lump">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Time saved</div><div class="metric-val green" id="m-time-saved">&#8230;</div></div>
     </div>
-    <div class="payoff-panel" id="payoff-panel">
-      <h3>Early Settlement Calculator</h3>
-      <div id="payoff-panel-body">
-        <p class="pp-na" id="payoff-panel-na">Available in Reduce Instalment mode only.</p>
-        <div id="payoff-panel-content" style="display:none">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-            <div>
-              <label>Target payoff month &rarr; required lump sum</label>
-              <select id="pp-month" style="width:100%;margin-bottom:6px" onchange="updatePayoffPanel()"></select>
-              <div>Required in <span id="pp-result-month-when" style="font-weight:600">&#8212;</span>: <span class="pp-result" id="pp-result-month">&mdash;</span> <button class="btn-link-reset" id="pp-apply-month" onclick="applyEarlySettlement('month')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
-            </div>
-            <div>
-              <label>One-time amount &rarr; earliest payoff month</label>
-              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
-                <input type="number" id="pp-amount" step="500" min="0" placeholder="e.g. 10,000" style="width:120px" oninput="updatePayoffPanel()">
-                <span style="font-size:.78rem;color:#555">&euro;</span>
+    <div class="cmp">
+      <div class="cmp-title">Interest: plan vs no extras</div>
+      <div class="cmp-row"><span class="cmp-name">No extras</span><div class="cmp-track"><div class="cmp-fill cmp-base" style="width:100%"><span id="m-base-int">&#8230;</span></div></div></div>
+      <div class="cmp-row"><span class="cmp-name">Your plan</span><div class="cmp-track"><div class="cmp-fill cmp-plan" id="m-plan-bar" style="width:0%"><span id="m-plan-int">&#8230;</span></div></div></div>
+      <div class="cmp-saved">You save <strong id="m-int-saved">&#8230;</strong> in interest</div>
+      <div class="cmp-lumps">Future lumps: <strong id="m-lumps-total">&#8230;</strong></div>
+    </div>
+    <div class="collapsible" id="panel-settlement">
+      <div class="collapsible-head" onclick="togglePanel('settlement',this)">
+        <span class="collapsible-title">Early Settlement Calculator</span>
+        <span class="collapsible-toggle">Show &#9660;</span>
+      </div>
+      <div class="collapsible-body" style="display:none">
+        <div class="payoff-panel" id="payoff-panel">
+          <div id="payoff-panel-body">
+            <p class="pp-na" id="payoff-panel-na">Available in Reduce Instalment mode only.</p>
+            <div id="payoff-panel-content" style="display:none">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div>
+                  <label>Target payoff month &rarr; required lump sum</label>
+                  <select id="pp-month" style="width:100%;margin-bottom:6px" onchange="updatePayoffPanel()"></select>
+                  <div>Required in <span id="pp-result-month-when" style="font-weight:600">&#8212;</span>: <span class="pp-result" id="pp-result-month">&mdash;</span> <button class="btn-link-reset" id="pp-apply-month" onclick="applyEarlySettlement('month')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
+                </div>
+                <div>
+                  <label>One-time amount &rarr; earliest payoff month</label>
+                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                    <input type="number" id="pp-amount" step="500" min="0" placeholder="e.g. 10,000" style="width:120px" oninput="updatePayoffPanel()">
+                    <span style="font-size:.78rem;color:#555">&euro;</span>
+                  </div>
+                  <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span> <button class="btn-link-reset" id="pp-apply-amount" onclick="applyEarlySettlement('amount')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
+                </div>
               </div>
-              <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span> <button class="btn-link-reset" id="pp-apply-amount" onclick="applyEarlySettlement('amount')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="chart-card">
-    <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
-    <div class="chart-note">Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
-    <canvas id="balanceChart" height="120"></canvas>
+  <div class="collapsible" id="panel-chart">
+    <div class="collapsible-head" onclick="togglePanel('chart',this)">
+      <span class="collapsible-title">Projection chart</span>
+      <span class="collapsible-toggle">Show &#9660;</span>
+    </div>
+    <div class="collapsible-body" style="display:none">
+      <div class="chart-card">
+        <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
+        <div class="chart-note">Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
+        <canvas id="balanceChart" height="120"></canvas>
+      </div>
+    </div>
   </div>
+  </div>
+  <div class="loan-scroll">
   <div class="txn-section">
     <div class="txn-title">Payment Schedule (&Delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron;)</div>
     <div class="budget-bar">
@@ -223,13 +306,14 @@ table.txn tr:hover td{background:#fafbff}
       <input type="number" id="loan-budget" value="1000" step="10" min="0" onchange="refreshLoan()"> &euro;
       <span id="budget-bar-note"></span>
     </div>
-    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Highlighted rows have an auto scheduled lump sum.</div>
+    <div class="txn-note">Click the empty circle <span class="confirm-dot" style="cursor:default"></span> on a projected row to confirm the payment &mdash; it locks (&#128274;, click to edit). Use <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Indigo pill = manual lump, amber pill = scheduled annual lump.</div>
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Instalment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>
   <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
   <p class="footer" style="margin-top:6px">If you find this useful &mdash; <a href="https://ko-fi.com/stel1os" target="_blank" rel="noopener" style="color:#aaa">buy me a coffee</a></p>
   <p class="footer" id="version-line" style="margin-top:4px"></p>
+  </div>
 </div>
 
 <div class="modal-overlay" id="help-modal" onclick="if(event.target===this)closeHelp()">
@@ -249,7 +333,7 @@ table.txn tr:hover td{background:#fafbff}
     <p style="font-size:.83rem;color:#444;margin:0 0 4px"><strong>Reduce Duration</strong> &mdash; the instalment stays roughly the same; each prepayment shortens the remaining term.</p>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px"><strong>Reduce Instalment</strong> &mdash; the term stays fixed; each prepayment lowers the monthly instalment going forward.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Confirming actual payments</h3>
-    <p style="font-size:.83rem;color:#444;margin:0 0 8px">When a payment has been made, tick the <strong>Paid?</strong> checkbox. A dialog pre-fills the projected amounts; edit them if your lender charged differently. The row locks and will never be overwritten by recalculations. All future rows recalculate from the locked outstanding balance.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">When a payment has been made, click the empty circle (&#9711;) at the left of that projected row. The projected amounts pre-fill; edit them if your lender charged differently, then <strong>Save</strong>. The row locks (&#128274;) and is never overwritten by recalculations &mdash; click the lock to edit it again. All future rows recalculate from the locked outstanding balance.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Early settlement calculator</h3>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">Available in Reduce Instalment mode. Enter a target settlement month to find the prepayment required to clear the outstanding balance, or enter a prepayment amount to find the earliest possible settlement month. Click <strong>Apply</strong> to insert it into the schedule.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Backup and restore</h3>
@@ -564,7 +648,7 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
 // Export for Node.js test runner; guard keeps browser build unaffected
 if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
 
-const APP_VERSION='v1.8.1';
+const APP_VERSION='v1.9.0';
 const LS_LOANS='lt_loans';
 const LS_OLD_MORT='lt_loan_mort';
 
@@ -623,6 +707,10 @@ function effectiveBudget(loanId){
   if(!alloc)return parseFloat(localStorage.getItem('lt_budget_'+loanId))||1000;
   return getBudgetTotal()*(alloc[String(loanId)]||0)/100;
 }
+
+// Collapsible panel open/closed preference (default: folded). key e.g. 'chart','settlement','dashChart'
+function getPanelOpen(key){try{return localStorage.getItem('lt_panel_'+key)==='1';}catch(e){return false;}}
+function setPanelOpen(key,open){try{localStorage.setItem('lt_panel_'+key,open?'1':'0');}catch(e){}}
 /* ─────────────────────────────────────────
    Setup modal helpers
 ───────────────────────────────────────── */
@@ -1016,7 +1104,7 @@ const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec
 function ymFmt(t){const p=(t.dispDate||t.date).slice(0,7).split('-');return p[0]+' '+MN[+p[1]-1];}
 const fmtE=n=>'€'+Math.round(n).toLocaleString('el-GR');
 const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const LOAN_COLORS=['#2563eb','#15803d','#d97706'];
+const LOAN_COLORS=['#4f46e5','#0d9488','#d97706'];
 let activeLoanIdx=0;
 let dashboardChart=null;
 
@@ -1089,10 +1177,14 @@ function renderDashboard(){
   const data=computeAllLoansData();
   renderDashboardStats(data);
   renderDashboardNextMonth(data);
+  renderDashboardNextLump(data);
   renderDashboardLoanCards(data);
   renderDashboardBudget(data);
   renderDashboardChart(data);
-  // annual schedule rendered on-demand via toggleAnnualSchedule()
+  applyPanelState('dashChart','panel-dashchart');
+  // keep the annual schedule current when it's open — otherwise it shows stale
+  // numbers after the underlying data changes (import, tab switch, budget change)
+  if(_annualOpen)renderAnnualSchedule();
 }
 
 function renderDashboardStats(data){
@@ -1102,9 +1194,9 @@ function renderDashboardStats(data){
   const earliest=payoffs[0]||'---';
   const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
   document.getElementById('dash-stats').innerHTML=
-    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value red">'+fmtE(totalBal)+'</div></div>'+
+    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value">'+fmtE(totalBal)+'</div></div>'+
     '<div class="card"><div class="card-label">Total Interest Saved</div><div class="card-value green">'+fmtE(totalSaved)+'</div></div>'+
-    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value green">'+fmtMon(earliest)+'</div></div>';
+    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value accent">'+fmtMon(earliest)+'</div></div>';
 }
 
 function renderDashboardNextMonth(data){
@@ -1118,6 +1210,22 @@ function renderDashboardNextMonth(data){
     if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.inst+(row.lump||0)));total+=row.inst+(row.lump||0);}
   });
   document.getElementById('dash-next-month').innerHTML='<strong>'+fmtMon(nextMon)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
+}
+
+// Earliest upcoming (unconfirmed) lump month across loans; sums the lumps due that month.
+function renderDashboardNextLump(data){
+  const el=document.getElementById('dash-next-lump');
+  if(!el)return;
+  const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  const months=data.map(d=>{const nx=d.sched.find(r=>!r.confirmed&&r.lump>0);return nx?nx.month:null;}).filter(Boolean).sort();
+  const month=months[0]||null;
+  if(!month){el.textContent='';return;}
+  let parts=[];let total=0;
+  data.forEach(d=>{
+    const row=d.sched.find(r=>r.month===month&&!r.confirmed&&r.lump>0);
+    if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.lump));total+=row.lump;}
+  });
+  el.innerHTML='<strong>Next lump &middot; '+fmtMon(month)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
 }
 
 function renderDashboardLoanCards(data){
@@ -1257,18 +1365,28 @@ function renderAnnualSchedule(){
 
   const years=Object.keys(byYear).sort();
   let html='<div class="tbl-wrap"><table class="txn"><thead><tr>'+
-    '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Balance</th>'+
+    '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Total Paid</th><th class="num">Balance</th>'+
     '</tr></thead><tbody>';
+  let tInst=0,tInt=0,tPrin=0,tLump=0;
   years.forEach(yr=>{
     const r=byYear[yr];
+    tInst+=r.inst;tInt+=r.int;tPrin+=r.prin;tLump+=r.lump;
     html+='<tr><td>'+yr+'</td>'+
       '<td class="num">'+f2x(r.inst)+'</td>'+
-      '<td class="num" style="color:#c2410c">'+f2x(r.int)+'</td>'+
-      '<td class="num" style="color:#16a34a">'+f2x(r.prin)+'</td>'+
-      '<td class="num" style="color:#2563eb">'+f2x(r.lump)+'</td>'+
+      '<td class="num" style="color:var(--muted)">'+f2x(r.int)+'</td>'+
+      '<td class="num">'+f2x(r.prin)+'</td>'+
+      '<td class="num" style="color:var(--accent)">'+f2x(r.lump)+'</td>'+
+      '<td class="num" style="font-weight:600">'+f2x(r.inst+r.lump)+'</td>'+
       '<td class="num bal-owed">'+f2x(balByYear[yr]||0)+'</td></tr>';
   });
-  html+='</tbody></table></div>';
+  html+='</tbody><tfoot><tr class="totals-row">'+
+    '<td>Total</td>'+
+    '<td class="num">'+f2x(tInst)+'</td>'+
+    '<td class="num" style="color:var(--muted)">'+f2x(tInt)+'</td>'+
+    '<td class="num">'+f2x(tPrin)+'</td>'+
+    '<td class="num" style="color:var(--accent)">'+f2x(tLump)+'</td>'+
+    '<td class="num">'+f2x(tInst+tLump)+'</td>'+
+    '<td class="num">&mdash;</td></tr></tfoot></table></div>';
   document.getElementById('dash-annual').innerHTML=html;
 }
 
@@ -1289,21 +1407,28 @@ function computePlanStats(mRows,mS){
   const mInst=mRows.filter(r=>r.type==='inst');
   const mPayoff=mInst.length?mInst[mInst.length-1].month:'---';
   const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  const ps=computeProgressStats(mSchedule,mS.balance);
+  const _rem=mSchedule.filter(r=>!r.confirmed).length;
+  const _ty=Math.floor(_rem/12),_tm=_rem%12;
+  const timeLeft=(_ty>0?_ty+'y ':'')+_tm+'m left';
   document.getElementById('m-plan-int').textContent=fmtE(mPI);
   document.getElementById('m-base-int').textContent=fmtE(mBI);
+  {const pb=document.getElementById('m-plan-bar');if(pb)pb.style.width=(mBI>0?Math.min(100,mPI/mBI*100):0).toFixed(1)+'%';}
   document.getElementById('m-int-saved').textContent=fmtE(mSv);
-  document.getElementById('m-lumps-total').textContent=mLN+' payments = '+fmtE(mLT);
-  document.getElementById('m-payoff').textContent=fmtMon(mPayoff);
+  document.getElementById('m-lumps-total').textContent=mLN+' · '+fmtE(mLT);
+  document.getElementById('m-payoff-cap').textContent=fmtMon(mPayoff)+' payoff';
   const mTimeSaved=mBase.length-mInst.length;
   document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
-  document.getElementById('m-next-lump').textContent=(()=>{const nx=mRows.find(r=>r.type==='extra');return nx?fmtMon(nx.month)+' · '+fmtE(nx.inst):'None';})();
+  document.getElementById('m-next-lump').textContent=(()=>{const nx=mSchedule.find(r=>!r.confirmed&&r.lump>0);return nx?fmtMon(nx.month)+' · '+fmtE(nx.lump):'None';})();
   document.getElementById('card-saved').textContent=fmtE(mSv);
   document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' vs no extras';
   document.getElementById('card-payoff').textContent=fmtMon(mPayoff);
-  document.getElementById('card-payoff-sub').textContent='Loan '+fmtMon(mPayoff);
-  document.getElementById('card-total-debt').textContent=fmtE(mS.balance);
-  document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
-  document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
+  document.getElementById('card-payoff-sub').textContent='';
+  document.getElementById('card-total-debt').textContent=fmtE(ps.latestBal);
+  document.getElementById('card-total-sub').textContent='of '+fmtE(mS.balance)+' borrowed';
+  document.getElementById('m-borrowed').textContent=fmtE(mS.balance);
+  document.getElementById('m-int-left').textContent=fmtE(mPI);
+  document.getElementById('m-time-left').textContent=timeLeft;
   document.getElementById('m-loan-title').textContent=mS.label||'Loan';
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
   if(typeof activeLoanIdx==='number'){
@@ -1312,11 +1437,10 @@ function computePlanStats(mRows,mS){
   const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
   const lumpMons=Array.isArray(mS.lumpMonths)?mS.lumpMonths:[mS.lumpMonth!=null?mS.lumpMonth:8];
   document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+lumpMons.map(m=>MN[m-1]).join(', ')+' · Budget drives lump formula dynamically';
-  const ps=computeProgressStats(mSchedule,mS.balance);
   const pfill=document.getElementById('m-progress-fill');
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
-  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' principal reduced · '+fmtE(ps.interestPaid)+' interest · '+fmtE(ps.extrasSoFar)+' extras so far';
+  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
   return{mBase};
 }
 
@@ -1376,9 +1500,9 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const fxPlugin=makeMarkersPlugin(_markers);
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
-    {label:'Loan (plan)',data:mP,borderColor:'#2563eb',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
-    {label:'Loan (no extras)',data:mBD,borderColor:'rgba(37,99,235,.28)',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
-    {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#1d4ed8',pointRadius:5,pointHoverRadius:7,showLine:false},
+    {label:'Loan (plan)',data:mP,borderColor:'#4f46e5',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
+    {label:'Loan (no extras)',data:mBD,borderColor:'#cbd5e1',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
+    {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#d97706',pointRadius:5,pointHoverRadius:7,showLine:false},
   ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
@@ -1412,24 +1536,25 @@ function renderProj(tbodyId,loanIdx){
     }
     const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
     const numCol=locked
-      ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
-      :`<td style="color:#bbb;font-size:.7rem">${n} <span class="lock-ic" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})" style="color:#2563eb">&#10003;</span></td>`;
+      ?`<td class="num-cell"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> <span class="num-n">${n}</span></td>`
+      :`<td class="num-cell"><span class="confirm-dot" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})"></span> <span class="num-n">${n}</span></td>`;
     let lumpCell;
     const manL=locked?0:(row.manualLump||0);
     if(row.payoff&&row.payoffAmt>0){
       lumpCell=`<td class="num" style="color:#7c3aed;font-weight:700" id="pl-${loanIdx}-${idx}" title="Balloon payoff">Payoff ${f2x(row.payoffAmt)}</td>`;
     } else if(lump>0&&!locked){
-      const t=manL>0?`Manual lump €${f2x(manL)} (click to edit)`:'Add manual lump sum';
-      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add${manL>0?' lump-set':''}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
+      const isMan=manL>0;
+      const t=isMan?`Manual lump €${f2x(manL)} (click to edit)`:'Scheduled annual lump · click to add a manual one-off';
+      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill ${isMan?'lump-manual':'lump-auto'}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
     }
-    else if(lump>0){lumpCell=`<td class="num" style="color:#15803d" id="pl-${loanIdx}-${idx}">${f2x(lump)}</td>`;}
+    else if(lump>0){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill lump-done">${f2x(lump)}</span></td>`;}
     else if(!locked){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
     else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
     html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
       ${numCol}
       <td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td>
-      <td class="num" style="color:#16a34a" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
-      <td class="num" style="color:#c2410c" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
+      <td class="num" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
+      <td class="num" style="color:var(--muted)" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
       <td class="num" id="pi-${loanIdx}-${idx}">${f2x(inst)}</td>
       ${lumpCell}
       <td class="bal-owed">${f2x(bal)}</td></tr>`;
@@ -1503,6 +1628,40 @@ function refreshPayoffPanel(){
   updatePayoffPanel();
 }
 
+/* Collapsible panels (chart / early settlement / dashboard chart) */
+function togglePanel(key,headEl){
+  const body=headEl.nextElementSibling;
+  if(!body)return;
+  const open=body.style.display==='none';
+  body.style.display=open?'':'none';
+  const tog=headEl.querySelector('.collapsible-toggle');
+  if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
+  setPanelOpen(key,open);
+  if(open){
+    if(key==='chart')rebuildChart();
+    if(key==='dashChart')renderDashboardChart(computeAllLoansData());
+  }
+}
+function applyPanelState(key,panelId){
+  const panel=document.getElementById(panelId);
+  if(!panel)return;
+  const head=panel.querySelector('.collapsible-head');
+  const body=panel.querySelector('.collapsible-body');
+  if(!head||!body)return;
+  const open=getPanelOpen(key);
+  body.style.display=open?'':'none';
+  const tog=head.querySelector('.collapsible-toggle');
+  if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
+  if(open){
+    if(key==='chart')rebuildChart();
+    if(key==='dashChart')renderDashboardChart(computeAllLoansData());
+  }
+}
+function applyPanelStates(){
+  applyPanelState('chart','panel-chart');
+  applyPanelState('settlement','panel-settlement');
+}
+
 function applyEarlySettlement(mode){
   if(!_mS)return;
   let threshold=0;
@@ -1563,6 +1722,7 @@ function refreshLoan(){
   refreshPayoffPanel();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=_mS&&_mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
+  applyPanelStates();
 }
 
 /* ─────────────────────────────────────────
@@ -1597,6 +1757,7 @@ function initApp(){
   renderProj('m-proj-tbody',loanId);
   rebuildChart();
   refreshPayoffPanel();
+  applyPanelStates();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
   renderTabBar();

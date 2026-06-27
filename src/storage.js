@@ -57,3 +57,7 @@ function effectiveBudget(loanId){
   if(!alloc)return parseFloat(localStorage.getItem('lt_budget_'+loanId))||1000;
   return getBudgetTotal()*(alloc[String(loanId)]||0)/100;
 }
+
+// Collapsible panel open/closed preference (default: folded). key e.g. 'chart','settlement','dashChart'
+function getPanelOpen(key){try{return localStorage.getItem('lt_panel_'+key)==='1';}catch(e){return false;}}
+function setPanelOpen(key,open){try{localStorage.setItem('lt_panel_'+key,open?'1':'0');}catch(e){}}

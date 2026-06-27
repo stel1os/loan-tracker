@@ -391,7 +391,7 @@ const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec
 function ymFmt(t){const p=(t.dispDate||t.date).slice(0,7).split('-');return p[0]+' '+MN[+p[1]-1];}
 const fmtE=n=>'€'+Math.round(n).toLocaleString('el-GR');
 const f2x=n=>n===0?'&mdash;':n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const LOAN_COLORS=['#2563eb','#15803d','#d97706'];
+const LOAN_COLORS=['#4f46e5','#0d9488','#d97706'];
 let activeLoanIdx=0;
 let dashboardChart=null;
 
@@ -464,10 +464,14 @@ function renderDashboard(){
   const data=computeAllLoansData();
   renderDashboardStats(data);
   renderDashboardNextMonth(data);
+  renderDashboardNextLump(data);
   renderDashboardLoanCards(data);
   renderDashboardBudget(data);
   renderDashboardChart(data);
-  // annual schedule rendered on-demand via toggleAnnualSchedule()
+  applyPanelState('dashChart','panel-dashchart');
+  // keep the annual schedule current when it's open — otherwise it shows stale
+  // numbers after the underlying data changes (import, tab switch, budget change)
+  if(_annualOpen)renderAnnualSchedule();
 }
 
 function renderDashboardStats(data){
@@ -477,9 +481,9 @@ function renderDashboardStats(data){
   const earliest=payoffs[0]||'---';
   const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
   document.getElementById('dash-stats').innerHTML=
-    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value red">'+fmtE(totalBal)+'</div></div>'+
+    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value">'+fmtE(totalBal)+'</div></div>'+
     '<div class="card"><div class="card-label">Total Interest Saved</div><div class="card-value green">'+fmtE(totalSaved)+'</div></div>'+
-    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value green">'+fmtMon(earliest)+'</div></div>';
+    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value accent">'+fmtMon(earliest)+'</div></div>';
 }
 
 function renderDashboardNextMonth(data){
@@ -493,6 +497,22 @@ function renderDashboardNextMonth(data){
     if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.inst+(row.lump||0)));total+=row.inst+(row.lump||0);}
   });
   document.getElementById('dash-next-month').innerHTML='<strong>'+fmtMon(nextMon)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
+}
+
+// Earliest upcoming (unconfirmed) lump month across loans; sums the lumps due that month.
+function renderDashboardNextLump(data){
+  const el=document.getElementById('dash-next-lump');
+  if(!el)return;
+  const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  const months=data.map(d=>{const nx=d.sched.find(r=>!r.confirmed&&r.lump>0);return nx?nx.month:null;}).filter(Boolean).sort();
+  const month=months[0]||null;
+  if(!month){el.textContent='';return;}
+  let parts=[];let total=0;
+  data.forEach(d=>{
+    const row=d.sched.find(r=>r.month===month&&!r.confirmed&&r.lump>0);
+    if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.lump));total+=row.lump;}
+  });
+  el.innerHTML='<strong>Next lump &middot; '+fmtMon(month)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
 }
 
 function renderDashboardLoanCards(data){
@@ -632,18 +652,28 @@ function renderAnnualSchedule(){
 
   const years=Object.keys(byYear).sort();
   let html='<div class="tbl-wrap"><table class="txn"><thead><tr>'+
-    '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Balance</th>'+
+    '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Total Paid</th><th class="num">Balance</th>'+
     '</tr></thead><tbody>';
+  let tInst=0,tInt=0,tPrin=0,tLump=0;
   years.forEach(yr=>{
     const r=byYear[yr];
+    tInst+=r.inst;tInt+=r.int;tPrin+=r.prin;tLump+=r.lump;
     html+='<tr><td>'+yr+'</td>'+
       '<td class="num">'+f2x(r.inst)+'</td>'+
-      '<td class="num" style="color:#c2410c">'+f2x(r.int)+'</td>'+
-      '<td class="num" style="color:#16a34a">'+f2x(r.prin)+'</td>'+
-      '<td class="num" style="color:#2563eb">'+f2x(r.lump)+'</td>'+
+      '<td class="num" style="color:var(--muted)">'+f2x(r.int)+'</td>'+
+      '<td class="num">'+f2x(r.prin)+'</td>'+
+      '<td class="num" style="color:var(--accent)">'+f2x(r.lump)+'</td>'+
+      '<td class="num" style="font-weight:600">'+f2x(r.inst+r.lump)+'</td>'+
       '<td class="num bal-owed">'+f2x(balByYear[yr]||0)+'</td></tr>';
   });
-  html+='</tbody></table></div>';
+  html+='</tbody><tfoot><tr class="totals-row">'+
+    '<td>Total</td>'+
+    '<td class="num">'+f2x(tInst)+'</td>'+
+    '<td class="num" style="color:var(--muted)">'+f2x(tInt)+'</td>'+
+    '<td class="num">'+f2x(tPrin)+'</td>'+
+    '<td class="num" style="color:var(--accent)">'+f2x(tLump)+'</td>'+
+    '<td class="num">'+f2x(tInst+tLump)+'</td>'+
+    '<td class="num">&mdash;</td></tr></tfoot></table></div>';
   document.getElementById('dash-annual').innerHTML=html;
 }
 
@@ -664,21 +694,28 @@ function computePlanStats(mRows,mS){
   const mInst=mRows.filter(r=>r.type==='inst');
   const mPayoff=mInst.length?mInst[mInst.length-1].month:'---';
   const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  const ps=computeProgressStats(mSchedule,mS.balance);
+  const _rem=mSchedule.filter(r=>!r.confirmed).length;
+  const _ty=Math.floor(_rem/12),_tm=_rem%12;
+  const timeLeft=(_ty>0?_ty+'y ':'')+_tm+'m left';
   document.getElementById('m-plan-int').textContent=fmtE(mPI);
   document.getElementById('m-base-int').textContent=fmtE(mBI);
+  {const pb=document.getElementById('m-plan-bar');if(pb)pb.style.width=(mBI>0?Math.min(100,mPI/mBI*100):0).toFixed(1)+'%';}
   document.getElementById('m-int-saved').textContent=fmtE(mSv);
-  document.getElementById('m-lumps-total').textContent=mLN+' payments = '+fmtE(mLT);
-  document.getElementById('m-payoff').textContent=fmtMon(mPayoff);
+  document.getElementById('m-lumps-total').textContent=mLN+' · '+fmtE(mLT);
+  document.getElementById('m-payoff-cap').textContent=fmtMon(mPayoff)+' payoff';
   const mTimeSaved=mBase.length-mInst.length;
   document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
-  document.getElementById('m-next-lump').textContent=(()=>{const nx=mRows.find(r=>r.type==='extra');return nx?fmtMon(nx.month)+' · '+fmtE(nx.inst):'None';})();
+  document.getElementById('m-next-lump').textContent=(()=>{const nx=mSchedule.find(r=>!r.confirmed&&r.lump>0);return nx?fmtMon(nx.month)+' · '+fmtE(nx.lump):'None';})();
   document.getElementById('card-saved').textContent=fmtE(mSv);
   document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' vs no extras';
   document.getElementById('card-payoff').textContent=fmtMon(mPayoff);
-  document.getElementById('card-payoff-sub').textContent='Loan '+fmtMon(mPayoff);
-  document.getElementById('card-total-debt').textContent=fmtE(mS.balance);
-  document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
-  document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
+  document.getElementById('card-payoff-sub').textContent='';
+  document.getElementById('card-total-debt').textContent=fmtE(ps.latestBal);
+  document.getElementById('card-total-sub').textContent='of '+fmtE(mS.balance)+' borrowed';
+  document.getElementById('m-borrowed').textContent=fmtE(mS.balance);
+  document.getElementById('m-int-left').textContent=fmtE(mPI);
+  document.getElementById('m-time-left').textContent=timeLeft;
   document.getElementById('m-loan-title').textContent=mS.label||'Loan';
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
   if(typeof activeLoanIdx==='number'){
@@ -687,11 +724,10 @@ function computePlanStats(mRows,mS){
   const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
   const lumpMons=Array.isArray(mS.lumpMonths)?mS.lumpMonths:[mS.lumpMonth!=null?mS.lumpMonth:8];
   document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+lumpMons.map(m=>MN[m-1]).join(', ')+' · Budget drives lump formula dynamically';
-  const ps=computeProgressStats(mSchedule,mS.balance);
   const pfill=document.getElementById('m-progress-fill');
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
-  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' principal reduced · '+fmtE(ps.interestPaid)+' interest · '+fmtE(ps.extrasSoFar)+' extras so far';
+  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
   return{mBase};
 }
 
@@ -751,9 +787,9 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const fxPlugin=makeMarkersPlugin(_markers);
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
-    {label:'Loan (plan)',data:mP,borderColor:'#2563eb',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
-    {label:'Loan (no extras)',data:mBD,borderColor:'rgba(37,99,235,.28)',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
-    {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#1d4ed8',pointRadius:5,pointHoverRadius:7,showLine:false},
+    {label:'Loan (plan)',data:mP,borderColor:'#4f46e5',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
+    {label:'Loan (no extras)',data:mBD,borderColor:'#cbd5e1',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
+    {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#d97706',pointRadius:5,pointHoverRadius:7,showLine:false},
   ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
@@ -787,24 +823,25 @@ function renderProj(tbodyId,loanIdx){
     }
     const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
     const numCol=locked
-      ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
-      :`<td style="color:#bbb;font-size:.7rem">${n} <span class="lock-ic" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})" style="color:#2563eb">&#10003;</span></td>`;
+      ?`<td class="num-cell"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> <span class="num-n">${n}</span></td>`
+      :`<td class="num-cell"><span class="confirm-dot" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})"></span> <span class="num-n">${n}</span></td>`;
     let lumpCell;
     const manL=locked?0:(row.manualLump||0);
     if(row.payoff&&row.payoffAmt>0){
       lumpCell=`<td class="num" style="color:#7c3aed;font-weight:700" id="pl-${loanIdx}-${idx}" title="Balloon payoff">Payoff ${f2x(row.payoffAmt)}</td>`;
     } else if(lump>0&&!locked){
-      const t=manL>0?`Manual lump €${f2x(manL)} (click to edit)`:'Add manual lump sum';
-      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add${manL>0?' lump-set':''}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
+      const isMan=manL>0;
+      const t=isMan?`Manual lump €${f2x(manL)} (click to edit)`:'Scheduled annual lump · click to add a manual one-off';
+      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill ${isMan?'lump-manual':'lump-auto'}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
     }
-    else if(lump>0){lumpCell=`<td class="num" style="color:#15803d" id="pl-${loanIdx}-${idx}">${f2x(lump)}</td>`;}
+    else if(lump>0){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill lump-done">${f2x(lump)}</span></td>`;}
     else if(!locked){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
     else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
     html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
       ${numCol}
       <td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td>
-      <td class="num" style="color:#16a34a" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
-      <td class="num" style="color:#c2410c" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
+      <td class="num" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
+      <td class="num" style="color:var(--muted)" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
       <td class="num" id="pi-${loanIdx}-${idx}">${f2x(inst)}</td>
       ${lumpCell}
       <td class="bal-owed">${f2x(bal)}</td></tr>`;
@@ -878,6 +915,40 @@ function refreshPayoffPanel(){
   updatePayoffPanel();
 }
 
+/* Collapsible panels (chart / early settlement / dashboard chart) */
+function togglePanel(key,headEl){
+  const body=headEl.nextElementSibling;
+  if(!body)return;
+  const open=body.style.display==='none';
+  body.style.display=open?'':'none';
+  const tog=headEl.querySelector('.collapsible-toggle');
+  if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
+  setPanelOpen(key,open);
+  if(open){
+    if(key==='chart')rebuildChart();
+    if(key==='dashChart')renderDashboardChart(computeAllLoansData());
+  }
+}
+function applyPanelState(key,panelId){
+  const panel=document.getElementById(panelId);
+  if(!panel)return;
+  const head=panel.querySelector('.collapsible-head');
+  const body=panel.querySelector('.collapsible-body');
+  if(!head||!body)return;
+  const open=getPanelOpen(key);
+  body.style.display=open?'':'none';
+  const tog=head.querySelector('.collapsible-toggle');
+  if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
+  if(open){
+    if(key==='chart')rebuildChart();
+    if(key==='dashChart')renderDashboardChart(computeAllLoansData());
+  }
+}
+function applyPanelStates(){
+  applyPanelState('chart','panel-chart');
+  applyPanelState('settlement','panel-settlement');
+}
+
 function applyEarlySettlement(mode){
   if(!_mS)return;
   let threshold=0;
@@ -938,6 +1009,7 @@ function refreshLoan(){
   refreshPayoffPanel();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=_mS&&_mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
+  applyPanelStates();
 }
 
 /* ─────────────────────────────────────────
@@ -972,6 +1044,7 @@ function initApp(){
   renderProj('m-proj-tbody',loanId);
   rebuildChart();
   refreshPayoffPanel();
+  applyPanelStates();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
   renderTabBar();
