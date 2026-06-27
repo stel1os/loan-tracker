@@ -1182,7 +1182,9 @@ function renderDashboard(){
   renderDashboardBudget(data);
   renderDashboardChart(data);
   applyPanelState('dashChart','panel-dashchart');
-  // annual schedule rendered on-demand via toggleAnnualSchedule()
+  // keep the annual schedule current when it's open — otherwise it shows stale
+  // numbers after the underlying data changes (import, tab switch, budget change)
+  if(_annualOpen)renderAnnualSchedule();
 }
 
 function renderDashboardStats(data){
