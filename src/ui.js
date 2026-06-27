@@ -664,21 +664,28 @@ function computePlanStats(mRows,mS){
   const mInst=mRows.filter(r=>r.type==='inst');
   const mPayoff=mInst.length?mInst[mInst.length-1].month:'---';
   const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  const ps=computeProgressStats(mSchedule,mS.balance);
+  const _rem=mSchedule.filter(r=>!r.confirmed).length;
+  const _ty=Math.floor(_rem/12),_tm=_rem%12;
+  const timeLeft=(_ty>0?_ty+'y ':'')+_tm+'m left';
   document.getElementById('m-plan-int').textContent=fmtE(mPI);
   document.getElementById('m-base-int').textContent=fmtE(mBI);
+  {const pb=document.getElementById('m-plan-bar');if(pb)pb.style.width=(mBI>0?Math.min(100,mPI/mBI*100):0).toFixed(1)+'%';}
   document.getElementById('m-int-saved').textContent=fmtE(mSv);
-  document.getElementById('m-lumps-total').textContent=mLN+' payments = '+fmtE(mLT);
-  document.getElementById('m-payoff').textContent=fmtMon(mPayoff);
+  document.getElementById('m-lumps-total').textContent=mLN+' · '+fmtE(mLT);
+  document.getElementById('m-payoff-cap').textContent=fmtMon(mPayoff)+' payoff';
   const mTimeSaved=mBase.length-mInst.length;
   document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
   document.getElementById('m-next-lump').textContent=(()=>{const nx=mRows.find(r=>r.type==='extra');return nx?fmtMon(nx.month)+' · '+fmtE(nx.inst):'None';})();
   document.getElementById('card-saved').textContent=fmtE(mSv);
   document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' vs no extras';
   document.getElementById('card-payoff').textContent=fmtMon(mPayoff);
-  document.getElementById('card-payoff-sub').textContent='Loan '+fmtMon(mPayoff);
-  document.getElementById('card-total-debt').textContent=fmtE(mS.balance);
-  document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
-  document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
+  document.getElementById('card-payoff-sub').textContent='';
+  document.getElementById('card-total-debt').textContent=fmtE(ps.latestBal);
+  document.getElementById('card-total-sub').textContent='of '+fmtE(mS.balance)+' borrowed';
+  document.getElementById('m-borrowed').textContent=fmtE(mS.balance);
+  document.getElementById('m-int-left').textContent=fmtE(mPI);
+  document.getElementById('m-time-left').textContent=timeLeft;
   document.getElementById('m-loan-title').textContent=mS.label||'Loan';
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
   if(typeof activeLoanIdx==='number'){
@@ -687,11 +694,10 @@ function computePlanStats(mRows,mS){
   const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
   const lumpMons=Array.isArray(mS.lumpMonths)?mS.lumpMonths:[mS.lumpMonth!=null?mS.lumpMonth:8];
   document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+lumpMons.map(m=>MN[m-1]).join(', ')+' · Budget drives lump formula dynamically';
-  const ps=computeProgressStats(mSchedule,mS.balance);
   const pfill=document.getElementById('m-progress-fill');
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
-  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' principal reduced · '+fmtE(ps.interestPaid)+' interest · '+fmtE(ps.extrasSoFar)+' extras so far';
+  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
   return{mBase};
 }
 

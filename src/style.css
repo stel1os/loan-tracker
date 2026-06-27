@@ -13,15 +13,31 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:10
 h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-spacing:-.01em}
 .subtitle{font-size:.82rem;color:var(--muted);margin-bottom:16px}
 .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
-.card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.card-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:6px}
-.card-value{font-size:1.6rem;font-weight:700}
-.card-sub{font-size:.78rem;color:#888;margin-top:4px}
-.green{color:#16a34a}.red{color:#dc2626}.orange{color:#ea580c}
-.progress-track{background:#e5e7eb;border-radius:99px;height:8px;margin-top:8px;overflow:hidden}
-.progress-fill{height:100%;border-radius:99px}
-.loan-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
-.loan-title{font-size:.9rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card{background:var(--surface);border-radius:var(--radius-card);padding:16px 18px;box-shadow:var(--shadow)}
+.card-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.card-value{font-size:1.5rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.card-sub{font-size:.74rem;color:var(--muted);margin-top:4px}
+.green{color:var(--positive)}.red{color:#dc2626}.orange{color:#ea580c}.accent{color:var(--accent)}
+.progress-track{background:#eef2f7;border-radius:99px;height:10px;margin-top:0;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#6366f1,var(--accent))}
+.loan-card{background:var(--surface);border-radius:var(--radius-card);padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.loan-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.accent-dot{width:9px;height:9px;border-radius:99px;background:var(--accent);display:inline-block;flex-shrink:0}
+.time-left{font-size:.78rem;color:#475569;font-weight:600;white-space:nowrap}
+.progress-cap{display:flex;justify-content:space-between;gap:10px;font-size:.72rem;color:var(--muted);margin-top:6px}
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin:14px 0}
+.metric-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.metric-val{font-size:1rem;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+.cmp-title{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#64748b;margin-bottom:10px}
+.cmp-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cmp-name{width:74px;font-size:.7rem;color:var(--muted)}
+.cmp-track{flex:1;height:18px;background:var(--hairline);border-radius:6px;overflow:hidden}
+.cmp-fill{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:.65rem;font-weight:600;box-sizing:border-box;white-space:nowrap}
+.cmp-base{background:#cbd5e1;color:#475569}
+.cmp-plan{background:var(--accent);color:#fff}
+.cmp-saved{text-align:right;font-size:.74rem;color:var(--positive);font-weight:600;margin-top:10px}
+.cmp-lumps{text-align:right;font-size:.7rem;color:var(--muted);margin-top:3px}
+.loan-title{font-size:.92rem;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase}
 .badge-blue{background:#dbeafe;color:#1d4ed8}.badge-amber{background:#fef3c7;color:#b45309}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
