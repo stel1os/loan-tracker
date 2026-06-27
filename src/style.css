@@ -55,6 +55,13 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .chart-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
 .chart-title{font-size:.88rem;font-weight:700;margin-bottom:4px;color:#333}
 .chart-note{font-size:.72rem;color:#999;margin-bottom:12px}
+.collapsible{background:var(--surface);border-radius:var(--radius-card);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.collapsible-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;user-select:none}
+.collapsible-title{font-size:.88rem;font-weight:700;color:var(--ink)}
+.collapsible-toggle{font-size:.78rem;font-weight:600;color:var(--accent);white-space:nowrap}
+.collapsible-body{padding:0 18px 18px}
+.collapsible-body .chart-card{box-shadow:none;background:transparent;padding:0;margin:0;border-radius:0}
+.collapsible-body .payoff-panel{margin:0}
 .txn-section{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
 .txn-title{font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f0f0f0}
 .txn-note{font-size:.78rem;color:#666;margin-bottom:14px;line-height:1.5}

@@ -885,6 +885,37 @@ function refreshPayoffPanel(){
   updatePayoffPanel();
 }
 
+/* Collapsible panels (chart / early settlement / dashboard chart) */
+function togglePanel(key,headEl){
+  const body=headEl.nextElementSibling;
+  if(!body)return;
+  const open=body.style.display==='none';
+  body.style.display=open?'':'none';
+  const tog=headEl.querySelector('.collapsible-toggle');
+  if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
+  setPanelOpen(key,open);
+  if(open){
+    if(key==='chart')rebuildChart();
+    if(key==='dashChart')renderDashboardChart(computeAllLoansData());
+  }
+}
+function applyPanelState(key,panelId){
+  const panel=document.getElementById(panelId);
+  if(!panel)return;
+  const head=panel.querySelector('.collapsible-head');
+  const body=panel.querySelector('.collapsible-body');
+  if(!head||!body)return;
+  const open=getPanelOpen(key);
+  body.style.display=open?'':'none';
+  const tog=head.querySelector('.collapsible-toggle');
+  if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
+  if(open&&key==='chart')rebuildChart();
+}
+function applyPanelStates(){
+  applyPanelState('chart','panel-chart');
+  applyPanelState('settlement','panel-settlement');
+}
+
 function applyEarlySettlement(mode){
   if(!_mS)return;
   let threshold=0;
@@ -945,6 +976,7 @@ function refreshLoan(){
   refreshPayoffPanel();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=_mS&&_mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
+  applyPanelStates();
 }
 
 /* ─────────────────────────────────────────
@@ -979,6 +1011,7 @@ function initApp(){
   renderProj('m-proj-tbody',loanId);
   rebuildChart();
   refreshPayoffPanel();
+  applyPanelStates();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
   renderTabBar();
