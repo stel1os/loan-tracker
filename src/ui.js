@@ -652,7 +652,7 @@ function renderAnnualSchedule(){
 
   const years=Object.keys(byYear).sort();
   let html='<div class="tbl-wrap"><table class="txn"><thead><tr>'+
-    '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Balance</th>'+
+    '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Total Paid</th><th class="num">Balance</th>'+
     '</tr></thead><tbody>';
   years.forEach(yr=>{
     const r=byYear[yr];
@@ -661,6 +661,7 @@ function renderAnnualSchedule(){
       '<td class="num" style="color:var(--muted)">'+f2x(r.int)+'</td>'+
       '<td class="num">'+f2x(r.prin)+'</td>'+
       '<td class="num" style="color:var(--accent)">'+f2x(r.lump)+'</td>'+
+      '<td class="num" style="font-weight:600">'+f2x(r.inst+r.lump)+'</td>'+
       '<td class="num bal-owed">'+f2x(balByYear[yr]||0)+'</td></tr>';
   });
   html+='</tbody></table></div>';
