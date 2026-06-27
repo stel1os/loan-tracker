@@ -44,25 +44,29 @@
 </div>
 <div id="loan-view">
   <div class="summary-row">
-    <div class="card"><div class="card-label">Total Debt</div><div class="card-value red" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
-    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value green" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
-    <div class="card"><div class="card-label">Interest Saved vs No Extras</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Outstanding</div><div class="card-value" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value accent" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Interest Saved</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
   </div>
   <div class="loan-card">
-    <div class="loan-title"><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
-    <div class="stat-grid">
-      <div><div class="stat-label">Balance</div><div class="stat-val red" id="m-bal-stat">&#8230;</div></div>
-      <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">&#8230;</div></div>
-      <div><div class="stat-label">Time Saved</div><div class="stat-val green" id="m-time-saved">&#8230;</div></div>
-      <div><div class="stat-label">Next Lump</div><div class="stat-val" id="m-next-lump" style="color:#2563eb">&#8230;</div></div>
+    <div class="loan-card-head">
+      <div class="loan-title"><span class="accent-dot"></span><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
+      <div class="time-left" id="m-time-left">&#8230;</div>
     </div>
-    <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%;background:linear-gradient(90deg,#2563eb,#93c5fd)"></div></div>
-    <div id="m-so-far-stats" style="font-size:.72rem;color:#aaa;margin-top:4px;">&#8212;</div>
-    <div class="plan-box">
-      <div class="plan-row"><span>Plan remaining interest</span><strong id="m-plan-int">&#8230;</strong></div>
-      <div class="plan-row"><span>No-extras interest</span><strong id="m-base-int">&#8230;</strong></div>
-      <div class="plan-row"><span>Interest saved</span><strong class="green" id="m-int-saved">&#8230;</strong></div>
-      <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">&#8230;</strong></div>
+    <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%"></div></div>
+    <div class="progress-cap"><span id="m-so-far-stats">&#8212;</span><span id="m-payoff-cap">&#8230;</span></div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">Borrowed</div><div class="metric-val" id="m-borrowed">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Interest left</div><div class="metric-val" id="m-int-left">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Next lump</div><div class="metric-val" id="m-next-lump">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Time saved</div><div class="metric-val green" id="m-time-saved">&#8230;</div></div>
+    </div>
+    <div class="cmp">
+      <div class="cmp-title">Interest: plan vs no extras</div>
+      <div class="cmp-row"><span class="cmp-name">No extras</span><div class="cmp-track"><div class="cmp-fill cmp-base" style="width:100%"><span id="m-base-int">&#8230;</span></div></div></div>
+      <div class="cmp-row"><span class="cmp-name">Your plan</span><div class="cmp-track"><div class="cmp-fill cmp-plan" id="m-plan-bar" style="width:0%"><span id="m-plan-int">&#8230;</span></div></div></div>
+      <div class="cmp-saved">You save <strong id="m-int-saved">&#8230;</strong> in interest</div>
+      <div class="cmp-lumps">Future lumps: <strong id="m-lumps-total">&#8230;</strong></div>
     </div>
     <div class="payoff-panel" id="payoff-panel">
       <h3>Early Settlement Calculator</h3>

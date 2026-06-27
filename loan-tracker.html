@@ -21,15 +21,31 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:10
 h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-spacing:-.01em}
 .subtitle{font-size:.82rem;color:var(--muted);margin-bottom:16px}
 .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
-.card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.card-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:6px}
-.card-value{font-size:1.6rem;font-weight:700}
-.card-sub{font-size:.78rem;color:#888;margin-top:4px}
-.green{color:#16a34a}.red{color:#dc2626}.orange{color:#ea580c}
-.progress-track{background:#e5e7eb;border-radius:99px;height:8px;margin-top:8px;overflow:hidden}
-.progress-fill{height:100%;border-radius:99px}
-.loan-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
-.loan-title{font-size:.9rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card{background:var(--surface);border-radius:var(--radius-card);padding:16px 18px;box-shadow:var(--shadow)}
+.card-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.card-value{font-size:1.5rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.card-sub{font-size:.74rem;color:var(--muted);margin-top:4px}
+.green{color:var(--positive)}.red{color:#dc2626}.orange{color:#ea580c}.accent{color:var(--accent)}
+.progress-track{background:#eef2f7;border-radius:99px;height:10px;margin-top:0;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#6366f1,var(--accent))}
+.loan-card{background:var(--surface);border-radius:var(--radius-card);padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.loan-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.accent-dot{width:9px;height:9px;border-radius:99px;background:var(--accent);display:inline-block;flex-shrink:0}
+.time-left{font-size:.78rem;color:#475569;font-weight:600;white-space:nowrap}
+.progress-cap{display:flex;justify-content:space-between;gap:10px;font-size:.72rem;color:var(--muted);margin-top:6px}
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin:14px 0}
+.metric-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.metric-val{font-size:1rem;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+.cmp-title{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#64748b;margin-bottom:10px}
+.cmp-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cmp-name{width:74px;font-size:.7rem;color:var(--muted)}
+.cmp-track{flex:1;height:18px;background:var(--hairline);border-radius:6px;overflow:hidden}
+.cmp-fill{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:.65rem;font-weight:600;box-sizing:border-box;white-space:nowrap}
+.cmp-base{background:#cbd5e1;color:#475569}
+.cmp-plan{background:var(--accent);color:#fff}
+.cmp-saved{text-align:right;font-size:.74rem;color:var(--positive);font-weight:600;margin-top:10px}
+.cmp-lumps{text-align:right;font-size:.7rem;color:var(--muted);margin-top:3px}
+.loan-title{font-size:.92rem;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase}
 .badge-blue{background:#dbeafe;color:#1d4ed8}.badge-amber{background:#fef3c7;color:#b45309}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
@@ -177,25 +193,29 @@ table.txn tr:hover td{background:#fafbff}
 </div>
 <div id="loan-view">
   <div class="summary-row">
-    <div class="card"><div class="card-label">Total Debt</div><div class="card-value red" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
-    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value green" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
-    <div class="card"><div class="card-label">Interest Saved vs No Extras</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Outstanding</div><div class="card-value" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value accent" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
+    <div class="card"><div class="card-label">Interest Saved</div><div class="card-value green" id="card-saved">&#8230;</div><div class="card-sub" id="card-saved-sub">Loading&hellip;</div></div>
   </div>
   <div class="loan-card">
-    <div class="loan-title"><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
-    <div class="stat-grid">
-      <div><div class="stat-label">Balance</div><div class="stat-val red" id="m-bal-stat">&#8230;</div></div>
-      <div><div class="stat-label">Plan Payoff</div><div class="stat-val green" id="m-payoff">&#8230;</div></div>
-      <div><div class="stat-label">Time Saved</div><div class="stat-val green" id="m-time-saved">&#8230;</div></div>
-      <div><div class="stat-label">Next Lump</div><div class="stat-val" id="m-next-lump" style="color:#2563eb">&#8230;</div></div>
+    <div class="loan-card-head">
+      <div class="loan-title"><span class="accent-dot"></span><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
+      <div class="time-left" id="m-time-left">&#8230;</div>
     </div>
-    <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%;background:linear-gradient(90deg,#2563eb,#93c5fd)"></div></div>
-    <div id="m-so-far-stats" style="font-size:.72rem;color:#aaa;margin-top:4px;">&#8212;</div>
-    <div class="plan-box">
-      <div class="plan-row"><span>Plan remaining interest</span><strong id="m-plan-int">&#8230;</strong></div>
-      <div class="plan-row"><span>No-extras interest</span><strong id="m-base-int">&#8230;</strong></div>
-      <div class="plan-row"><span>Interest saved</span><strong class="green" id="m-int-saved">&#8230;</strong></div>
-      <div class="plan-row"><span>Future lumps total</span><strong id="m-lumps-total">&#8230;</strong></div>
+    <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%"></div></div>
+    <div class="progress-cap"><span id="m-so-far-stats">&#8212;</span><span id="m-payoff-cap">&#8230;</span></div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">Borrowed</div><div class="metric-val" id="m-borrowed">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Interest left</div><div class="metric-val" id="m-int-left">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Next lump</div><div class="metric-val" id="m-next-lump">&#8230;</div></div>
+      <div class="metric"><div class="metric-label">Time saved</div><div class="metric-val green" id="m-time-saved">&#8230;</div></div>
+    </div>
+    <div class="cmp">
+      <div class="cmp-title">Interest: plan vs no extras</div>
+      <div class="cmp-row"><span class="cmp-name">No extras</span><div class="cmp-track"><div class="cmp-fill cmp-base" style="width:100%"><span id="m-base-int">&#8230;</span></div></div></div>
+      <div class="cmp-row"><span class="cmp-name">Your plan</span><div class="cmp-track"><div class="cmp-fill cmp-plan" id="m-plan-bar" style="width:0%"><span id="m-plan-int">&#8230;</span></div></div></div>
+      <div class="cmp-saved">You save <strong id="m-int-saved">&#8230;</strong> in interest</div>
+      <div class="cmp-lumps">Future lumps: <strong id="m-lumps-total">&#8230;</strong></div>
     </div>
     <div class="payoff-panel" id="payoff-panel">
       <h3>Early Settlement Calculator</h3>
@@ -1299,21 +1319,28 @@ function computePlanStats(mRows,mS){
   const mInst=mRows.filter(r=>r.type==='inst');
   const mPayoff=mInst.length?mInst[mInst.length-1].month:'---';
   const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  const ps=computeProgressStats(mSchedule,mS.balance);
+  const _rem=mSchedule.filter(r=>!r.confirmed).length;
+  const _ty=Math.floor(_rem/12),_tm=_rem%12;
+  const timeLeft=(_ty>0?_ty+'y ':'')+_tm+'m left';
   document.getElementById('m-plan-int').textContent=fmtE(mPI);
   document.getElementById('m-base-int').textContent=fmtE(mBI);
+  {const pb=document.getElementById('m-plan-bar');if(pb)pb.style.width=(mBI>0?Math.min(100,mPI/mBI*100):0).toFixed(1)+'%';}
   document.getElementById('m-int-saved').textContent=fmtE(mSv);
-  document.getElementById('m-lumps-total').textContent=mLN+' payments = '+fmtE(mLT);
-  document.getElementById('m-payoff').textContent=fmtMon(mPayoff);
+  document.getElementById('m-lumps-total').textContent=mLN+' · '+fmtE(mLT);
+  document.getElementById('m-payoff-cap').textContent=fmtMon(mPayoff)+' payoff';
   const mTimeSaved=mBase.length-mInst.length;
   document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
   document.getElementById('m-next-lump').textContent=(()=>{const nx=mRows.find(r=>r.type==='extra');return nx?fmtMon(nx.month)+' · '+fmtE(nx.inst):'None';})();
   document.getElementById('card-saved').textContent=fmtE(mSv);
   document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' vs no extras';
   document.getElementById('card-payoff').textContent=fmtMon(mPayoff);
-  document.getElementById('card-payoff-sub').textContent='Loan '+fmtMon(mPayoff);
-  document.getElementById('card-total-debt').textContent=fmtE(mS.balance);
-  document.getElementById('card-total-sub').textContent=fmtE(mS.balance)+' loan balance';
-  document.getElementById('m-bal-stat').textContent=fmtE(mS.balance);
+  document.getElementById('card-payoff-sub').textContent='';
+  document.getElementById('card-total-debt').textContent=fmtE(ps.latestBal);
+  document.getElementById('card-total-sub').textContent='of '+fmtE(mS.balance)+' borrowed';
+  document.getElementById('m-borrowed').textContent=fmtE(mS.balance);
+  document.getElementById('m-int-left').textContent=fmtE(mPI);
+  document.getElementById('m-time-left').textContent=timeLeft;
   document.getElementById('m-loan-title').textContent=mS.label||'Loan';
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
   if(typeof activeLoanIdx==='number'){
@@ -1322,11 +1349,10 @@ function computePlanStats(mRows,mS){
   const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
   const lumpMons=Array.isArray(mS.lumpMonths)?mS.lumpMonths:[mS.lumpMonth!=null?mS.lumpMonth:8];
   document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+lumpMons.map(m=>MN[m-1]).join(', ')+' · Budget drives lump formula dynamically';
-  const ps=computeProgressStats(mSchedule,mS.balance);
   const pfill=document.getElementById('m-progress-fill');
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
-  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' principal reduced · '+fmtE(ps.interestPaid)+' interest · '+fmtE(ps.extrasSoFar)+' extras so far';
+  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
   return{mBase};
 }
 
