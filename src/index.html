@@ -43,6 +43,7 @@
   </div>
 </div>
 <div id="loan-view">
+  <div class="loan-pinned">
   <div class="summary-row">
     <div class="card"><div class="card-label">Outstanding</div><div class="card-value" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
     <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value accent" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
@@ -112,6 +113,8 @@
       </div>
     </div>
   </div>
+  </div>
+  <div class="loan-scroll">
   <div class="txn-section">
     <div class="txn-title">Payment Schedule (&Delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron;)</div>
     <div class="budget-bar">
@@ -126,6 +129,7 @@
   <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
   <p class="footer" style="margin-top:6px">If you find this useful &mdash; <a href="https://ko-fi.com/stel1os" target="_blank" rel="noopener" style="color:#aaa">buy me a coffee</a></p>
   <p class="footer" id="version-line" style="margin-top:4px"></p>
+  </div>
 </div>
 
 <div class="modal-overlay" id="help-modal" onclick="if(event.target===this)closeHelp()">
