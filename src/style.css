@@ -102,7 +102,7 @@ table.txn tr:hover td{background:#fafbff}
 .lump-done{background:#dcfce7;color:#15803d;cursor:default}
 .num{font-variant-numeric:tabular-nums;text-align:right}
 .bal-owed{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
-.totals-row td{font-weight:700;border-top:2px solid #d0d0d0!important;background:#f8f9fb!important}
+.totals-row td{font-weight:700;border-top:1px solid #cbd5e1!important;background:#f8fafc!important;position:sticky;bottom:0}
 .act-input{width:78px;font-size:.78rem;padding:2px 4px;border:1px solid #93c5fd;border-radius:4px;font-family:SF Mono,monospace;text-align:right}
 .btn-save{background:#16a34a;color:#fff;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.74rem;font-weight:600}
 .btn-cancel{margin-left:4px;font-size:.72rem;border:none;background:none;cursor:pointer;color:#666}

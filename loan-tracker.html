@@ -110,7 +110,7 @@ table.txn tr:hover td{background:#fafbff}
 .lump-done{background:#dcfce7;color:#15803d;cursor:default}
 .num{font-variant-numeric:tabular-nums;text-align:right}
 .bal-owed{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
-.totals-row td{font-weight:700;border-top:2px solid #d0d0d0!important;background:#f8f9fb!important}
+.totals-row td{font-weight:700;border-top:1px solid #cbd5e1!important;background:#f8fafc!important;position:sticky;bottom:0}
 .act-input{width:78px;font-size:.78rem;padding:2px 4px;border:1px solid #93c5fd;border-radius:4px;font-family:SF Mono,monospace;text-align:right}
 .btn-save{background:#16a34a;color:#fff;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.74rem;font-weight:600}
 .btn-cancel{margin-left:4px;font-size:.72rem;border:none;background:none;cursor:pointer;color:#666}
@@ -1367,8 +1367,10 @@ function renderAnnualSchedule(){
   let html='<div class="tbl-wrap"><table class="txn"><thead><tr>'+
     '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Total Paid</th><th class="num">Balance</th>'+
     '</tr></thead><tbody>';
+  let tInst=0,tInt=0,tPrin=0,tLump=0;
   years.forEach(yr=>{
     const r=byYear[yr];
+    tInst+=r.inst;tInt+=r.int;tPrin+=r.prin;tLump+=r.lump;
     html+='<tr><td>'+yr+'</td>'+
       '<td class="num">'+f2x(r.inst)+'</td>'+
       '<td class="num" style="color:var(--muted)">'+f2x(r.int)+'</td>'+
@@ -1377,7 +1379,14 @@ function renderAnnualSchedule(){
       '<td class="num" style="font-weight:600">'+f2x(r.inst+r.lump)+'</td>'+
       '<td class="num bal-owed">'+f2x(balByYear[yr]||0)+'</td></tr>';
   });
-  html+='</tbody></table></div>';
+  html+='</tbody><tfoot><tr class="totals-row">'+
+    '<td>Total</td>'+
+    '<td class="num">'+f2x(tInst)+'</td>'+
+    '<td class="num" style="color:var(--muted)">'+f2x(tInt)+'</td>'+
+    '<td class="num">'+f2x(tPrin)+'</td>'+
+    '<td class="num" style="color:var(--accent)">'+f2x(tLump)+'</td>'+
+    '<td class="num">'+f2x(tInst+tLump)+'</td>'+
+    '<td class="num">&mdash;</td></tr></tfoot></table></div>';
   document.getElementById('dash-annual').innerHTML=html;
 }
 

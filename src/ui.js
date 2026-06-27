@@ -654,8 +654,10 @@ function renderAnnualSchedule(){
   let html='<div class="tbl-wrap"><table class="txn"><thead><tr>'+
     '<th>Year</th><th class="num">Instalments</th><th class="num">Interest</th><th class="num">Principal</th><th class="num">Lump Sums</th><th class="num">Total Paid</th><th class="num">Balance</th>'+
     '</tr></thead><tbody>';
+  let tInst=0,tInt=0,tPrin=0,tLump=0;
   years.forEach(yr=>{
     const r=byYear[yr];
+    tInst+=r.inst;tInt+=r.int;tPrin+=r.prin;tLump+=r.lump;
     html+='<tr><td>'+yr+'</td>'+
       '<td class="num">'+f2x(r.inst)+'</td>'+
       '<td class="num" style="color:var(--muted)">'+f2x(r.int)+'</td>'+
@@ -664,7 +666,14 @@ function renderAnnualSchedule(){
       '<td class="num" style="font-weight:600">'+f2x(r.inst+r.lump)+'</td>'+
       '<td class="num bal-owed">'+f2x(balByYear[yr]||0)+'</td></tr>';
   });
-  html+='</tbody></table></div>';
+  html+='</tbody><tfoot><tr class="totals-row">'+
+    '<td>Total</td>'+
+    '<td class="num">'+f2x(tInst)+'</td>'+
+    '<td class="num" style="color:var(--muted)">'+f2x(tInt)+'</td>'+
+    '<td class="num">'+f2x(tPrin)+'</td>'+
+    '<td class="num" style="color:var(--accent)">'+f2x(tLump)+'</td>'+
+    '<td class="num">'+f2x(tInst+tLump)+'</td>'+
+    '<td class="num">&mdash;</td></tr></tfoot></table></div>';
   document.getElementById('dash-annual').innerHTML=html;
 }
 
