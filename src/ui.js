@@ -464,6 +464,7 @@ function renderDashboard(){
   const data=computeAllLoansData();
   renderDashboardStats(data);
   renderDashboardNextMonth(data);
+  renderDashboardNextLump(data);
   renderDashboardLoanCards(data);
   renderDashboardBudget(data);
   renderDashboardChart(data);
@@ -494,6 +495,22 @@ function renderDashboardNextMonth(data){
     if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.inst+(row.lump||0)));total+=row.inst+(row.lump||0);}
   });
   document.getElementById('dash-next-month').innerHTML='<strong>'+fmtMon(nextMon)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
+}
+
+// Earliest upcoming (unconfirmed) lump month across loans; sums the lumps due that month.
+function renderDashboardNextLump(data){
+  const el=document.getElementById('dash-next-lump');
+  if(!el)return;
+  const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
+  const months=data.map(d=>{const nx=d.sched.find(r=>!r.confirmed&&r.lump>0);return nx?nx.month:null;}).filter(Boolean).sort();
+  const month=months[0]||null;
+  if(!month){el.textContent='';return;}
+  let parts=[];let total=0;
+  data.forEach(d=>{
+    const row=d.sched.find(r=>r.month===month&&!r.confirmed&&r.lump>0);
+    if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.lump));total+=row.lump;}
+  });
+  el.innerHTML='<strong>Next lump &middot; '+fmtMon(month)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
 }
 
 function renderDashboardLoanCards(data){
