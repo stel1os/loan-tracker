@@ -63,6 +63,13 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .chart-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
 .chart-title{font-size:.88rem;font-weight:700;margin-bottom:4px;color:#333}
 .chart-note{font-size:.72rem;color:#999;margin-bottom:12px}
+.collapsible{background:var(--surface);border-radius:var(--radius-card);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.collapsible-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;user-select:none}
+.collapsible-title{font-size:.88rem;font-weight:700;color:var(--ink)}
+.collapsible-toggle{font-size:.78rem;font-weight:600;color:var(--accent);white-space:nowrap}
+.collapsible-body{padding:0 18px 18px}
+.collapsible-body .chart-card{box-shadow:none;background:transparent;padding:0;margin:0;border-radius:0}
+.collapsible-body .payoff-panel{margin:0}
 .txn-section{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
 .txn-title{font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f0f0f0}
 .txn-note{font-size:.78rem;color:#666;margin-bottom:14px;line-height:1.5}
@@ -223,34 +230,49 @@ table.txn tr:hover td{background:#fafbff}
       <div class="cmp-saved">You save <strong id="m-int-saved">&#8230;</strong> in interest</div>
       <div class="cmp-lumps">Future lumps: <strong id="m-lumps-total">&#8230;</strong></div>
     </div>
-    <div class="payoff-panel" id="payoff-panel">
-      <h3>Early Settlement Calculator</h3>
-      <div id="payoff-panel-body">
-        <p class="pp-na" id="payoff-panel-na">Available in Reduce Instalment mode only.</p>
-        <div id="payoff-panel-content" style="display:none">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-            <div>
-              <label>Target payoff month &rarr; required lump sum</label>
-              <select id="pp-month" style="width:100%;margin-bottom:6px" onchange="updatePayoffPanel()"></select>
-              <div>Required in <span id="pp-result-month-when" style="font-weight:600">&#8212;</span>: <span class="pp-result" id="pp-result-month">&mdash;</span> <button class="btn-link-reset" id="pp-apply-month" onclick="applyEarlySettlement('month')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
-            </div>
-            <div>
-              <label>One-time amount &rarr; earliest payoff month</label>
-              <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
-                <input type="number" id="pp-amount" step="500" min="0" placeholder="e.g. 10,000" style="width:120px" oninput="updatePayoffPanel()">
-                <span style="font-size:.78rem;color:#555">&euro;</span>
+    <div class="collapsible" id="panel-settlement">
+      <div class="collapsible-head" onclick="togglePanel('settlement',this)">
+        <span class="collapsible-title">Early Settlement Calculator</span>
+        <span class="collapsible-toggle">Show &#9660;</span>
+      </div>
+      <div class="collapsible-body" style="display:none">
+        <div class="payoff-panel" id="payoff-panel">
+          <div id="payoff-panel-body">
+            <p class="pp-na" id="payoff-panel-na">Available in Reduce Instalment mode only.</p>
+            <div id="payoff-panel-content" style="display:none">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div>
+                  <label>Target payoff month &rarr; required lump sum</label>
+                  <select id="pp-month" style="width:100%;margin-bottom:6px" onchange="updatePayoffPanel()"></select>
+                  <div>Required in <span id="pp-result-month-when" style="font-weight:600">&#8212;</span>: <span class="pp-result" id="pp-result-month">&mdash;</span> <button class="btn-link-reset" id="pp-apply-month" onclick="applyEarlySettlement('month')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
+                </div>
+                <div>
+                  <label>One-time amount &rarr; earliest payoff month</label>
+                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                    <input type="number" id="pp-amount" step="500" min="0" placeholder="e.g. 10,000" style="width:120px" oninput="updatePayoffPanel()">
+                    <span style="font-size:.78rem;color:#555">&euro;</span>
+                  </div>
+                  <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span> <button class="btn-link-reset" id="pp-apply-amount" onclick="applyEarlySettlement('amount')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
+                </div>
               </div>
-              <div>Earliest: <span class="pp-result" id="pp-result-amount">&mdash;</span> <button class="btn-link-reset" id="pp-apply-amount" onclick="applyEarlySettlement('amount')" style="display:none;margin-left:6px;font-size:.75rem">Apply</button></div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="chart-card">
-    <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
-    <div class="chart-note">Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
-    <canvas id="balanceChart" height="120"></canvas>
+  <div class="collapsible" id="panel-chart">
+    <div class="collapsible-head" onclick="togglePanel('chart',this)">
+      <span class="collapsible-title">Projection chart</span>
+      <span class="collapsible-toggle">Show &#9660;</span>
+    </div>
+    <div class="collapsible-body" style="display:none">
+      <div class="chart-card">
+        <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
+        <div class="chart-note">Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
+        <canvas id="balanceChart" height="120"></canvas>
+      </div>
+    </div>
   </div>
   <div class="txn-section">
     <div class="txn-title">Payment Schedule (&Delta;&omicron;&sigma;&omicron;&lambda;&#972;&gamma;&iota;&omicron;)</div>
@@ -659,6 +681,10 @@ function effectiveBudget(loanId){
   if(!alloc)return parseFloat(localStorage.getItem('lt_budget_'+loanId))||1000;
   return getBudgetTotal()*(alloc[String(loanId)]||0)/100;
 }
+
+// Collapsible panel open/closed preference (default: folded). key e.g. 'chart','settlement','dashChart'
+function getPanelOpen(key){try{return localStorage.getItem('lt_panel_'+key)==='1';}catch(e){return false;}}
+function setPanelOpen(key,open){try{localStorage.setItem('lt_panel_'+key,open?'1':'0');}catch(e){}}
 /* ─────────────────────────────────────────
    Setup modal helpers
 ───────────────────────────────────────── */
@@ -1546,6 +1572,37 @@ function refreshPayoffPanel(){
   updatePayoffPanel();
 }
 
+/* Collapsible panels (chart / early settlement / dashboard chart) */
+function togglePanel(key,headEl){
+  const body=headEl.nextElementSibling;
+  if(!body)return;
+  const open=body.style.display==='none';
+  body.style.display=open?'':'none';
+  const tog=headEl.querySelector('.collapsible-toggle');
+  if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
+  setPanelOpen(key,open);
+  if(open){
+    if(key==='chart')rebuildChart();
+    if(key==='dashChart')renderDashboardChart(computeAllLoansData());
+  }
+}
+function applyPanelState(key,panelId){
+  const panel=document.getElementById(panelId);
+  if(!panel)return;
+  const head=panel.querySelector('.collapsible-head');
+  const body=panel.querySelector('.collapsible-body');
+  if(!head||!body)return;
+  const open=getPanelOpen(key);
+  body.style.display=open?'':'none';
+  const tog=head.querySelector('.collapsible-toggle');
+  if(tog)tog.innerHTML=open?'Hide &#9650;':'Show &#9660;';
+  if(open&&key==='chart')rebuildChart();
+}
+function applyPanelStates(){
+  applyPanelState('chart','panel-chart');
+  applyPanelState('settlement','panel-settlement');
+}
+
 function applyEarlySettlement(mode){
   if(!_mS)return;
   let threshold=0;
@@ -1606,6 +1663,7 @@ function refreshLoan(){
   refreshPayoffPanel();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=_mS&&_mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
+  applyPanelStates();
 }
 
 /* ─────────────────────────────────────────
@@ -1640,6 +1698,7 @@ function initApp(){
   renderProj('m-proj-tbody',loanId);
   rebuildChart();
   refreshPayoffPanel();
+  applyPanelStates();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
   renderTabBar();
