@@ -1389,7 +1389,7 @@ function computePlanStats(mRows,mS){
   document.getElementById('m-payoff-cap').textContent=fmtMon(mPayoff)+' payoff';
   const mTimeSaved=mBase.length-mInst.length;
   document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
-  document.getElementById('m-next-lump').textContent=(()=>{const nx=mRows.find(r=>r.type==='extra');return nx?fmtMon(nx.month)+' · '+fmtE(nx.inst):'None';})();
+  document.getElementById('m-next-lump').textContent=(()=>{const nx=mSchedule.find(r=>!r.confirmed&&r.lump>0);return nx?fmtMon(nx.month)+' · '+fmtE(nx.lump):'None';})();
   document.getElementById('card-saved').textContent=fmtE(mSv);
   document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' vs no extras';
   document.getElementById('card-payoff').textContent=fmtMon(mPayoff);
