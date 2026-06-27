@@ -58,7 +58,7 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .cmp-lumps{text-align:right;font-size:.7rem;color:var(--muted);margin-top:3px}
 .loan-title{font-size:.92rem;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase}
-.badge-blue{background:#dbeafe;color:#1d4ed8}.badge-amber{background:#fef3c7;color:#b45309}
+.badge-blue{background:var(--accent-soft);color:var(--accent)}.badge-amber{background:var(--amber-soft);color:var(--amber)}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat-label{font-size:.68rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .stat-val{font-size:1.05rem;font-weight:700;margin-top:1px}
@@ -132,7 +132,8 @@ table.txn tr:hover td{background:#fafbff}
 .form-group{display:flex;flex-direction:column;gap:4px}
 .form-label{font-size:.72rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
 .form-input{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.85rem;font-family:inherit;width:100%}
-.form-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.15)}
+.form-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.15)}
 .form-input.err{border-color:#dc2626;box-shadow:0 0 0 2px rgba(220,38,38,.12)}
 .form-select{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.85rem;font-family:inherit;width:100%;background:#fff}
 .form-hint{font-size:.68rem;color:#999;margin-top:1px}
@@ -142,12 +143,12 @@ table.txn tr:hover td{background:#fafbff}
 .form-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:.78rem;color:#475569;margin:-2px 0 18px;line-height:1.6}
 .form-preview strong{color:#1e293b;font-weight:700}
 .form-section-title{font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:2px 0 10px;padding-bottom:5px;border-bottom:1px solid #eef2f7}
-.form-advanced-toggle{background:none;border:none;padding:4px 0;cursor:pointer;font-size:.78rem;color:#2563eb;font-weight:600}
+.form-advanced-toggle{background:none;border:none;padding:4px 0;cursor:pointer;font-size:.78rem;color:var(--accent);font-weight:600}
 .form-advanced-toggle:hover{text-decoration:underline}
 
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #eee;padding-top:16px;margin-top:4px}
-.btn-primary{background:#2563eb;color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
-.btn-primary:hover{background:#1d4ed8}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:8px 22px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
+.btn-primary:hover{background:#4338ca}
 .btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
 .btn-secondary:hover{background:#e5e7eb}
 .btn-danger{background:#dc2626;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600}
@@ -331,7 +332,7 @@ table.txn tr:hover td{background:#fafbff}
     <p style="font-size:.83rem;color:#444;margin:0 0 4px"><strong>Reduce Duration</strong> &mdash; the instalment stays roughly the same; each prepayment shortens the remaining term.</p>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px"><strong>Reduce Instalment</strong> &mdash; the term stays fixed; each prepayment lowers the monthly instalment going forward.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Confirming actual payments</h3>
-    <p style="font-size:.83rem;color:#444;margin:0 0 8px">When a payment has been made, tick the <strong>Paid?</strong> checkbox. A dialog pre-fills the projected amounts; edit them if your lender charged differently. The row locks and will never be overwritten by recalculations. All future rows recalculate from the locked outstanding balance.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">When a payment has been made, click the empty circle (&#9711;) at the left of that projected row. The projected amounts pre-fill; edit them if your lender charged differently, then <strong>Save</strong>. The row locks (&#128274;) and is never overwritten by recalculations &mdash; click the lock to edit it again. All future rows recalculate from the locked outstanding balance.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Early settlement calculator</h3>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">Available in Reduce Instalment mode. Enter a target settlement month to find the prepayment required to clear the outstanding balance, or enter a prepayment amount to find the earliest possible settlement month. Click <strong>Apply</strong> to insert it into the schedule.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Backup and restore</h3>
