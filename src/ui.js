@@ -793,24 +793,25 @@ function renderProj(tbodyId,loanIdx){
     }
     const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
     const numCol=locked
-      ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
-      :`<td style="color:#bbb;font-size:.7rem">${n} <span class="lock-ic" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})" style="color:#2563eb">&#10003;</span></td>`;
+      ?`<td class="num-cell"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> <span class="num-n">${n}</span></td>`
+      :`<td class="num-cell"><span class="confirm-dot" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})"></span> <span class="num-n">${n}</span></td>`;
     let lumpCell;
     const manL=locked?0:(row.manualLump||0);
     if(row.payoff&&row.payoffAmt>0){
       lumpCell=`<td class="num" style="color:#7c3aed;font-weight:700" id="pl-${loanIdx}-${idx}" title="Balloon payoff">Payoff ${f2x(row.payoffAmt)}</td>`;
     } else if(lump>0&&!locked){
-      const t=manL>0?`Manual lump €${f2x(manL)} (click to edit)`:'Add manual lump sum';
-      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add${manL>0?' lump-set':''}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
+      const isMan=manL>0;
+      const t=isMan?`Manual lump €${f2x(manL)} (click to edit)`:'Scheduled annual lump · click to add a manual one-off';
+      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill ${isMan?'lump-manual':'lump-auto'}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
     }
-    else if(lump>0){lumpCell=`<td class="num" style="color:#15803d" id="pl-${loanIdx}-${idx}">${f2x(lump)}</td>`;}
+    else if(lump>0){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill lump-done">${f2x(lump)}</span></td>`;}
     else if(!locked){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
     else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
     html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
       ${numCol}
       <td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td>
-      <td class="num" style="color:#16a34a" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
-      <td class="num" style="color:#c2410c" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
+      <td class="num" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
+      <td class="num" style="color:var(--muted)" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
       <td class="num" id="pi-${loanIdx}-${idx}">${f2x(inst)}</td>
       ${lumpCell}
       <td class="bal-owed">${f2x(bal)}</td></tr>`;

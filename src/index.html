@@ -104,7 +104,7 @@
       <input type="number" id="loan-budget" value="1000" step="10" min="0" onchange="refreshLoan()"> &euro;
       <span id="budget-bar-note"></span>
     </div>
-    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Highlighted rows have an auto scheduled lump sum.</div>
+    <div class="txn-note">Click the empty circle <span class="confirm-dot" style="cursor:default"></span> on a projected row to confirm the payment &mdash; it locks (&#128274;, click to edit). Use <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Indigo pill = manual lump, amber pill = scheduled annual lump.</div>
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Instalment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>

@@ -68,24 +68,30 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .txn-note{font-size:.78rem;color:#666;margin-bottom:14px;line-height:1.5}
 .tbl-wrap{overflow-x:auto}
 table.txn{width:100%;border-collapse:collapse;font-size:.79rem}
-table.txn th{background:#f8f9fb;text-align:left;padding:8px 10px;font-size:.68rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e0e0e0;white-space:nowrap;position:sticky;top:0;z-index:2}
+table.txn th{background:var(--surface);text-align:left;padding:9px 10px;font-size:.64rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--hairline);white-space:nowrap;position:sticky;top:0;z-index:2}
 table.txn th.num{text-align:right}
-table.txn td{padding:7px 10px;border-bottom:1px solid #f3f3f3;vertical-align:middle}
+table.txn td{padding:8px 10px;border-bottom:1px solid var(--hairline);vertical-align:middle}
 table.txn tr:last-child td{border-bottom:none}
 table.txn tr:hover td{background:#fafbff}
-.tr-confirmed td{background:#f0fff4}
+.tr-confirmed td{background:#f6fdf9}
 .tr-lump td{background:#fefce8}
 .tr-lump:hover td{background:#fef9c3}
 .tr-payoff td{background:#fdf2ff;border-top:2px solid #d8b4fe!important}
 .tr-payoff:hover td{background:#f5e8ff}
-.tr-sep td{background:#e8eaf6;font-size:.72rem;font-weight:700;color:#3730a3;letter-spacing:.04em;padding:5px 10px;position:sticky;top:30px;z-index:1}
+.tr-sep td{background:#f8fafc;font-size:.7rem;font-weight:700;color:var(--accent);letter-spacing:.02em;padding:6px 10px;position:sticky;top:31px;z-index:1}
 .lock-ic{cursor:pointer;font-size:.85rem}
-.lump-add{cursor:pointer;color:#2563eb;font-weight:700;font-size:.95rem;border:1px dashed #93c5fd;border-radius:4px;padding:0 6px;background:#eff6ff}
-.lump-add:hover{background:#dbeafe}
-.lump-set{color:#15803d;border-color:#86efac;background:#f0fdf4;border-style:solid}
-.lump-set:hover{background:#dcfce7}
-.num{font-family:'SF Mono',monospace;text-align:right}
-.bal-owed{font-weight:700;color:#dc2626;font-family:'SF Mono',monospace;text-align:right}
+.num-cell{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.num-n{color:var(--muted)}
+.confirm-dot{display:inline-block;width:15px;height:15px;border:1.5px solid #cbd5e1;border-radius:99px;cursor:pointer;vertical-align:middle}
+.confirm-dot:hover{border-color:var(--accent)}
+.lump-add{cursor:pointer;color:var(--accent);font-weight:700;font-size:.95rem;border:1px dashed #c7d2fe;border-radius:6px;padding:0 6px;background:var(--accent-soft)}
+.lump-add:hover{background:#e0e7ff}
+.lump-pill{font-weight:600;font-size:.72rem;padding:1px 7px;border-radius:6px;cursor:pointer;display:inline-block}
+.lump-manual{background:var(--accent-soft);color:var(--accent)}
+.lump-auto{background:var(--amber-soft);color:var(--amber)}
+.lump-done{background:#dcfce7;color:#15803d;cursor:default}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.bal-owed{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
 .totals-row td{font-weight:700;border-top:2px solid #d0d0d0!important;background:#f8f9fb!important}
 .act-input{width:78px;font-size:.78rem;padding:2px 4px;border:1px solid #93c5fd;border-radius:4px;font-family:SF Mono,monospace;text-align:right}
 .btn-save{background:#16a34a;color:#fff;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.74rem;font-weight:600}
@@ -253,7 +259,7 @@ table.txn tr:hover td{background:#fafbff}
       <input type="number" id="loan-budget" value="1000" step="10" min="0" onchange="refreshLoan()"> &euro;
       <span id="budget-bar-note"></span>
     </div>
-    <div class="txn-note">Past confirmed rows are locked (&#128274; &mdash; click to edit). Future rows are projected; click <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Highlighted rows have an auto scheduled lump sum.</div>
+    <div class="txn-note">Click the empty circle <span class="confirm-dot" style="cursor:default"></span> on a projected row to confirm the payment &mdash; it locks (&#128274;, click to edit). Use <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Indigo pill = manual lump, amber pill = scheduled annual lump.</div>
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Instalment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>
@@ -1448,24 +1454,25 @@ function renderProj(tbodyId,loanIdx){
     }
     const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
     const numCol=locked
-      ?`<td style="font-size:.7rem"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> ${n}</td>`
-      :`<td style="color:#bbb;font-size:.7rem">${n} <span class="lock-ic" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})" style="color:#2563eb">&#10003;</span></td>`;
+      ?`<td class="num-cell"><span class="lock-ic" title="Confirmed — click to edit" onclick="unlockRow(${loanIdx},${idx})">&#128274;</span> <span class="num-n">${n}</span></td>`
+      :`<td class="num-cell"><span class="confirm-dot" title="Mark as paid — confirm actual amounts" onclick="unlockRow(${loanIdx},${idx})"></span> <span class="num-n">${n}</span></td>`;
     let lumpCell;
     const manL=locked?0:(row.manualLump||0);
     if(row.payoff&&row.payoffAmt>0){
       lumpCell=`<td class="num" style="color:#7c3aed;font-weight:700" id="pl-${loanIdx}-${idx}" title="Balloon payoff">Payoff ${f2x(row.payoffAmt)}</td>`;
     } else if(lump>0&&!locked){
-      const t=manL>0?`Manual lump €${f2x(manL)} (click to edit)`:'Add manual lump sum';
-      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add${manL>0?' lump-set':''}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
+      const isMan=manL>0;
+      const t=isMan?`Manual lump €${f2x(manL)} (click to edit)`:'Scheduled annual lump · click to add a manual one-off';
+      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill ${isMan?'lump-manual':'lump-auto'}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
     }
-    else if(lump>0){lumpCell=`<td class="num" style="color:#15803d" id="pl-${loanIdx}-${idx}">${f2x(lump)}</td>`;}
+    else if(lump>0){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill lump-done">${f2x(lump)}</span></td>`;}
     else if(!locked){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
     else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
     html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
       ${numCol}
       <td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td>
-      <td class="num" style="color:#16a34a" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
-      <td class="num" style="color:#c2410c" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
+      <td class="num" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
+      <td class="num" style="color:var(--muted)" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
       <td class="num" id="pi-${loanIdx}-${idx}">${f2x(inst)}</td>
       ${lumpCell}
       <td class="bal-owed">${f2x(bal)}</td></tr>`;
