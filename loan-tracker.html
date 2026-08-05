@@ -1320,9 +1320,26 @@ function renderDashboardChart(data){
       borderColor:color,tension:.3,pointRadius:0,borderWidth:2,fill:false,spanGaps:false
     };
   });
+  // One dashed marker per fixed-rate loan, in that loan's own colour so the
+  // line is attributable without a legend. Month arithmetic matches buildChart.
+  const markers=[];
+  data.forEach((d,i)=>{
+    const L=d.loan;
+    if(L.rateType!=='fixed'||!(L.fixedPeriodMonths>0))return;
+    let em=L.startMonth+L.fixedPeriodMonths,ey=L.startYear;
+    while(em>12){em-=12;ey++;}
+    const name=L.label||'Loan '+(i+1);
+    markers.push({
+      month:ey+'-'+String(em).padStart(2,'0'),
+      color:LOAN_COLORS[i%LOAN_COLORS.length],
+      label1:name.length>12?name.slice(0,11)+'…':name,
+      label2:MN[em-1]+' '+ey,
+      yOff:(markers.length%2)*26
+    });
+  });
   const ctx=document.getElementById('dashboardChart');
   if(!ctx)return;
-  dashboardChart=new Chart(ctx.getContext('2d'),{type:'line',data:{labels,datasets},
+  dashboardChart=new Chart(ctx.getContext('2d'),{type:'line',plugins:[makeMarkersPlugin(markers)],data:{labels,datasets},
     options:{responsive:true,interaction:{mode:'index',intersect:false},
       plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}},
       scales:{
@@ -1469,8 +1486,9 @@ function makeMarkersPlugin(markers){
       ctx.strokeStyle=m.color;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.stroke();
       ctx.setLineDash([]);ctx.fillStyle=m.color;
       ctx.font='600 10px sans-serif';ctx.textAlign='center';
-      ctx.fillText(m.label1,x,ya.top+12);
-      if(m.label2)ctx.fillText(m.label2,x,ya.top+24);
+      const yo=m.yOff||0;
+      ctx.fillText(m.label1,x,ya.top+12+yo);
+      if(m.label2)ctx.fillText(m.label2,x,ya.top+24+yo);
       ctx.restore();
     });
   }};
