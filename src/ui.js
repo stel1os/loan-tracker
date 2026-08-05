@@ -613,7 +613,7 @@ function renderDashboardChart(data){
     options:{responsive:true,interaction:{mode:'index',intersect:false},
       plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}},
       scales:{
-        x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},
+        x:{ticks:{maxTicksLimit:10,font:{size:10},callback(v){const d=new Date(this.getLabelForValue(v)+'-01');return d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear()}},grid:{color:'rgba(0,0,0,.04)'}},
         y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}
       }
     }
@@ -790,7 +790,7 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
     {label:'Loan (plan)',data:mP,borderColor:'#4f46e5',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
     {label:'Loan (no extras)',data:mBD,borderColor:'#cbd5e1',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
     {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#d97706',pointRadius:5,pointHoverRadius:7,showLine:false},
-  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:20,font:{size:10},callback(v){const l=this.getLabelForValue(v),d=new Date(l+'-01');return d.getMonth()%6===0?d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear():''}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:10,font:{size:10},callback(v){const d=new Date(this.getLabelForValue(v)+'-01');return d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear()}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
 
