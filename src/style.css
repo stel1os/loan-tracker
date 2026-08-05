@@ -163,6 +163,8 @@ table.txn tr:hover td{background:#fafbff}
 .dash-loan-card-label{font-weight:700;font-size:.9rem;margin-bottom:4px}
 .dash-loan-card-balance{font-size:1.2rem;font-weight:700;margin-bottom:2px;font-variant-numeric:tabular-nums}
 .dash-loan-card-payoff{font-size:.78rem;color:#64748b;margin-bottom:6px}
+.dash-loan-card-paid{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:3px}
+.dash-loan-card-paid.sub{color:var(--muted);padding-left:8px;font-size:.68rem;margin-top:1px}
 .dash-budget-section{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
 .dash-budget-title{font-weight:600;font-size:.88rem;margin-bottom:10px}
 .dash-budget-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}

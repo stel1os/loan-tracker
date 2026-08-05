@@ -171,6 +171,8 @@ table.txn tr:hover td{background:#fafbff}
 .dash-loan-card-label{font-weight:700;font-size:.9rem;margin-bottom:4px}
 .dash-loan-card-balance{font-size:1.2rem;font-weight:700;margin-bottom:2px;font-variant-numeric:tabular-nums}
 .dash-loan-card-payoff{font-size:.78rem;color:#64748b;margin-bottom:6px}
+.dash-loan-card-paid{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:3px}
+.dash-loan-card-paid.sub{color:var(--muted);padding-left:8px;font-size:.68rem;margin-top:1px}
 .dash-budget-section{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
 .dash-budget-title{font-weight:600;font-size:.88rem;margin-bottom:10px}
 .dash-budget-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -1228,6 +1230,20 @@ function renderDashboardNextLump(data){
   el.innerHTML='<strong>Next lump &middot; '+fmtMon(month)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
 }
 
+// Paid-to-date lines for a dashboard loan card. All figures come from
+// confirmed rows only, so a user who has confirmed nothing sees a zero state.
+function paidHtml(ps){
+  if(ps.principalReduced<=0&&ps.interestPaid<=0){
+    return '<div class="dash-loan-card-paid sub">Nothing confirmed yet</div>';
+  }
+  let h='<div class="dash-loan-card-paid"><span>Principal paid</span><span>'+fmtE(ps.principalReduced)+'</span></div>';
+  if(ps.extrasSoFar>0){
+    h+='<div class="dash-loan-card-paid sub"><span>of which lumps</span><span>'+fmtE(ps.extrasSoFar)+'</span></div>';
+  }
+  h+='<div class="dash-loan-card-paid"><span>Interest paid</span><span>'+fmtE(ps.interestPaid)+'</span></div>';
+  return h;
+}
+
 function renderDashboardLoanCards(data){
   const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
   let html='';
@@ -1239,6 +1255,7 @@ function renderDashboardLoanCards(data){
       '<div class="dash-loan-card-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</div>'+
       '<div class="dash-loan-card-balance">'+fmtE(bal)+'</div>'+
       '<div class="dash-loan-card-payoff">Payoff: '+fmtMon(d.payoffMonth)+'</div>'+
+      paidHtml(ps)+
       '<div class="progress-track" style="margin:4px 0 0"><div class="progress-fill" style="width:'+ps.progressPct.toFixed(1)+'%;background:'+color+'"></div></div>'+
       '</div>';
   });

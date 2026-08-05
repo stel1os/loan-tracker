@@ -515,6 +515,20 @@ function renderDashboardNextLump(data){
   el.innerHTML='<strong>Next lump &middot; '+fmtMon(month)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
 }
 
+// Paid-to-date lines for a dashboard loan card. All figures come from
+// confirmed rows only, so a user who has confirmed nothing sees a zero state.
+function paidHtml(ps){
+  if(ps.principalReduced<=0&&ps.interestPaid<=0){
+    return '<div class="dash-loan-card-paid sub">Nothing confirmed yet</div>';
+  }
+  let h='<div class="dash-loan-card-paid"><span>Principal paid</span><span>'+fmtE(ps.principalReduced)+'</span></div>';
+  if(ps.extrasSoFar>0){
+    h+='<div class="dash-loan-card-paid sub"><span>of which lumps</span><span>'+fmtE(ps.extrasSoFar)+'</span></div>';
+  }
+  h+='<div class="dash-loan-card-paid"><span>Interest paid</span><span>'+fmtE(ps.interestPaid)+'</span></div>';
+  return h;
+}
+
 function renderDashboardLoanCards(data){
   const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
   let html='';
@@ -526,6 +540,7 @@ function renderDashboardLoanCards(data){
       '<div class="dash-loan-card-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</div>'+
       '<div class="dash-loan-card-balance">'+fmtE(bal)+'</div>'+
       '<div class="dash-loan-card-payoff">Payoff: '+fmtMon(d.payoffMonth)+'</div>'+
+      paidHtml(ps)+
       '<div class="progress-track" style="margin:4px 0 0"><div class="progress-fill" style="width:'+ps.progressPct.toFixed(1)+'%;background:'+color+'"></div></div>'+
       '</div>';
   });
