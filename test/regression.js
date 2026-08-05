@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc } = require('../src/engine.js');
+const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats } = require('../src/engine.js');
 
 const UPDATE = process.argv.includes('--update-snapshots');
 const SAMPLES_DIR = path.join(__dirname, 'fixtures');
@@ -253,4 +253,45 @@ test('#90-93 redistributeBudgetAlloc: all-zero others — distributes evenly', (
   const result = redistributeBudgetAlloc({'0':100,'1':0}, '0', 70);
   assert.strictEqual(result['0'], 70);
   assert.strictEqual(result['1'], 30);
+});
+
+// --- paid-to-date figures behind the dashboard loan cards ---
+
+test('computeProgressStats: principalReduced includes lump sums, not just instalment principal', () => {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'loan-a-95k.json'), 'utf8'));
+  const loan = JSON.parse(sample.lt_loans)[0];
+  const budget = parseFloat(sample['lt_budget_0']);
+  const actuals = JSON.parse(sample['confirmed_0_act']);
+
+  const rate = (loan.annualRate + loan.levy) / 100 / 12;
+  const postRate = (loan.postFixedRate && loan.fixedPeriodMonths > 0)
+    ? (loan.postFixedRate + loan.levy) / 100 / 12
+    : 0;
+  const startKey = projFirstMonth(loan);
+  const { ey, em } = projEndMonth(loan);
+
+  const { sched } = genProj(
+    budget, loan.balance, startKey, rate, ey, em,
+    {}, loan.lumpMonths || [loan.lumpMonth], actuals,
+    loan.lumpEnabled !== false,
+    loan.lumpEffect || 'reduce-installment',
+    !!loan.balloonEnabled, loan.balloonThreshold || 0,
+    loan.fixedPeriodMonths || 0, postRate
+  );
+
+  const ps = computeProgressStats(sched, loan.balance);
+  const confirmed = sched.filter(s => s.confirmed);
+  const instPrincipal = +confirmed.reduce((a, s) => a + s.principal, 0).toFixed(2);
+
+  assert.strictEqual(confirmed.length, 22, 'fixture must have 22 confirmed rows');
+  assert.strictEqual(ps.extrasSoFar, 2912, 'confirmed lump sums');
+  assert.strictEqual(instPrincipal, 3956.19, 'instalment principal alone');
+  assert.strictEqual(ps.principalReduced, 6868.19, 'balance reduction');
+  assert.strictEqual(ps.interestPaid, 7668.02, 'confirmed interest');
+
+  // The card's "of which lumps" line exists because of this identity:
+  assert.strictEqual(
+    +(instPrincipal + ps.extrasSoFar).toFixed(2), ps.principalReduced,
+    'principalReduced must equal instalment principal + lump sums'
+  );
 });
