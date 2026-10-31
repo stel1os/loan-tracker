@@ -1542,6 +1542,11 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
     const tyr=mS.targetPayoffDate.slice(0,4);
     _markers.push({month:mS.targetPayoffDate,color:'#a855f7',label1:'Goal',label2:MN[tmo-1]+' '+tyr});
   }
+  const lastConfirmed=mSchedule.filter(r=>r.confirmed).pop();
+  if(lastConfirmed){
+    const p=lastConfirmed.month.split('-');
+    _markers.push({month:lastConfirmed.month,color:'#16a34a',label1:'You are here',label2:MN[+p[1]-1]+' '+p[0]});
+  }
   const fxPlugin=makeMarkersPlugin(_markers);
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
