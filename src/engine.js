@@ -128,6 +128,16 @@ function computeProgressStats(sched,startBal){
   const progressPct=startBal>0?+(principalReduced/startBal*100).toFixed(4):0;
   return{principalReduced,interestPaid,extrasSoFar,progressPct,latestBal};
 }
+// Returns what is still to come, from unconfirmed sched entries only.
+function computeRemainingStats(sched){
+  const open=sched.filter(s=>!s.confirmed);
+  const lumps=open.filter(s=>s.lump>0);
+  return{
+    interestLeft:+open.reduce((a,s)=>a+s.interest,0).toFixed(2),
+    lumpCount:lumps.length,
+    lumpTotal:+lumps.reduce((a,s)=>a+s.lump,0).toFixed(2)
+  };
+}
 // Returns total interest on the no-extras baseline using the correct two-phase rate schedule.
 // Replaces single-rate amortizeSimple for interest-saved calculations on fixed-rate loans.
 function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeriodMonths,postFixedRate){
@@ -156,4 +166,4 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
   return result;
 }
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};

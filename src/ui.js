@@ -720,8 +720,7 @@ function computePlanStats(mRows,mS){
   const mBI=computeBaselineInterest(mS.balance,projFirstMonth(mS),LOAN_RATE,ey,em,mS.fixedPeriodMonths||0,postRate);
   const mBase=amortizeSimple(mS.balance,LOAN_RATE,mS.months);
   const mPI=mRows.filter(r=>r.type==='inst').reduce((s,r)=>s+r.int,0);
-  const mLT=mRows.filter(r=>r.type==='extra').reduce((s,r)=>s+r.inst,0);
-  const mLN=mRows.filter(r=>r.type==='extra').length;
+  const remaining=computeRemainingStats(mSchedule);
   const mSv=mBI-mPI;
   const mInst=mRows.filter(r=>r.type==='inst');
   const mPayoff=mInst.length?mInst[mInst.length-1].month:'---';
@@ -734,7 +733,7 @@ function computePlanStats(mRows,mS){
   document.getElementById('m-base-int').textContent=fmtE(mBI);
   {const pb=document.getElementById('m-plan-bar');if(pb)pb.style.width=(mBI>0?Math.min(100,mPI/mBI*100):0).toFixed(1)+'%';}
   document.getElementById('m-int-saved').textContent=fmtE(mSv);
-  document.getElementById('m-lumps-total').textContent=mLN+' · '+fmtE(mLT);
+  document.getElementById('m-lumps-total').textContent=remaining.lumpCount+' · '+fmtE(remaining.lumpTotal);
   document.getElementById('m-payoff-cap').textContent=fmtMon(mPayoff)+' payoff';
   const mTimeSaved=mBase.length-mInst.length;
   document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
@@ -746,7 +745,7 @@ function computePlanStats(mRows,mS){
   document.getElementById('card-total-debt').textContent=fmtE(ps.latestBal);
   document.getElementById('card-total-sub').textContent='of '+fmtE(mS.balance)+' borrowed';
   document.getElementById('m-borrowed').textContent=fmtE(mS.balance);
-  document.getElementById('m-int-left').textContent=fmtE(mPI);
+  document.getElementById('m-int-left').textContent=fmtE(remaining.interestLeft);
   document.getElementById('m-time-left').textContent=timeLeft;
   document.getElementById('m-loan-title').textContent=mS.label||'Loan';
   document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
@@ -818,6 +817,10 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
     _markers.push({month:mS.targetPayoffDate,color:'#a855f7',label1:'Goal',label2:MN[tmo-1]+' '+tyr});
   }
   const lastConfirmed=mSchedule.filter(r=>r.confirmed).pop();
+  // Paid part is solid, plan part dashed; they share the last confirmed month so the line is unbroken.
+  const splitIdx=lastConfirmed?labels.indexOf(lastConfirmed.month):-1;
+  const mPaid=labels.map((_,i)=>i<=splitIdx?mP[i]:null);
+  const mPlan=labels.map((_,i)=>i>=splitIdx?mP[i]:null);
   if(lastConfirmed){
     const p=lastConfirmed.month.split('-');
     _markers.push({month:lastConfirmed.month,color:'#16a34a',label1:'You are here',label2:MN[+p[1]-1]+' '+p[0]});
@@ -825,10 +828,11 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
   const fxPlugin=makeMarkersPlugin(_markers);
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
-    {label:'Loan (plan)',data:mP,borderColor:'#4f46e5',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
+    {label:'Loan (paid)',data:mPaid,borderColor:'#4f46e5',tension:.3,pointRadius:0,borderWidth:2,fill:false},
+    {label:'Loan (plan)',data:mPlan,borderColor:'#4f46e5',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
     {label:'Loan (no extras)',data:mBD,borderColor:'#cbd5e1',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
     {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#d97706',pointRadius:5,pointHoverRadius:7,showLine:false},
-  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:10,font:{size:10},callback(v){const d=new Date(this.getLabelForValue(v)+'-01');return d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear()}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')&&(i.text!=='Loan (paid)'||splitIdx>=0)}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label==='Loan (plan)'&&c.dataIndex===splitIdx)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:10,font:{size:10},callback(v){const d=new Date(this.getLabelForValue(v)+'-01');return d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear()}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
 

@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats } = require('../src/engine.js');
+const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats, computeRemainingStats } = require('../src/engine.js');
 
 const UPDATE = process.argv.includes('--update-snapshots');
 const SAMPLES_DIR = path.join(__dirname, 'fixtures');
@@ -294,4 +294,24 @@ test('computeProgressStats: principalReduced includes lump sums, not just instal
     +(instPrincipal + ps.extrasSoFar).toFixed(2), ps.principalReduced,
     'principalReduced must equal instalment principal + lump sums'
   );
+});
+
+test('computeRemainingStats: counts only unconfirmed rows, so paid interest and lumps are excluded', () => {
+  const sched = [
+    { confirmed: true, interest: 100, lump: 500 },
+    { confirmed: true, interest: 90, lump: 0 },
+    { confirmed: false, interest: 80.25, lump: 0 },
+    { confirmed: false, interest: 70.5, lump: 300 },
+    { confirmed: false, interest: 60, lump: 200 },
+  ];
+  assert.deepStrictEqual(computeRemainingStats(sched), {
+    interestLeft: 210.75,
+    lumpCount: 2,
+    lumpTotal: 500,
+  });
+});
+
+test('computeRemainingStats: nothing left when every row is confirmed', () => {
+  const sched = [{ confirmed: true, interest: 100, lump: 500 }];
+  assert.deepStrictEqual(computeRemainingStats(sched), { interestLeft: 0, lumpCount: 0, lumpTotal: 0 });
 });
