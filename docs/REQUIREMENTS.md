@@ -1,7 +1,7 @@
 ---
 title: Loan Tracker — Requirements
 created: 2026-05-17
-updated: 2026-06-11
+updated: 2026-11-15
 tags:
   - loan-tracker
   - requirements
@@ -125,6 +125,7 @@ Flat numbered list of functional requirements. Grouped by feature area. Derived 
 | FR-074 | Progress bar width reflects actual principal reduced (from confirmed rows) as a percentage of the opening balance | core | #40 | 5 | done |
 | FR-075 | 'So far' stats line shows principal reduced, interest paid, and extra lump payments derived from confirmed rows only | core | #40 | 5 | done |
 | FR-076 | Principal field in the confirm-actual dialog is read-only and auto-derived as max(0, instalment − interest); user enters only interest and instalment | core | #42 | 5 | done |
+| FR-077 | The app checks today's date: unconfirmed rows whose month has fully ended count as overdue, and the loan page shows the count and the months. The current month is never overdue, because the schedule stores months, not due dates | core | ASTRO-91 | | done |
 
 ---
 

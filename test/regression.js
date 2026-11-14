@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats, computeRemainingStats } = require('../src/engine.js');
+const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats, computeRemainingStats, computeOverdue } = require('../src/engine.js');
 
 const UPDATE = process.argv.includes('--update-snapshots');
 const SAMPLES_DIR = path.join(__dirname, 'fixtures');
@@ -314,4 +314,50 @@ test('computeRemainingStats: counts only unconfirmed rows, so paid interest and 
 test('computeRemainingStats: nothing left when every row is confirmed', () => {
   const sched = [{ confirmed: true, interest: 100, lump: 500 }];
   assert.deepStrictEqual(computeRemainingStats(sched), { interestLeft: 0, lumpCount: 0, lumpTotal: 0 });
+});
+
+// Overdue check. Dates are fixed so the results never depend on the day the tests run.
+function schedFor(sampleName) {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, sampleName + '.json'), 'utf8'));
+  const loan = JSON.parse(sample.lt_loans)[0];
+  const rate = (loan.annualRate + loan.levy) / 100 / 12;
+  const postRate = (loan.postFixedRate && loan.fixedPeriodMonths > 0) ? (loan.postFixedRate + loan.levy) / 100 / 12 : 0;
+  const { ey, em } = projEndMonth(loan);
+  return genProj(parseFloat(sample['lt_budget_0']), loan.balance, projFirstMonth(loan), rate, ey, em, {}, loan.lumpMonth,
+    JSON.parse(sample['confirmed_0_act'] || '{}'), loan.lumpEnabled !== false, loan.lumpEffect || 'reduce-installment',
+    !!loan.balloonEnabled, loan.balloonThreshold || 0, loan.fixedPeriodMonths || 0, postRate).sched;
+}
+
+test('computeOverdue: unconfirmed months that have ended are overdue (loan-a-95k, today 2026-11)', () => {
+  // Last confirmed month in this fixture is 2026-05.
+  assert.deepStrictEqual(computeOverdue(schedFor('loan-a-95k'), '2026-11'), {
+    count: 5,
+    months: ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10'],
+  });
+});
+
+test('computeOverdue: the current month is never overdue', () => {
+  const sched = schedFor('loan-a-95k');
+  assert.deepStrictEqual(computeOverdue(sched, '2026-06'), { count: 0, months: [] });
+  assert.deepStrictEqual(computeOverdue(sched, '2026-07'), { count: 1, months: ['2026-06'] });
+});
+
+test('computeOverdue: nothing overdue before the loan starts or when every past row is confirmed', () => {
+  const sched = [
+    { month: '2026-01', confirmed: true },
+    { month: '2026-02', confirmed: true },
+    { month: '2026-03', confirmed: false },
+  ];
+  assert.deepStrictEqual(computeOverdue(sched, '2025-12'), { count: 0, months: [] });
+  assert.deepStrictEqual(computeOverdue(sched, '2026-03'), { count: 0, months: [] });
+});
+
+test('computeOverdue: a gap between confirmed months counts, and a year boundary compares correctly', () => {
+  const sched = [
+    { month: '2025-11', confirmed: true },
+    { month: '2025-12', confirmed: false },
+    { month: '2026-01', confirmed: true },
+    { month: '2026-02', confirmed: false },
+  ];
+  assert.deepStrictEqual(computeOverdue(sched, '2026-02'), { count: 1, months: ['2025-12'] });
 });

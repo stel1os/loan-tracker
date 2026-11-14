@@ -122,6 +122,8 @@ table.txn tr:hover td{background:#fafbff}
 .act-input{width:78px;font-size:.78rem;padding:2px 4px;border:1px solid #93c5fd;border-radius:4px;font-family:SF Mono,monospace;text-align:right}
 .btn-save{background:#16a34a;color:#fff;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.74rem;font-weight:600}
 .btn-cancel{margin-left:4px;font-size:.72rem;border:none;background:none;cursor:pointer;color:#666}
+.overdue-warn{margin-bottom:10px;padding:8px 12px;background:var(--amber-soft);border:1px solid #fcd34d;border-radius:8px;color:var(--amber);font-size:.84rem}
+.overdue-warn strong{font-weight:700}
 .budget-bar{margin-bottom:12px;font-size:.82rem;color:#555;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px}
 .budget-bar input{width:75px;padding:3px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:.82rem;font-family:inherit}
 .budget-bar span{color:#0369a1;font-size:.76rem}
@@ -238,6 +240,7 @@ table.txn tr:hover td{background:#fafbff}
 </div>
 <div id="loan-view">
   <div class="loan-pinned">
+  <div class="overdue-warn" id="m-overdue" style="display:none"></div>
   <div class="summary-row">
     <div class="card"><div class="card-label">Outstanding</div><div class="card-value" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
     <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value accent" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
@@ -646,6 +649,12 @@ function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeri
   const{sched}=genProj(0,bal,startMonthStr,rate,endYear,endMon,{},1,{},false,'reduce-installment',false,0,fixedPeriodMonths||0,postFixedRate||0);
   return sched.reduce((a,s)=>a+s.interest,0);
 }
+// Returns the unconfirmed rows whose month has fully ended. todayKey is 'YYYY-MM'.
+// The schedule stores months, not due dates, so the current month is never overdue.
+function computeOverdue(sched,todayKey){
+  const months=sched.filter(s=>!s.confirmed&&s.month<todayKey).map(s=>s.month);
+  return{count:months.length,months};
+}
 function redistributeBudgetAlloc(alloc,changedId,newPct){
   newPct=Math.max(0,Math.min(100,newPct));
   const result={};Object.keys(alloc).forEach(k=>{result[k]=alloc[k];});
@@ -668,7 +677,7 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
   return result;
 }
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,computeOverdue,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
 
 const APP_VERSION='v1.11.0';
 const LS_LOANS='lt_loans';
@@ -1448,6 +1457,19 @@ function renderAnnualSchedule(){
    Projection engine
 ───────────────────────────────────────── */
 
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+// Warns on the loan page when past months are still unconfirmed.
+function renderOverdue(){
+  const el=document.getElementById('m-overdue');if(!el)return;
+  const od=computeOverdue(mSchedule,todayKey());
+  if(!od.count){el.style.display='none';el.textContent='';return;}
+  const fm=m=>MN[+m.slice(5,7)-1]+' '+m.slice(0,4);
+  const range=od.count===1?fm(od.months[0]):fm(od.months[0])+' to '+fm(od.months[od.count-1]);
+  el.innerHTML='<strong>'+od.count+(od.count===1?' payment':' payments')+' overdue</strong> &middot; '+range+(od.count===1?' is':' are')+' not confirmed yet';
+  el.style.display='';
+}
+
 function computePlanStats(mRows,mS){
   const LOAN_RATE=(mS.annualRate+mS.levy)/100/12;
   const postRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
@@ -1494,6 +1516,7 @@ function computePlanStats(mRows,mS){
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
   if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
+  renderOverdue();
   return{mBase};
 }
 

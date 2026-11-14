@@ -144,6 +144,12 @@ function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeri
   const{sched}=genProj(0,bal,startMonthStr,rate,endYear,endMon,{},1,{},false,'reduce-installment',false,0,fixedPeriodMonths||0,postFixedRate||0);
   return sched.reduce((a,s)=>a+s.interest,0);
 }
+// Returns the unconfirmed rows whose month has fully ended. todayKey is 'YYYY-MM'.
+// The schedule stores months, not due dates, so the current month is never overdue.
+function computeOverdue(sched,todayKey){
+  const months=sched.filter(s=>!s.confirmed&&s.month<todayKey).map(s=>s.month);
+  return{count:months.length,months};
+}
 function redistributeBudgetAlloc(alloc,changedId,newPct){
   newPct=Math.max(0,Math.min(100,newPct));
   const result={};Object.keys(alloc).forEach(k=>{result[k]=alloc[k];});
@@ -166,4 +172,4 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
   return result;
 }
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,computeOverdue,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
