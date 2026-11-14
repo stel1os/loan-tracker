@@ -126,6 +126,7 @@ Flat numbered list of functional requirements. Grouped by feature area. Derived 
 | FR-075 | 'So far' stats line shows principal reduced, interest paid, and extra lump payments derived from confirmed rows only | core | #40 | 5 | done |
 | FR-076 | Principal field in the confirm-actual dialog is read-only and auto-derived as max(0, instalment − interest); user enters only interest and instalment | core | #42 | 5 | done |
 | FR-077 | The app checks today's date: unconfirmed rows whose month has fully ended count as overdue, and the loan page shows the count and the months. The current month is never overdue, because the schedule stores months, not due dates | core | ASTRO-91 | | done |
+| FR-078 | The top of the loan page shows a next-payment bar: the next unconfirmed month and its instalment, the overdue warning from FR-077, and a Confirm button that opens the existing confirm fields on that row. A fully paid loan shows "Loan fully paid" and no button | core | ASTRO-92 | | done |
 
 ---
 
