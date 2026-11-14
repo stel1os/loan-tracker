@@ -715,15 +715,51 @@ function renderAnnualSchedule(){
 
 function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 
-// Warns on the loan page when past months are still unconfirmed.
-function renderOverdue(){
-  const el=document.getElementById('m-overdue');if(!el)return;
-  const od=computeOverdue(mSchedule,todayKey());
-  if(!od.count){el.style.display='none';el.textContent='';return;}
+// Next-payment bar at the top of the loan page: next unconfirmed month and amount,
+// a warning when past months are still unconfirmed, and a Confirm button.
+function renderNextBar(){
+  const bar=document.getElementById('m-next-bar');if(!bar)return;
   const fm=m=>MN[+m.slice(5,7)-1]+' '+m.slice(0,4);
-  const range=od.count===1?fm(od.months[0]):fm(od.months[0])+' to '+fm(od.months[od.count-1]);
-  el.innerHTML='<strong>'+od.count+(od.count===1?' payment':' payments')+' overdue</strong> &middot; '+range+(od.count===1?' is':' are')+' not confirmed yet';
-  el.style.display='';
+  const eur=n=>'&euro;'+n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const label=document.getElementById('m-next-label');
+  const value=document.getElementById('m-next-value');
+  const warn=document.getElementById('m-overdue');
+  const btn=document.getElementById('m-next-confirm');
+  const next=mSchedule.find(r=>!r.confirmed);
+  const od=computeOverdue(mSchedule,todayKey());
+  bar.classList.toggle('is-overdue',od.count>0);
+  bar.classList.toggle('is-paid',!next);
+  if(!next){
+    const last=mSchedule[mSchedule.length-1];
+    label.textContent='Next payment';
+    value.textContent='Loan fully paid'+(last?' · last payment '+fm(last.month):'');
+    warn.style.display='none';warn.textContent='';
+    btn.style.display='none';
+    return;
+  }
+  label.textContent='Next payment';
+  let extra='';
+  if(next.payoff&&next.payoffAmt>0)extra=' <span class="next-extra">+ '+eur(next.payoffAmt)+' final payoff</span>';
+  else if(next.lump>0)extra=' <span class="next-extra">+ '+eur(next.lump)+' lump sum</span>';
+  value.innerHTML=fm(next.month)+' &middot; '+eur(next.inst)+extra;
+  btn.style.display='';
+  if(od.count){
+    const range=od.count===1?fm(od.months[0]):fm(od.months[0])+' to '+fm(od.months[od.count-1]);
+    warn.innerHTML='<strong>'+od.count+(od.count===1?' payment':' payments')+' overdue</strong> &middot; '+range+(od.count===1?' is':' are')+' not confirmed yet';
+    warn.style.display='';
+  }else{warn.style.display='none';warn.textContent='';}
+}
+
+// Confirm button on the next-payment bar: opens the existing confirm fields on that row.
+function confirmNext(){
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const idx=mSchedule.findIndex(r=>!r.confirmed);
+  if(idx<0)return;
+  unlockRow(loanId,idx);
+  const row=document.getElementById('prow-'+loanId+'-'+idx);
+  if(row)row.scrollIntoView({block:'center'});
+  const inp=document.getElementById('ai-'+loanId+'-'+idx);
+  if(inp)inp.focus({preventScroll:true});
 }
 
 function computePlanStats(mRows,mS){
@@ -772,7 +808,7 @@ function computePlanStats(mRows,mS){
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
   if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
-  renderOverdue();
+  renderNextBar();
   return{mBase};
 }
 

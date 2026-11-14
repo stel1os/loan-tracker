@@ -53,7 +53,14 @@
 </div>
 <div id="loan-view">
   <div class="loan-pinned">
-  <div class="overdue-warn" id="m-overdue" style="display:none"></div>
+  <div class="next-bar" id="m-next-bar">
+    <div class="next-main">
+      <div class="next-label" id="m-next-label">Next payment</div>
+      <div class="next-value" id="m-next-value">&#8230;</div>
+      <div class="next-overdue" id="m-overdue" style="display:none"></div>
+    </div>
+    <button class="btn-primary" id="m-next-confirm" onclick="confirmNext()">Confirm</button>
+  </div>
   <div class="summary-row">
     <div class="card"><div class="card-label">Outstanding</div><div class="card-value" id="card-total-debt">&#8364;&#8230;</div><div class="card-sub" id="card-total-sub">Loading&hellip;</div></div>
     <div class="card"><div class="card-label">Plan Payoff</div><div class="card-value accent" id="card-payoff">&#8230;</div><div class="card-sub" id="card-payoff-sub">Loading&hellip;</div></div>
