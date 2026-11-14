@@ -713,6 +713,19 @@ function renderAnnualSchedule(){
    Projection engine
 ───────────────────────────────────────── */
 
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+// Warns on the loan page when past months are still unconfirmed.
+function renderOverdue(){
+  const el=document.getElementById('m-overdue');if(!el)return;
+  const od=computeOverdue(mSchedule,todayKey());
+  if(!od.count){el.style.display='none';el.textContent='';return;}
+  const fm=m=>MN[+m.slice(5,7)-1]+' '+m.slice(0,4);
+  const range=od.count===1?fm(od.months[0]):fm(od.months[0])+' to '+fm(od.months[od.count-1]);
+  el.innerHTML='<strong>'+od.count+(od.count===1?' payment':' payments')+' overdue</strong> &middot; '+range+(od.count===1?' is':' are')+' not confirmed yet';
+  el.style.display='';
+}
+
 function computePlanStats(mRows,mS){
   const LOAN_RATE=(mS.annualRate+mS.levy)/100/12;
   const postRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
@@ -759,6 +772,7 @@ function computePlanStats(mRows,mS){
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
   if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
+  renderOverdue();
   return{mBase};
 }
 
