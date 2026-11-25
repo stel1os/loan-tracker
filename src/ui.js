@@ -755,6 +755,8 @@ function confirmNext(){
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
   const idx=mSchedule.findIndex(r=>!r.confirmed);
   if(idx<0)return;
+  const r0=document.getElementById('prow-'+loanId+'-'+idx);
+  if(r0&&r0.style.display==='none'){openYears[loanId+':'+mSchedule[idx].month.slice(0,4)]=true;renderProj('m-proj-tbody',loanId);}
   unlockRow(loanId,idx);
   const row=document.getElementById('prow-'+loanId+'-'+idx);
   if(row)row.scrollIntoView({block:'center'});
@@ -922,10 +924,40 @@ let mSchedule=[];
 
 
 /* renders the unified δοσολόγιο from mSchedule */
+/* Schedule folding. The current year and the next 12 months are open; earlier and
+   later months are folded, except unpaid past months, which stay open. Clicking a
+   year heading opens or folds that whole year; the choice lasts until the page reloads. */
+const openYears={};
+function scheduleWindow(){
+  const tk=todayKey();
+  let end=(+tk.slice(0,4)+1)+tk.slice(4);
+  // A loan whose next payment is more than a year away opens on its first 12 unpaid months.
+  const next=mSchedule.find(r=>!r.confirmed);
+  if(next){let y=+next.month.slice(0,4),m=+next.month.slice(5,7)+11;if(m>12){m-=12;y++;}const e=y+'-'+String(m).padStart(2,'0');if(e>end)end=e;}
+  return{start:tk.slice(0,4)+'-01',end};
+}
+function rowOpenByDefault(row,win){
+  return(row.month>=win.start&&row.month<=win.end)||(!row.confirmed&&row.month<win.start);
+}
+function rowVisible(row,loanIdx,win){
+  const o=openYears[loanIdx+':'+row.month.slice(0,4)];
+  return o===undefined?rowOpenByDefault(row,win):o;
+}
+function toggleYear(loanIdx,yr){
+  const rows=mSchedule.filter(r=>r.month.slice(0,4)===yr);
+  const win=scheduleWindow();
+  const allShown=rows.every(r=>rowVisible(r,loanIdx,win));
+  openYears[loanIdx+':'+yr]=!allShown;
+  renderProj('m-proj-tbody',loanIdx);
+}
+
 function renderProj(tbodyId,loanIdx){
   const tbody=document.getElementById(tbodyId);
   tbody.innerHTML='';
   let n=0,prevYr='';let html='';
+  const win=scheduleWindow();
+  const years={};
+  mSchedule.forEach(r=>{const y=r.month.slice(0,4);const t=years[y]||(years[y]={total:0,shown:0,paid:0});t.total++;if(r.confirmed)t.paid++;if(rowVisible(r,loanIdx,win))t.shown++;});
   mSchedule.forEach((row,idx)=>{
     n++;
     const locked=!!row.confirmed;
@@ -935,11 +967,17 @@ function renderProj(tbodyId,loanIdx){
     const lump=row.lump;
     const bal=row.bal;
     const yr=row.month.slice(0,4);
-    if(yr!==prevYr){html+=`<tr class="tr-sep"><td colspan="7">${yr}</td></tr>`;prevYr=yr;}
+    if(yr!==prevYr){
+      const t=years[yr];
+      const hint=t.shown===t.total?'':t.shown===0?(t.total+(t.total===1?' month':' months')+(t.paid===t.total?', all paid':'')+' &middot; show'):(t.shown+' of '+t.total+' months shown &middot; show all');
+      html+=`<tr class="tr-sep yr-head" onclick="toggleYear(${loanIdx},'${yr}')" title="Open or fold ${yr}"><td colspan="7"><span class="yr-caret">${t.shown===t.total?'&#9662;':'&#9656;'}</span> ${yr}<span class="yr-hint">${hint}</span></td></tr>`;
+      prevYr=yr;
+    }
+    const hide=rowVisible(row,loanIdx,win)?'':' style="display:none"';
     // balloon payoff + lump same month: emit a separate lump row before the payoff row
     if(row.payoff&&lump>0){
       const balPost=+(row.payoffAmt+inst-interest).toFixed(2);
-      html+=`<tr class="tr-lump"><td style="color:#bbb;font-size:.7rem">${n}</td><td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num" style="color:#15803d">${f2x(lump)}</td><td class="bal-owed">${f2x(balPost)}</td></tr>`;
+      html+=`<tr class="tr-lump"${hide}><td style="color:#bbb;font-size:.7rem">${n}</td><td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num" style="color:#15803d">${f2x(lump)}</td><td class="bal-owed">${f2x(balPost)}</td></tr>`;
       n++;
     }
     const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
@@ -958,7 +996,7 @@ function renderProj(tbodyId,loanIdx){
     else if(lump>0){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill lump-done">${f2x(lump)}</span></td>`;}
     else if(!locked){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
     else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
-    html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}">
+    html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}"${hide}>
       ${numCol}
       <td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td>
       <td class="num" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>

@@ -131,7 +131,6 @@
       <input type="number" id="loan-budget" value="1000" step="10" min="0" onchange="refreshLoan()"> &euro;
       <span id="budget-bar-note"></span>
     </div>
-    <div class="txn-note">Click the empty circle <span class="confirm-dot" style="cursor:default"></span> on a projected row to confirm the payment &mdash; it locks (&#128274;, click to edit). Use <strong>+</strong> in Lump Sum to add a manual one-off prepayment. Indigo pill = manual lump, amber pill = scheduled annual lump.</div>
     <div class="tbl-wrap"><table class="txn"><thead><tr><th>#</th><th>Date</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Instalment</th><th class="num">Lump Sum</th><th class="num">Balance</th></tr></thead><tbody id="m-proj-tbody"></tbody></table></div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>
@@ -152,7 +151,9 @@
     <h3 style="font-size:.9rem;margin:14px 0 6px">Monthly budget</h3>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter the total amount you are willing to pay each month. The <strong>monthly surplus</strong> &mdash; your budget minus the regular instalment &mdash; accumulates and is paid as an annual lump-sum prepayment on the month you select. Increasing your budget accelerates principal reduction and brings your settlement date forward.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Payment schedule</h3>
-    <p style="font-size:.83rem;color:#444;margin:0 0 8px">The schedule shows the full amortisation table: each row is one month and displays the interest charge, the principal repayment, the total instalment, any lump-sum prepayment, and the remaining outstanding balance.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 4px">The schedule is the amortisation table: each row is one month and displays the interest charge, the principal repayment, the total instalment, any lump-sum prepayment, and the remaining outstanding balance.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 4px">It opens on the current year and the next 12 months. Earlier and later months are folded under their year; unpaid past months always stay open. Click a year&rsquo;s heading to open or fold it.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Click the empty circle (&#9711;) on a row to confirm that payment; it then locks (&#128274;), and clicking the lock edits it again. Use <strong>+</strong> in the Lump Sum column to add a one-off prepayment. An indigo pill is a manual lump sum and an amber pill is a scheduled annual lump sum.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Lump-sum prepayments</h3>
     <p style="font-size:.83rem;color:#444;margin:0 0 4px">Each year, on your chosen month, accumulated surplus is paid as a lump-sum prepayment directly against principal. You can also add a one-off manual prepayment to any future row using the <strong>+</strong> button in the Lump Sum column.</p>
     <p style="font-size:.83rem;color:#444;margin:0 0 4px"><strong>Reduce Duration</strong> &mdash; the instalment stays roughly the same; each prepayment shortens the remaining term.</p>

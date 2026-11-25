@@ -86,7 +86,10 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .collapsible-body .payoff-panel{margin:0}
 .txn-section{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
 .txn-title{font-size:.9rem;font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f0f0f0}
-.txn-note{font-size:.78rem;color:#666;margin-bottom:14px;line-height:1.5}
+.yr-head{cursor:pointer;user-select:none}
+.yr-head:hover td{background:#eef2ff}
+.yr-caret{display:inline-block;width:12px}
+.yr-hint{margin-left:10px;font-weight:500;color:var(--muted)}
 .tbl-wrap{overflow-x:auto}
 table.txn{width:100%;border-collapse:collapse;font-size:.79rem}
 table.txn th{background:var(--surface);text-align:left;padding:9px 10px;font-size:.64rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--hairline);white-space:nowrap;position:sticky;top:0;z-index:2}
