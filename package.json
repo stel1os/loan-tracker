@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node build.js",
     "build:pages": "node build.js && node -e \"const f=require('fs');f.mkdirSync('dist',{recursive:true});f.copyFileSync('loan-tracker.html','dist/index.html')\"",
-    "test": "node --test test/regression.js test/api-state.test.mjs",
+    "test": "node --test test/regression.js test/api-state.test.mjs test/sync.test.js",
     "test:update": "node test/regression.js --update-snapshots"
   }
 }

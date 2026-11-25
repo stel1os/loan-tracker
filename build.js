@@ -7,6 +7,7 @@ const js = [
   fs.readFileSync('src/engine.js', 'utf8'),
   fs.readFileSync('src/storage.js', 'utf8'),
   fs.readFileSync('src/ui.js', 'utf8'),
+  fs.readFileSync('src/sync.js', 'utf8'),
 ].join('\n');
 
 let html = fs.readFileSync('src/index.html', 'utf8');

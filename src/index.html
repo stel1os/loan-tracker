@@ -20,6 +20,7 @@
       <div class="hdr-menu" id="hdr-menu" role="menu" hidden>
         <button role="menuitem" id="btn-export" onclick="closeMenu();exportData()">&#8681; Export backup</button>
         <div class="menu-info" id="menu-last-backup">Last backup: Never</div>
+        <div class="menu-info menu-sync" id="menu-sync" hidden></div>
         <button role="menuitem" onclick="closeMenu();triggerImport()">&#8679; Import backup</button>
         <button role="menuitem" onclick="closeMenu();openHelp()">? Help</button>
         <div class="menu-sep" role="separator"></div>
@@ -34,6 +35,10 @@
   <button class="btn-link-reset" onclick="triggerImport()" style="margin-left:6px;font-size:.82rem">Import from backup</button>
   <button class="btn-link-reset" onclick="loadExample()" style="margin-left:10px;font-size:.82rem">Load example</button>
   <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+</div>
+<div class="sync-notice" id="sync-notice" role="status" hidden>
+  <span id="sync-notice-text"></span>
+  <span class="sync-notice-actions"><button class="btn-secondary" onclick="downloadOtherVersion()">Download the other version</button><button class="btn-link-reset" onclick="dismissSyncNotice()">Dismiss</button></span>
 </div>
 <div id="tab-bar" style="display:none"></div>
 <div id="dashboard-view" style="display:none">
@@ -200,7 +205,9 @@
     <p style="font-size:.83rem;color:#444;margin:0 0 4px">The <strong>What if</strong> tab under the chart lets you try a different monthly budget or a one-time payment. As you type, it shows the new payoff date and interest saved. Nothing is saved until you press <strong>Apply</strong>.</p>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">The one-time payment is available in Reduce Instalment mode. Enter a target settlement month to find the prepayment required to clear the outstanding balance, or enter a prepayment amount to find the earliest possible settlement month. Click <strong>Apply</strong> to insert it into the schedule.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Backup and restore</h3>
-    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Open the <strong>&middot;&middot;&middot;</strong> menu at the top right and click <strong>Export backup</strong> to download a JSON backup of your loan configuration, confirmed actuals, budget, and manual prepayments. Click <strong>Import backup</strong> to restore from a backup on any browser or device. The menu shows when you last exported (&ldquo;Last backup: 12 days ago&rdquo; or &ldquo;Never&rdquo;); that date is kept in this browser only and is not part of the backup file. <strong>Reset all data</strong> is in the same menu and asks before deleting anything. All data stays in your browser&rsquo;s local storage &mdash; nothing is sent to any server.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Open the <strong>&middot;&middot;&middot;</strong> menu at the top right and click <strong>Export backup</strong> to download a JSON backup of your loan configuration, confirmed actuals, budget, and manual prepayments. Click <strong>Import backup</strong> to restore from a backup on any browser or device. The menu shows when you last exported (&ldquo;Last backup: 12 days ago&rdquo; or &ldquo;Never&rdquo;); that date is kept in this browser only and is not part of the backup file. <strong>Reset all data</strong> is in the same menu and asks before deleting anything.</p>
+    <h3 style="font-size:.9rem;margin:14px 0 6px">Private online copy</h3>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">On your private copy, every change is saved online automatically a moment after you make it, and the menu shows when it last saved. Opening the private copy on another device shows the same numbers. Without internet it keeps working and saves when the connection returns. If two devices changed the data in the meantime, the newer version is kept and the other is offered as a backup file. Backups are still worth keeping. The public copy never saves online. All data stays in your browser&rsquo;s local storage &mdash; nothing is sent to any server.</p>
     <div class="modal-actions">
       <button class="btn-primary" onclick="closeHelp()">Close</button>
     </div>

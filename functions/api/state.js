@@ -7,6 +7,7 @@
 //                                             stored; the stored copy is returned and nothing is overwritten
 //
 // `data` is the same set of keys a backup file holds: every lt_* and confirmed_* key, as strings.
+// It is empty after a Reset; otherwise it must include lt_loans.
 //
 // Settings (Pages project -> Settings -> Variables), never in the code:
 //   ALLOWED_EMAIL       the one email allowed to save and load
@@ -71,7 +72,8 @@ export async function verifyAccessToken(token, env, { fetchImpl = fetch, now = D
 function validData(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
   const keys = Object.keys(data);
-  if (!keys.length || !('lt_loans' in data)) return false;
+  if (!keys.length) return true; // empty after a Reset
+  if (!('lt_loans' in data)) return false;
   return keys.every((k) => KEY_RE.test(k) && typeof data[k] === 'string');
 }
 
