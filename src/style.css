@@ -197,21 +197,29 @@ table.txn tr:hover td{background:#fafbff}
 .tab-btn-add:hover{background:var(--accent-soft)}
 
 /* ── Dashboard ── */
-.dash-next-month{font-size:.84rem;color:#475569;margin:-6px 0 14px;padding:8px 12px;background:#f8fafc;border-radius:6px}
-.dash-loan-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.dash-loan-card{flex:1;min-width:180px;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-card);padding:14px 16px;cursor:pointer;box-shadow:var(--shadow);transition:box-shadow .15s}
-.dash-loan-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.dash-loan-card-label{font-weight:700;font-size:.9rem;margin-bottom:4px}
-.dash-loan-card-balance{font-size:1.2rem;font-weight:700;margin-bottom:2px;font-variant-numeric:tabular-nums}
-.dash-loan-card-payoff{font-size:.78rem;color:#64748b;margin-bottom:6px}
-.dash-loan-card-paid{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:3px}
-.dash-loan-card-paid.sub{color:var(--muted);padding-left:8px;font-size:.68rem;margin-top:1px}
-.dash-budget-section{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
-.dash-budget-title{font-weight:600;font-size:.88rem;margin-bottom:10px}
-.dash-budget-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.dash-budget-label{min-width:100px;font-size:.84rem;font-weight:600}
-.dash-budget-pct{width:44px;text-align:center;border:1px solid #cbd5e1;border-radius:4px;padding:2px 4px;font-size:.84rem}
-.dash-budget-eur{min-width:60px;font-size:.82rem;color:#64748b}
-.dash-budget-warn{color:#dc2626;font-size:.78rem;margin-top:4px;display:none}
+.dash-month{background:var(--surface);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:12px 16px;margin-bottom:10px}
+.dash-month-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px}
+.dash-month-value{font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.dash-month-parts{font-size:.8rem;color:#475569;margin-top:2px}
+.dash-month-parts .paid{color:var(--positive);font-weight:600}
+.dash-overdue{margin-bottom:10px;padding:8px 12px;border-radius:8px;font-size:.84rem}
+.dash-overdue.has{background:var(--amber-soft);border:1px solid #fcd34d;color:var(--amber)}
+.dash-overdue.none{color:var(--positive);padding:0 2px;font-size:.8rem}
+.dash-table-card{padding:6px 10px}
+.dash-table{width:100%;border-collapse:collapse;font-size:.84rem;font-variant-numeric:tabular-nums}
+.dash-table th{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:right;padding:8px;white-space:nowrap}
+.dash-table th:first-child,.dash-table td:first-child{text-align:left}
+.dash-table td{padding:9px 8px;text-align:right;border-top:1px solid var(--hairline);white-space:nowrap}
+.dash-table tbody tr{cursor:pointer}
+.dash-table tbody tr:hover td{background:#f8fafc}
+.dash-table .dash-name{font-weight:700}
+.dash-table tfoot td{font-weight:700;border-top:2px solid #e2e8f0}
+.wi-split-rows{margin:10px 0 2px}
+.wi-split-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.84rem}
+.wi-split-row .wi-split-name{min-width:110px;font-weight:600}
+.wi-split-row input[type=number]{width:56px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px;font-family:inherit;text-align:center}
+.wi-split-row input[type=range]{flex:1;max-width:260px}
+.wi-split-row .wi-split-eur{min-width:70px;color:#64748b}
+.wi-loanline{display:block}
 .dash-annual-wrap{margin-top:8px}
 .dash-annual-toggle{font-size:.84rem;color:#64748b;margin-bottom:8px}

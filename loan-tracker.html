@@ -205,22 +205,30 @@ table.txn tr:hover td{background:#fafbff}
 .tab-btn-add:hover{background:var(--accent-soft)}
 
 /* ── Dashboard ── */
-.dash-next-month{font-size:.84rem;color:#475569;margin:-6px 0 14px;padding:8px 12px;background:#f8fafc;border-radius:6px}
-.dash-loan-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.dash-loan-card{flex:1;min-width:180px;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-card);padding:14px 16px;cursor:pointer;box-shadow:var(--shadow);transition:box-shadow .15s}
-.dash-loan-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.dash-loan-card-label{font-weight:700;font-size:.9rem;margin-bottom:4px}
-.dash-loan-card-balance{font-size:1.2rem;font-weight:700;margin-bottom:2px;font-variant-numeric:tabular-nums}
-.dash-loan-card-payoff{font-size:.78rem;color:#64748b;margin-bottom:6px}
-.dash-loan-card-paid{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:3px}
-.dash-loan-card-paid.sub{color:var(--muted);padding-left:8px;font-size:.68rem;margin-top:1px}
-.dash-budget-section{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-card);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
-.dash-budget-title{font-weight:600;font-size:.88rem;margin-bottom:10px}
-.dash-budget-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.dash-budget-label{min-width:100px;font-size:.84rem;font-weight:600}
-.dash-budget-pct{width:44px;text-align:center;border:1px solid #cbd5e1;border-radius:4px;padding:2px 4px;font-size:.84rem}
-.dash-budget-eur{min-width:60px;font-size:.82rem;color:#64748b}
-.dash-budget-warn{color:#dc2626;font-size:.78rem;margin-top:4px;display:none}
+.dash-month{background:var(--surface);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:12px 16px;margin-bottom:10px}
+.dash-month-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px}
+.dash-month-value{font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.dash-month-parts{font-size:.8rem;color:#475569;margin-top:2px}
+.dash-month-parts .paid{color:var(--positive);font-weight:600}
+.dash-overdue{margin-bottom:10px;padding:8px 12px;border-radius:8px;font-size:.84rem}
+.dash-overdue.has{background:var(--amber-soft);border:1px solid #fcd34d;color:var(--amber)}
+.dash-overdue.none{color:var(--positive);padding:0 2px;font-size:.8rem}
+.dash-table-card{padding:6px 10px}
+.dash-table{width:100%;border-collapse:collapse;font-size:.84rem;font-variant-numeric:tabular-nums}
+.dash-table th{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:right;padding:8px;white-space:nowrap}
+.dash-table th:first-child,.dash-table td:first-child{text-align:left}
+.dash-table td{padding:9px 8px;text-align:right;border-top:1px solid var(--hairline);white-space:nowrap}
+.dash-table tbody tr{cursor:pointer}
+.dash-table tbody tr:hover td{background:#f8fafc}
+.dash-table .dash-name{font-weight:700}
+.dash-table tfoot td{font-weight:700;border-top:2px solid #e2e8f0}
+.wi-split-rows{margin:10px 0 2px}
+.wi-split-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.84rem}
+.wi-split-row .wi-split-name{min-width:110px;font-weight:600}
+.wi-split-row input[type=number]{width:56px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px;font-family:inherit;text-align:center}
+.wi-split-row input[type=range]{flex:1;max-width:260px}
+.wi-split-row .wi-split-eur{min-width:70px;color:#64748b}
+.wi-loanline{display:block}
 .dash-annual-wrap{margin-top:8px}
 .dash-annual-toggle{font-size:.84rem;color:#64748b;margin-bottom:8px}
 </style>
@@ -247,9 +255,9 @@ table.txn tr:hover td{background:#fafbff}
 </div>
 <div id="tab-bar" style="display:none"></div>
 <div id="dashboard-view" style="display:none">
-  <div id="dash-stats" class="summary-row"></div>
-  <div id="dash-next-month" class="dash-next-month"></div>
-  <div id="dash-next-lump" class="dash-next-month"></div>
+  <div id="dash-month" class="dash-month"></div>
+  <div id="dash-overdue"></div>
+  <div class="loan-card dash-table-card"><div class="tbl-wrap"><table class="dash-table" id="dash-table"></table></div></div>
   <div class="collapsible" id="panel-dashchart">
     <div class="collapsible-head" onclick="togglePanel('dashChart',this)">
       <span class="collapsible-title">Combined balance chart</span>
@@ -262,8 +270,6 @@ table.txn tr:hover td{background:#fafbff}
       </div>
     </div>
   </div>
-  <div id="dash-loan-cards" class="dash-loan-cards"></div>
-  <div id="dash-budget" class="dash-budget-section"></div>
   <div class="dash-annual-wrap">
     <button class="btn-link-reset dash-annual-toggle" onclick="toggleAnnualSchedule()">&#9654; Annual schedule</button>
     <div id="dash-annual" style="display:none"></div>
@@ -318,8 +324,9 @@ table.txn tr:hover td{background:#fafbff}
   </div>
   <div class="lpane" id="pane-whatif" style="display:none">
   <div class="loan-card whatif">
-    <div class="wi-title">Monthly budget</div>
-    <div class="wi-sub">Try a different monthly budget. Nothing is saved until you press Apply.</div>
+    <div class="wi-title" id="wi-budget-title">Monthly budget</div>
+    <div class="wi-sub" id="wi-budget-sub">Try a different monthly budget. Nothing is saved until you press Apply.</div>
+    <div id="wi-single">
     <div class="wi-row">
       <input type="number" id="loan-budget" value="1000" step="10" min="0" oninput="updateWhatIf()"> <span>&euro; a month</span>
       <span class="wi-note" id="budget-bar-note"></span>
@@ -329,7 +336,16 @@ table.txn tr:hover td{background:#fafbff}
       <button class="btn-primary wi-btn" onclick="applyBudget()">Apply</button>
       <button class="btn-link-reset" onclick="resetBudgetTrial()">Reset</button>
     </div>
-    <div class="wi-note" id="wi-budget-multi" style="display:none">With more than one loan, the budget is split on the Dashboard. You can try amounts here, but Apply is not available.</div>
+    </div>
+    <div id="wi-split" style="display:none">
+      <div class="wi-row"><span>Total for all loans</span> <input type="number" id="wi-total" step="10" min="0" oninput="onSplitTotal(this.value)"> <span>&euro; a month</span></div>
+      <div id="wi-split-rows" class="wi-split-rows"></div>
+      <div class="wi-result" id="wi-split-result"></div>
+      <div class="wi-actions" id="wi-split-actions" style="display:none">
+        <button class="btn-primary wi-btn" onclick="applySplit()">Apply</button>
+        <button class="btn-link-reset" onclick="resetSplit()">Reset</button>
+      </div>
+    </div>
   </div>
   <div class="loan-card whatif">
     <div class="wi-title">One-time payment</div>
@@ -386,7 +402,7 @@ table.txn tr:hover td{background:#fafbff}
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter your loan details once: an optional name, the outstanding principal, remaining term, nominal annual interest rate, and any additional levy charged by your lender. Choose your rate type (fixed or variable) and, if fixed, the duration of the fixed period and the rate that applies after it expires. The form shows a live summary &mdash; effective rate, term in years, and estimated instalment &mdash; as you type. Click <strong>Save &amp; Apply</strong>. All settings can be changed at any time via <strong>Edit</strong>.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Multiple loans &amp; the Dashboard</h3>
     <p style="font-size:.83rem;color:#444;margin:0 0 4px">Track up to three loans (e.g. a mortgage plus a home-repair loan). Add one with <strong>+ Add</strong> in the tab bar and give it a name in the setup form. Each loan gets its own tab and projection &mdash; click a tab to switch between them. Remove a loan with <strong>Delete this loan</strong> in its Edit screen; deleting back down to one loan returns to the single-loan view.</p>
-    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Once you have more than one loan, a <strong>Dashboard</strong> tab appears. It aggregates everything across your loans: total outstanding balance, earliest payoff, total interest saved, a combined balance chart, a card per loan, and a collapsible annual schedule. Your monthly budget is managed here too &mdash; set a single <strong>total</strong> and use the sliders to split it across loans (the split always sums to 100%).</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Once you have more than one loan, a <strong>Dashboard</strong> tab appears. It aggregates everything across your loans: total outstanding balance, earliest payoff, total interest saved, a combined balance chart, a card per loan, and a collapsible annual schedule. It opens with what is due this month across your loans and any overdue payments, then one row per loan with its payoff date with and without extras. Your monthly budget is set in any loan&rsquo;s <strong>What if</strong> tab: a single <strong>total</strong> split across loans by percentage (the split always sums to 100%).</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Monthly budget (What if tab)</h3>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter the total amount you are willing to pay each month. The <strong>monthly surplus</strong> &mdash; your budget minus the regular instalment &mdash; accumulates and is paid as an annual lump-sum prepayment on the month you select. Increasing your budget accelerates principal reduction and brings your settlement date forward.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Payment schedule</h3>
@@ -715,6 +731,11 @@ function computeOverdue(sched,todayKey){
   const months=sched.filter(s=>!s.confirmed&&s.month<todayKey).map(s=>s.month);
   return{count:months.length,months};
 }
+// Payoff month of the no-extras baseline (regular instalments only), same rate schedule as computeBaselineInterest.
+function computeBaselinePayoff(bal,startMonthStr,rate,endYear,endMon,fixedPeriodMonths,postFixedRate){
+  const{sched}=genProj(0,bal,startMonthStr,rate,endYear,endMon,{},1,{},false,'reduce-installment',false,0,fixedPeriodMonths||0,postFixedRate||0);
+  return sched.length?sched[sched.length-1].month:null;
+}
 function redistributeBudgetAlloc(alloc,changedId,newPct){
   newPct=Math.max(0,Math.min(100,newPct));
   const result={};Object.keys(alloc).forEach(k=>{result[k]=alloc[k];});
@@ -737,9 +758,9 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
   return result;
 }
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,computeOverdue,computeRateChange,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeBaselinePayoff,computeProgressStats,computeRemainingStats,computeOverdue,computeRateChange,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
 
-const APP_VERSION='v1.13.0';
+const APP_VERSION='v1.14.0';
 const LS_LOANS='lt_loans';
 const LS_OLD_MORT='lt_loan_mort';
 
@@ -1260,17 +1281,16 @@ function computeAllLoansData(){
     const planInt=instRows.reduce((s,r)=>s+r.int,0);
     const intSaved=baseInt-planInt;
     const nextUnconf=sched.find(r=>!r.confirmed&&!r.payoff);
-    return{loan,rows,sched,payoffMonth,intSaved,budget,nextUnconf,loanIdx:i};
+    const basePayoff=computeBaselinePayoff(loan.balance,startKey,rate,ey,em,loan.fixedPeriodMonths||0,postRate);
+    return{loan,rows,sched,payoffMonth,basePayoff,intSaved,budget,nextUnconf,loanIdx:i};
   });
 }
 
 function renderDashboard(){
   const data=computeAllLoansData();
-  renderDashboardStats(data);
-  renderDashboardNextMonth(data);
-  renderDashboardNextLump(data);
-  renderDashboardLoanCards(data);
-  renderDashboardBudget(data);
+  renderDashboardMonth(data);
+  renderDashboardOverdue(data);
+  renderDashboardTable(data);
   renderDashboardChart(data);
   applyPanelState('dashChart','panel-dashchart');
   // keep the annual schedule current when it's open — otherwise it shows stale
@@ -1278,137 +1298,62 @@ function renderDashboard(){
   if(_annualOpen)renderAnnualSchedule();
 }
 
-function renderDashboardStats(data){
-  const totalBal=data.reduce((s,d)=>s+computeProgressStats(d.sched,d.loan.balance).latestBal,0);
-  const totalSaved=data.reduce((s,d)=>s+d.intSaved,0);
-  const payoffs=data.map(d=>d.payoffMonth).filter(m=>m!=='---').sort();
-  const earliest=payoffs[0]||'---';
-  const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
-  document.getElementById('dash-stats').innerHTML=
-    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value">'+fmtE(totalBal)+'</div></div>'+
-    '<div class="card"><div class="card-label">Total Interest Saved</div><div class="card-value green">'+fmtE(totalSaved)+'</div></div>'+
-    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value accent">'+fmtMon(earliest)+'</div></div>';
-}
+const eur2=n=>'&euro;'+n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtMonKey=m=>m&&m!=='---'?MN[+m.slice(5,7)-1]+' '+m.slice(0,4):'&mdash;';
+const loanName=(d,i)=>escHtml(d.loan.label||'Loan '+(i+1));
 
-function renderDashboardNextMonth(data){
-  const fmtMon=m=>{if(!m)return '';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
-  const nextMonths=data.map(d=>d.nextUnconf?d.nextUnconf.month:null).filter(Boolean).sort();
-  const nextMon=nextMonths[0]||null;
-  if(!nextMon){document.getElementById('dash-next-month').textContent='';return;}
-  let parts=[];let total=0;
-  data.forEach(d=>{
-    const row=d.sched.find(r=>r.month===nextMon&&!r.confirmed);
-    if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.inst+(row.lump||0)));total+=row.inst+(row.lump||0);}
+// This month's total across loans: what is due (unconfirmed) and what is already paid.
+function renderDashboardMonth(data){
+  const el=document.getElementById('dash-month');if(!el)return;
+  const tk=todayKey();
+  let due=0,paid=0;const parts=[];
+  data.forEach((d,i)=>{
+    const row=d.sched.find(r=>r.month===tk);
+    if(!row)return;
+    const amt=row.inst+(row.lump||0);
+    if(row.confirmed){paid+=amt;parts.push(loanName(d,i)+' '+eur2(amt)+' <span class="paid">paid</span>');}
+    else{due+=amt;parts.push(loanName(d,i)+' '+eur2(amt));}
   });
-  document.getElementById('dash-next-month').innerHTML='<strong>'+fmtMon(nextMon)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
+  const value=!parts.length?'Nothing due':(due>0?eur2(due)+' due':'All paid');
+  el.innerHTML='<div class="dash-month-label">This month &middot; '+fmtMonKey(tk)+'</div>'+
+    '<div class="dash-month-value">'+value+'</div>'+
+    (parts.length?'<div class="dash-month-parts">'+parts.join(' &middot; ')+(paid>0&&due>0?' &middot; '+eur2(paid)+' already paid':'')+'</div>':'');
 }
 
-// Earliest upcoming (unconfirmed) lump month across loans; sums the lumps due that month.
-function renderDashboardNextLump(data){
-  const el=document.getElementById('dash-next-lump');
-  if(!el)return;
-  const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
-  const months=data.map(d=>{const nx=d.sched.find(r=>!r.confirmed&&r.lump>0);return nx?nx.month:null;}).filter(Boolean).sort();
-  const month=months[0]||null;
-  if(!month){el.textContent='';return;}
-  let parts=[];let total=0;
-  data.forEach(d=>{
-    const row=d.sched.find(r=>r.month===month&&!r.confirmed&&r.lump>0);
-    if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.lump));total+=row.lump;}
+// Overdue payments across loans (months that have ended without a confirmed payment).
+function renderDashboardOverdue(data){
+  const el=document.getElementById('dash-overdue');if(!el)return;
+  const tk=todayKey();let total=0;const parts=[];
+  data.forEach((d,i)=>{
+    const od=computeOverdue(d.sched,tk);if(!od.count)return;
+    total+=od.count;
+    const range=od.count===1?fmtMonKey(od.months[0]):fmtMonKey(od.months[0])+' to '+fmtMonKey(od.months[od.count-1]);
+    parts.push(loanName(d,i)+': '+range);
   });
-  el.innerHTML='<strong>Next lump &middot; '+fmtMon(month)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
+  if(!total){el.className='dash-overdue none';el.textContent='No overdue payments';return;}
+  el.className='dash-overdue has';
+  el.innerHTML='<strong>'+total+(total===1?' payment':' payments')+' overdue</strong> &middot; '+parts.join(' &middot; ');
 }
 
-// Paid-to-date lines for a dashboard loan card. All figures come from
-// confirmed rows only, so a user who has confirmed nothing sees a zero state.
-function paidHtml(ps){
-  if(ps.principalReduced<=0&&ps.interestPaid<=0){
-    return '<div class="dash-loan-card-paid sub">Nothing confirmed yet</div>';
-  }
-  let h='<div class="dash-loan-card-paid"><span>Principal paid</span><span>'+fmtE(ps.principalReduced)+'</span></div>';
-  if(ps.extrasSoFar>0){
-    h+='<div class="dash-loan-card-paid sub"><span>of which lumps</span><span>'+fmtE(ps.extrasSoFar)+'</span></div>';
-  }
-  h+='<div class="dash-loan-card-paid"><span>Interest paid</span><span>'+fmtE(ps.interestPaid)+'</span></div>';
-  return h;
-}
-
-function renderDashboardLoanCards(data){
-  const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
-  let html='';
+// One row per loan, then a total row.
+function renderDashboardTable(data){
+  const el=document.getElementById('dash-table');if(!el)return;
+  let rows='',tOut=0,tSaved=0;
   data.forEach((d,i)=>{
     const color=LOAN_COLORS[i%LOAN_COLORS.length];
-    const ps=computeProgressStats(d.sched,d.loan.balance);
-    const bal=ps.latestBal;
-    html+='<div class="dash-loan-card" onclick="showTab('+d.loanIdx+')" style="border-top:3px solid '+color+'">'+
-      '<div class="dash-loan-card-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</div>'+
-      '<div class="dash-loan-card-balance">'+fmtE(bal)+'</div>'+
-      '<div class="dash-loan-card-payoff">Payoff: '+fmtMon(d.payoffMonth)+'</div>'+
-      paidHtml(ps)+
-      '<div class="progress-track" style="margin:4px 0 0"><div class="progress-fill" style="width:'+ps.progressPct.toFixed(1)+'%;background:'+color+'"></div></div>'+
-      '</div>';
+    const out=computeProgressStats(d.sched,d.loan.balance).latestBal;
+    tOut+=out;tSaved+=d.intSaved;
+    const nx=d.sched.find(r=>!r.confirmed);
+    const next=nx?fmtMonKey(nx.month)+' &middot; '+eur2(nx.inst+(nx.lump||0)):'Fully paid';
+    rows+='<tr onclick="showTab('+d.loanIdx+')" title="Open '+loanName(d,i)+'">'+
+      '<td class="dash-name" style="color:'+color+'">'+loanName(d,i)+'</td>'+
+      '<td>'+fmtE(out)+'</td><td>'+next+'</td>'+
+      '<td>'+fmtMonKey(d.payoffMonth)+'</td><td>'+fmtMonKey(d.basePayoff)+'</td>'+
+      '<td style="color:var(--positive)">'+fmtE(d.intSaved)+'</td></tr>';
   });
-  document.getElementById('dash-loan-cards').innerHTML=html;
-}
-
-function renderDashboardBudget(data){
-  const total=getBudgetTotal()||1000;
-  const alloc=getBudgetAlloc()||{};
-  let html='<div class="dash-budget-title">Monthly Budget</div>'+
-    '<div class="dash-budget-row">'+
-    '<span class="dash-budget-label">Total</span>'+
-    '<input type="number" id="dash-total-budget" value="'+total+'" step="10" min="0" style="width:90px;border:1px solid #cbd5e1;border-radius:4px;padding:3px 6px" onchange="onDashBudgetTotalChange(this.value)">'+
-    '&nbsp;<span style="font-size:.82rem;color:#64748b">€ / month</span></div>';
-  data.forEach((d,i)=>{
-    const color=LOAN_COLORS[i%LOAN_COLORS.length];
-    const pct=alloc[String(i)]||0;
-    const eur=Math.round(total*pct/100);
-    html+='<div class="dash-budget-row">'+
-      '<span class="dash-budget-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</span>'+
-      '<input type="range" min="0" max="100" step="5" value="'+pct+'" style="flex:1;accent-color:'+color+'" oninput="onDashAllocChange(\''+String(i)+'\',+this.value,this)">'+
-      '<input type="number" min="0" max="100" value="'+pct+'" class="dash-budget-pct" id="dash-pct-'+String(i)+'" onchange="onDashAllocChange(\''+String(i)+'\',+this.value,null)">'+
-      '<span style="font-size:.78rem;color:#64748b">%&nbsp;=&nbsp;</span>'+
-      '<span class="dash-budget-eur" id="dash-eur-'+String(i)+'">'+fmtE(eur)+'</span>'+
-      '</div>';
-  });
-  html+='<div class="dash-budget-warn" id="dash-budget-warn">⚠ Allocations must sum to 100%</div>';
-  document.getElementById('dash-budget').innerHTML=html;
-  checkBudgetSum();
-}
-
-function onDashBudgetTotalChange(val){
-  const v=parseFloat(val)||0;
-  setBudgetTotal(v);
-  renderDashboard();
-}
-
-function onDashAllocChange(loanId,newPct,sliderEl){
-  newPct=Math.max(0,Math.min(100,Math.round(newPct)));
-  const alloc=getBudgetAlloc()||{};
-  const newAlloc=redistributeBudgetAlloc(alloc,loanId,newPct);
-  setBudgetAlloc(newAlloc);
-  const total=getBudgetTotal()||1000;
-  Object.keys(newAlloc).forEach(id=>{
-    const pctEl=document.getElementById('dash-pct-'+id);
-    const eurEl=document.getElementById('dash-eur-'+id);
-    if(pctEl)pctEl.value=newAlloc[id];
-    if(eurEl)eurEl.textContent=fmtE(Math.round(total*newAlloc[id]/100));
-    if(sliderEl){
-      const rows=document.querySelectorAll('#dash-budget .dash-budget-row input[type=range]');
-      rows.forEach(r=>{
-        const pctSib=r.nextElementSibling;
-        if(pctSib&&pctSib.id==='dash-pct-'+id)r.value=newAlloc[id];
-      });
-    }
-  });
-  checkBudgetSum();
-}
-
-function checkBudgetSum(){
-  const alloc=getBudgetAlloc()||{};
-  const sum=Object.values(alloc).reduce((s,v)=>s+v,0);
-  const warn=document.getElementById('dash-budget-warn');
-  if(warn)warn.style.display=(sum!==100)?'':'none';
+  el.innerHTML='<thead><tr><th>Loan</th><th>Outstanding</th><th>Next payment</th><th>Payoff</th><th>Without extras</th><th>Interest saved</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr><td>Total</td><td>'+fmtE(tOut)+'</td><td></td><td></td><td></td><td style="color:var(--positive)">'+fmtE(tSaved)+'</td></tr></tfoot>';
 }
 
 function renderDashboardChart(data){
@@ -1936,28 +1881,31 @@ function showLowerTab(id){
 /* What if: try a budget or a one-time payment without saving anything. */
 function savedBudget(loanId){return effectiveBudget(loanId)||1000;}
 function isMultiLoan(){return (loadLoans()||[]).length>1;}
-// Runs the projection for this loan with a trial budget and/or a trial payoff threshold. Saves nothing.
-function trialPlan(budget,threshold){
-  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
-  const rate=(_mS.annualRate+_mS.levy)/100/12;
-  const{ey,em}=projEndMonth(_mS);
-  const postRate=(_mS.postFixedRate&&_mS.fixedPeriodMonths>0)?((_mS.postFixedRate+_mS.levy)/100/12):0;
-  const useB=threshold>0?true:!!_mS.balloonEnabled,thr=threshold>0?threshold:(_mS.balloonThreshold||0);
-  const{rows}=genProj(budget,_mS.balance,projFirstMonth(_mS),rate,ey,em,getManLumps(loanId),_mS.lumpMonths,getActuals(loanId),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',useB,thr,_mS.fixedPeriodMonths||0,postRate);
+// Runs the projection for a loan with a trial budget and/or a trial payoff threshold. Saves nothing.
+function trialPlanFor(loanId,loan,budget,threshold){
+  const rate=(loan.annualRate+loan.levy)/100/12;
+  const{ey,em}=projEndMonth(loan);
+  const postRate=(loan.postFixedRate&&loan.fixedPeriodMonths>0)?((loan.postFixedRate+loan.levy)/100/12):0;
+  const useB=threshold>0?true:!!loan.balloonEnabled,thr=threshold>0?threshold:(loan.balloonThreshold||0);
+  const{rows}=genProj(budget,loan.balance,projFirstMonth(loan),rate,ey,em,getManLumps(loanId),loan.lumpMonths,getActuals(loanId),loan.lumpEnabled!==false,loan.lumpEffect||'reduce-installment',useB,thr,loan.fixedPeriodMonths||0,postRate);
   const inst=rows.filter(r=>r.type==='inst');
   return{payoff:inst.length?inst[inst.length-1].month:null,planInt:inst.reduce((s,r)=>s+r.int,0)};
 }
-function baselineInterest(){
-  const rate=(_mS.annualRate+_mS.levy)/100/12;
-  const{ey,em}=projEndMonth(_mS);
-  const postRate=(_mS.postFixedRate&&_mS.fixedPeriodMonths>0)?((_mS.postFixedRate+_mS.levy)/100/12):0;
-  return computeBaselineInterest(_mS.balance,projFirstMonth(_mS),rate,ey,em,_mS.fixedPeriodMonths||0,postRate);
+function trialPlan(budget,threshold){
+  return trialPlanFor(typeof activeLoanIdx==='number'?activeLoanIdx:0,_mS,budget,threshold);
+}
+function baselineInterestFor(loan){
+  const rate=(loan.annualRate+loan.levy)/100/12;
+  const{ey,em}=projEndMonth(loan);
+  const postRate=(loan.postFixedRate&&loan.fixedPeriodMonths>0)?((loan.postFixedRate+loan.levy)/100/12):0;
+  return computeBaselineInterest(loan.balance,projFirstMonth(loan),rate,ey,em,loan.fixedPeriodMonths||0,postRate);
 }
 // "Payoff 2049 Jul -> 2044 May . interest saved 1.922 -> 9.100 (+7.178)"
-function trialEffectHtml(trial){
+function trialEffectHtml(trial,loanId,loan){
+  if(loan===undefined){loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;loan=_mS;}
   const fm=m=>m?m.slice(0,4)+' '+MN[+m.slice(5,7)-1]:'&mdash;';
-  const now=trialPlan(savedBudget(typeof activeLoanIdx==='number'?activeLoanIdx:0),0);
-  const base=baselineInterest();
+  const now=trialPlanFor(loanId,loan,savedBudget(loanId),0);
+  const base=baselineInterestFor(loan);
   const sNow=base-now.planInt,sNew=base-trial.planInt,d=sNew-sNow;
   const diff=Math.round(d)===0?'':' <span class="'+(d>0?'wi-gain':'wi-loss')+'">('+(d>0?'+':'&minus;')+fmtE(Math.abs(d))+')</span>';
   return 'Payoff '+fm(now.payoff)+' &rarr; <span class="wi-new">'+fm(trial.payoff)+'</span> &middot; interest saved '+fmtE(sNow)+' &rarr; <span class="wi-new">'+fmtE(sNew)+'</span>'+diff;
@@ -1965,20 +1913,72 @@ function trialEffectHtml(trial){
 function updateWhatIf(){
   if(!_mS)return;
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const multi=isMultiLoan();
+  document.getElementById('wi-single').style.display=multi?'none':'';
+  document.getElementById('wi-split').style.display=multi?'':'none';
+  document.getElementById('wi-budget-title').textContent=multi?'Monthly budget for all loans':'Monthly budget';
+  document.getElementById('wi-budget-sub').textContent=multi?'Try a different total or split. Nothing is saved until you press Apply.':'Try a different monthly budget. Nothing is saved until you press Apply.';
+  if(multi){if(!splitTrial)initSplitTrial();renderSplitTrial();return;}
   const inp=document.getElementById('loan-budget');if(!inp)return;
   const saved=savedBudget(loanId),tried=parseFloat(inp.value);
   const res=document.getElementById('wi-budget-result');
   const acts=document.getElementById('wi-budget-actions');
-  const multi=isMultiLoan();
-  document.getElementById('wi-budget-multi').style.display=multi?'':'none';
   if(!(tried>0)||Math.abs(tried-saved)<0.005){
     res.innerHTML='Current budget: <strong>'+fmtE(saved)+'</strong> a month.';
     acts.style.display='none';
     return;
   }
   res.innerHTML=trialEffectHtml(trialPlan(tried,0));
-  acts.style.display=multi?'none':'';
+  acts.style.display='';
 }
+
+/* Multi-loan budget: one total split across loans by percentage (moved here from the Dashboard). */
+let splitTrial=null;
+function initSplitTrial(){
+  const loans=loadLoans()||[];
+  const saved=getBudgetAlloc()||{};
+  const alloc={};loans.forEach((_,i)=>{alloc[String(i)]=saved[String(i)]||0;});
+  splitTrial={total:getBudgetTotal()||1000,alloc};
+}
+function splitChanged(){
+  const saved=getBudgetAlloc()||{};
+  if(Math.abs(splitTrial.total-(getBudgetTotal()||1000))>=0.005)return true;
+  return Object.keys(splitTrial.alloc).some(k=>(saved[k]||0)!==splitTrial.alloc[k]);
+}
+function renderSplitTrial(){
+  const loans=loadLoans()||[];
+  const t=document.getElementById('wi-total');
+  if(document.activeElement!==t)t.value=splitTrial.total;
+  let html='';
+  loans.forEach((loan,i)=>{
+    const k=String(i),pct=splitTrial.alloc[k]||0,color=LOAN_COLORS[i%LOAN_COLORS.length];
+    html+='<div class="wi-split-row"><span class="wi-split-name" style="color:'+color+'">'+escHtml(loan.label||'Loan '+(i+1))+'</span>'+
+      '<input type="range" min="0" max="100" step="5" value="'+pct+'" style="accent-color:'+color+'" oninput="onSplitPct(\''+k+'\',+this.value)" aria-label="Share for '+escHtml(loan.label||'Loan '+(i+1))+'">'+
+      '<input type="number" min="0" max="100" value="'+pct+'" onchange="onSplitPct(\''+k+'\',+this.value)"> <span>%</span>'+
+      '<span class="wi-split-eur">= '+fmtE(splitTrial.total*pct/100)+'</span></div>';
+  });
+  document.getElementById('wi-split-rows').innerHTML=html;
+  const changed=splitChanged();
+  document.getElementById('wi-split-actions').style.display=changed?'':'none';
+  if(!changed){
+    document.getElementById('wi-split-result').innerHTML='Current total: <strong>'+fmtE(splitTrial.total)+'</strong> a month.';
+    return;
+  }
+  document.getElementById('wi-split-result').innerHTML=loans.map((loan,i)=>{
+    const b=splitTrial.total*(splitTrial.alloc[String(i)]||0)/100;
+    return '<span class="wi-loanline"><strong>'+escHtml(loan.label||'Loan '+(i+1))+':</strong> '+trialEffectHtml(trialPlanFor(i,loan,b,0),i,loan)+'</span>';
+  }).join('');
+}
+function onSplitTotal(v){splitTrial.total=Math.max(0,parseFloat(v)||0);renderSplitTrial();}
+function onSplitPct(k,v){splitTrial.alloc=redistributeBudgetAlloc(splitTrial.alloc,k,Math.round(v));renderSplitTrial();}
+function applySplit(){
+  if(!splitTrial||!(splitTrial.total>0))return;
+  setBudgetTotal(splitTrial.total);
+  setBudgetAlloc(splitTrial.alloc);
+  splitTrial=null;
+  refreshLoan();
+}
+function resetSplit(){splitTrial=null;updateWhatIf();}
 function applyBudget(){
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
   const v=parseFloat(document.getElementById('loan-budget').value);
@@ -2096,6 +2096,7 @@ function initApp(){
   applyPanelStates();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'The surplus over your instalment is paid once a year as a lump sum.':'The annual lump sum is off, so the budget does not change the plan. Turn it on in Edit.';
+  splitTrial=null;
   showLowerTab(lowerTab);
   renderTabBar();
   const loans=loadLoans()||[];

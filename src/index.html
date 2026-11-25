@@ -29,9 +29,9 @@
 </div>
 <div id="tab-bar" style="display:none"></div>
 <div id="dashboard-view" style="display:none">
-  <div id="dash-stats" class="summary-row"></div>
-  <div id="dash-next-month" class="dash-next-month"></div>
-  <div id="dash-next-lump" class="dash-next-month"></div>
+  <div id="dash-month" class="dash-month"></div>
+  <div id="dash-overdue"></div>
+  <div class="loan-card dash-table-card"><div class="tbl-wrap"><table class="dash-table" id="dash-table"></table></div></div>
   <div class="collapsible" id="panel-dashchart">
     <div class="collapsible-head" onclick="togglePanel('dashChart',this)">
       <span class="collapsible-title">Combined balance chart</span>
@@ -44,8 +44,6 @@
       </div>
     </div>
   </div>
-  <div id="dash-loan-cards" class="dash-loan-cards"></div>
-  <div id="dash-budget" class="dash-budget-section"></div>
   <div class="dash-annual-wrap">
     <button class="btn-link-reset dash-annual-toggle" onclick="toggleAnnualSchedule()">&#9654; Annual schedule</button>
     <div id="dash-annual" style="display:none"></div>
@@ -100,8 +98,9 @@
   </div>
   <div class="lpane" id="pane-whatif" style="display:none">
   <div class="loan-card whatif">
-    <div class="wi-title">Monthly budget</div>
-    <div class="wi-sub">Try a different monthly budget. Nothing is saved until you press Apply.</div>
+    <div class="wi-title" id="wi-budget-title">Monthly budget</div>
+    <div class="wi-sub" id="wi-budget-sub">Try a different monthly budget. Nothing is saved until you press Apply.</div>
+    <div id="wi-single">
     <div class="wi-row">
       <input type="number" id="loan-budget" value="1000" step="10" min="0" oninput="updateWhatIf()"> <span>&euro; a month</span>
       <span class="wi-note" id="budget-bar-note"></span>
@@ -111,7 +110,16 @@
       <button class="btn-primary wi-btn" onclick="applyBudget()">Apply</button>
       <button class="btn-link-reset" onclick="resetBudgetTrial()">Reset</button>
     </div>
-    <div class="wi-note" id="wi-budget-multi" style="display:none">With more than one loan, the budget is split on the Dashboard. You can try amounts here, but Apply is not available.</div>
+    </div>
+    <div id="wi-split" style="display:none">
+      <div class="wi-row"><span>Total for all loans</span> <input type="number" id="wi-total" step="10" min="0" oninput="onSplitTotal(this.value)"> <span>&euro; a month</span></div>
+      <div id="wi-split-rows" class="wi-split-rows"></div>
+      <div class="wi-result" id="wi-split-result"></div>
+      <div class="wi-actions" id="wi-split-actions" style="display:none">
+        <button class="btn-primary wi-btn" onclick="applySplit()">Apply</button>
+        <button class="btn-link-reset" onclick="resetSplit()">Reset</button>
+      </div>
+    </div>
   </div>
   <div class="loan-card whatif">
     <div class="wi-title">One-time payment</div>
@@ -168,7 +176,7 @@
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter your loan details once: an optional name, the outstanding principal, remaining term, nominal annual interest rate, and any additional levy charged by your lender. Choose your rate type (fixed or variable) and, if fixed, the duration of the fixed period and the rate that applies after it expires. The form shows a live summary &mdash; effective rate, term in years, and estimated instalment &mdash; as you type. Click <strong>Save &amp; Apply</strong>. All settings can be changed at any time via <strong>Edit</strong>.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Multiple loans &amp; the Dashboard</h3>
     <p style="font-size:.83rem;color:#444;margin:0 0 4px">Track up to three loans (e.g. a mortgage plus a home-repair loan). Add one with <strong>+ Add</strong> in the tab bar and give it a name in the setup form. Each loan gets its own tab and projection &mdash; click a tab to switch between them. Remove a loan with <strong>Delete this loan</strong> in its Edit screen; deleting back down to one loan returns to the single-loan view.</p>
-    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Once you have more than one loan, a <strong>Dashboard</strong> tab appears. It aggregates everything across your loans: total outstanding balance, earliest payoff, total interest saved, a combined balance chart, a card per loan, and a collapsible annual schedule. Your monthly budget is managed here too &mdash; set a single <strong>total</strong> and use the sliders to split it across loans (the split always sums to 100%).</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Once you have more than one loan, a <strong>Dashboard</strong> tab appears. It aggregates everything across your loans: total outstanding balance, earliest payoff, total interest saved, a combined balance chart, a card per loan, and a collapsible annual schedule. It opens with what is due this month across your loans and any overdue payments, then one row per loan with its payoff date with and without extras. Your monthly budget is set in any loan&rsquo;s <strong>What if</strong> tab: a single <strong>total</strong> split across loans by percentage (the split always sums to 100%).</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Monthly budget (What if tab)</h3>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">Enter the total amount you are willing to pay each month. The <strong>monthly surplus</strong> &mdash; your budget minus the regular instalment &mdash; accumulates and is paid as an annual lump-sum prepayment on the month you select. Increasing your budget accelerates principal reduction and brings your settlement date forward.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Payment schedule</h3>
