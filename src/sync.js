@@ -70,6 +70,7 @@ if(typeof module!=='undefined')module.exports={isDataKey,isTrackedKey,snapshotOf
   // Any change to the loan data marks this browser as ahead of the online copy and schedules one grouped save.
   function onLocalChange(){
     if(suppress)return;
+    if(localStorage.getItem('lt_loans'))hidePrivateStart();
     meta=Object.assign({cloudSavedAt:null},meta||{},{dirty:true,localSavedAt:new Date().toISOString()});
     saveMeta();
     setStatus({kind:'saving'});
@@ -116,7 +117,24 @@ if(typeof module!=='undefined')module.exports={isDataKey,isTrackedKey,snapshotOf
     if(again||(meta&&meta.dirty&&status.kind==='saving')){again=false;timer=setTimeout(push,DELAY);}
   }
 
+  function showPrivateStart(){
+    const el=document.getElementById('private-start');if(!el)return;
+    el.hidden=false;
+    const lv=document.getElementById('loan-view');if(lv)lv.style.visibility='hidden';
+    const st=document.getElementById('app-subtitle');if(st)st.textContent='Private copy';
+    const fr=document.getElementById('first-run-banner');if(fr)fr.classList.remove('show');
+    if(typeof closeSetup==='function')closeSetup();
+  }
+  window.startNewLoanHere=function(){
+    hidePrivateStart();
+    if(typeof openSetup==='function')openSetup(true);
+  };
+  function hidePrivateStart(){
+    const el=document.getElementById('private-start');if(el)el.hidden=true;
+    const lv=document.getElementById('loan-view');if(lv)lv.style.visibility='';
+  }
   function rerender(){
+    hidePrivateStart();
     try{
       const hasLoan=!!localStorage.getItem('lt_loans');
       if(hasLoan&&typeof closeSetup==='function')closeSetup();
@@ -177,6 +195,7 @@ if(typeof module!=='undefined')module.exports={isDataKey,isTrackedKey,snapshotOf
     finally{inFlight=false;}
     if(!cloud)return;
     const action=decideSync(meta,snapshotOf(localStorage),cloud);
+    if(action==='none'&&!cloud.savedAt&&!localStorage.getItem('lt_loans'))showPrivateStart();
     if(action==='none'){
       if(!meta&&!cloud.savedAt)setStatus({kind:'idle'});
       else{if(!meta){meta={cloudSavedAt:cloud.savedAt,localSavedAt:cloud.savedAt,dirty:false};saveMeta();}setStatus({kind:'saved',at:cloud.savedAt||meta.cloudSavedAt});}
