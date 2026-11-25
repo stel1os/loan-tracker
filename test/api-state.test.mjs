@@ -67,6 +67,7 @@ test('bad bodies are refused and nothing is stored', async () => {
     { savedAt: '2026-11-25T10:00:00.000Z', data: { lt_loans: 123 } },
     { savedAt: '2026-11-25T10:00:00.000Z', data: { lt_budget_0: '1000' } },
     { savedAt: '2026-11-25T10:00:00.000Z', data: [] },
+    { savedAt: '2026-11-25T10:00:00.000Z', data: null },
   ];
   for (const b of bad) assert.equal((await handle(req('PUT', b), env(kv), asOwner)).status, 400, JSON.stringify(b));
   const big = { savedAt: '2026-11-25T10:00:00.000Z', data: { lt_loans: 'x'.repeat(1024 * 1024 + 10) } };
@@ -124,4 +125,12 @@ test('the full path: a genuine token for the owner can save; the same token for 
   assert.equal(ok.status, 200);
   const no = await handle(req('GET', undefined, await sign({ ...good, email: 'stranger@x.com' })), env(kv), { fetchImpl, now: NOW });
   assert.equal(no.status, 403);
+});
+
+test('an empty save (after a Reset) is stored, so the reset reaches the online copy', async () => {
+  const kv = memoryKV();
+  await handle(req('PUT', { savedAt: '2026-11-25T10:00:00.000Z', data }), env(kv), asOwner);
+  const r = await handle(req('PUT', { savedAt: '2026-11-25T11:00:00.000Z', data: {} }), env(kv), asOwner);
+  assert.equal(r.status, 200);
+  assert.deepEqual(JSON.parse(kv.m.get('state:' + OWNER)).data, {});
 });

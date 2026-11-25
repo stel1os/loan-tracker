@@ -1340,6 +1340,7 @@ function renderLastBackup(){
 }
 function openMenu(){
   renderLastBackup();
+  if(typeof renderSyncStatus==='function')renderSyncStatus();
   const m=document.getElementById('hdr-menu'),b=document.getElementById('menu-btn');
   m.hidden=false;b.setAttribute('aria-expanded','true');
   const first=m.querySelector('button');if(first)first.focus();
