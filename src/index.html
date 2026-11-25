@@ -36,6 +36,11 @@
   <button class="btn-link-reset" onclick="loadExample()" style="margin-left:10px;font-size:.82rem">Load example</button>
   <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
 </div>
+<div class="private-start" id="private-start" hidden>
+  <div class="private-start-title">Nothing is saved online yet</div>
+  <div class="private-start-text">To bring your loan here, open the public copy on the device that has your data, choose &middot;&middot;&middot; &rarr; Export backup, then import that file here. From then on, every change is saved online automatically.</div>
+  <div class="private-start-actions"><button class="btn-primary" onclick="triggerImport()">Import a backup</button><button class="btn-link-reset" onclick="startNewLoanHere()">Set up a new loan</button></div>
+</div>
 <div class="sync-notice" id="sync-notice" role="status" hidden>
   <span id="sync-notice-text"></span>
   <span class="sync-notice-actions"><button class="btn-secondary" onclick="downloadOtherVersion()">Download the other version</button><button class="btn-link-reset" onclick="dismissSyncNotice()">Dismiss</button></span>

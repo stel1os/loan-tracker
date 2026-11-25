@@ -165,6 +165,12 @@ table.txn tr:hover td{background:#fafbff}
 .menu-info{font-size:.74rem;color:#64748b;padding:0 10px 6px 32px}
 .menu-info.stale{color:var(--amber);font-weight:600}
 .menu-sync{padding-top:2px}
+.private-start{margin-bottom:12px;padding:16px 18px;background:var(--surface);border:1px solid #c7d2fe;border-radius:var(--radius-card);box-shadow:var(--shadow)}
+.private-start[hidden]{display:none}
+.private-start-title{font-weight:700;font-size:1rem;margin-bottom:4px}
+.private-start-text{font-size:.85rem;color:#475569;line-height:1.5;margin-bottom:12px}
+.private-start-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.private-start-actions .btn-link-reset{font-size:.84rem;color:#64748b}
 .sync-notice{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:10px;padding:10px 14px;background:var(--amber-soft);border:1px solid #fcd34d;border-radius:8px;color:var(--amber);font-size:.84rem}
 .sync-notice[hidden]{display:none}
 .sync-notice-actions{display:flex;gap:12px;align-items:center}

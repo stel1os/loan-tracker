@@ -173,6 +173,12 @@ table.txn tr:hover td{background:#fafbff}
 .menu-info{font-size:.74rem;color:#64748b;padding:0 10px 6px 32px}
 .menu-info.stale{color:var(--amber);font-weight:600}
 .menu-sync{padding-top:2px}
+.private-start{margin-bottom:12px;padding:16px 18px;background:var(--surface);border:1px solid #c7d2fe;border-radius:var(--radius-card);box-shadow:var(--shadow)}
+.private-start[hidden]{display:none}
+.private-start-title{font-weight:700;font-size:1rem;margin-bottom:4px}
+.private-start-text{font-size:.85rem;color:#475569;line-height:1.5;margin-bottom:12px}
+.private-start-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.private-start-actions .btn-link-reset{font-size:.84rem;color:#64748b}
 .sync-notice{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:10px;padding:10px 14px;background:var(--amber-soft);border:1px solid #fcd34d;border-radius:8px;color:var(--amber);font-size:.84rem}
 .sync-notice[hidden]{display:none}
 .sync-notice-actions{display:flex;gap:12px;align-items:center}
@@ -335,6 +341,11 @@ table.txn tr:hover td{background:#fafbff}
   <button class="btn-link-reset" onclick="triggerImport()" style="margin-left:6px;font-size:.82rem">Import from backup</button>
   <button class="btn-link-reset" onclick="loadExample()" style="margin-left:10px;font-size:.82rem">Load example</button>
   <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+</div>
+<div class="private-start" id="private-start" hidden>
+  <div class="private-start-title">Nothing is saved online yet</div>
+  <div class="private-start-text">To bring your loan here, open the public copy on the device that has your data, choose &middot;&middot;&middot; &rarr; Export backup, then import that file here. From then on, every change is saved online automatically.</div>
+  <div class="private-start-actions"><button class="btn-primary" onclick="triggerImport()">Import a backup</button><button class="btn-link-reset" onclick="startNewLoanHere()">Set up a new loan</button></div>
 </div>
 <div class="sync-notice" id="sync-notice" role="status" hidden>
   <span id="sync-notice-text"></span>
@@ -848,7 +859,7 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
 // Export for Node.js test runner; guard keeps browser build unaffected
 if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeBaselinePayoff,computeProgressStats,computeRemainingStats,computeOverdue,computeRateChange,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
 
-const APP_VERSION='v1.15.0';
+const APP_VERSION='v1.16.0';
 const LS_LOANS='lt_loans';
 const LS_OLD_MORT='lt_loan_mort';
 
@@ -2350,6 +2361,7 @@ if(typeof module!=='undefined')module.exports={isDataKey,isTrackedKey,snapshotOf
   // Any change to the loan data marks this browser as ahead of the online copy and schedules one grouped save.
   function onLocalChange(){
     if(suppress)return;
+    if(localStorage.getItem('lt_loans'))hidePrivateStart();
     meta=Object.assign({cloudSavedAt:null},meta||{},{dirty:true,localSavedAt:new Date().toISOString()});
     saveMeta();
     setStatus({kind:'saving'});
@@ -2396,7 +2408,24 @@ if(typeof module!=='undefined')module.exports={isDataKey,isTrackedKey,snapshotOf
     if(again||(meta&&meta.dirty&&status.kind==='saving')){again=false;timer=setTimeout(push,DELAY);}
   }
 
+  function showPrivateStart(){
+    const el=document.getElementById('private-start');if(!el)return;
+    el.hidden=false;
+    const lv=document.getElementById('loan-view');if(lv)lv.style.visibility='hidden';
+    const st=document.getElementById('app-subtitle');if(st)st.textContent='Private copy';
+    const fr=document.getElementById('first-run-banner');if(fr)fr.classList.remove('show');
+    if(typeof closeSetup==='function')closeSetup();
+  }
+  window.startNewLoanHere=function(){
+    hidePrivateStart();
+    if(typeof openSetup==='function')openSetup(true);
+  };
+  function hidePrivateStart(){
+    const el=document.getElementById('private-start');if(el)el.hidden=true;
+    const lv=document.getElementById('loan-view');if(lv)lv.style.visibility='';
+  }
   function rerender(){
+    hidePrivateStart();
     try{
       const hasLoan=!!localStorage.getItem('lt_loans');
       if(hasLoan&&typeof closeSetup==='function')closeSetup();
@@ -2457,6 +2486,7 @@ if(typeof module!=='undefined')module.exports={isDataKey,isTrackedKey,snapshotOf
     finally{inFlight=false;}
     if(!cloud)return;
     const action=decideSync(meta,snapshotOf(localStorage),cloud);
+    if(action==='none'&&!cloud.savedAt&&!localStorage.getItem('lt_loans'))showPrivateStart();
     if(action==='none'){
       if(!meta&&!cloud.savedAt)setStatus({kind:'idle'});
       else{if(!meta){meta={cloudSavedAt:cloud.savedAt,localSavedAt:cloud.savedAt,dirty:false};saveMeta();}setStatus({kind:'saved',at:cloud.savedAt||meta.cloudSavedAt});}
