@@ -54,6 +54,8 @@ Click **Export** in the header to download a timestamped JSON file of your full 
 
 This project is built using [Spec-Driven Development (SDD)](https://github.com/stel1os/ai-sdd-sop) — an AI-assisted software development methodology where every implementation task and test traces back to a numbered spec requirement.
 
+`npm run build` builds `loan-tracker.html`, which GitHub Pages serves. `npm run build:pages` also copies it to `dist/index.html`, for the owner's private Cloudflare Pages copy. That copy is behind Cloudflare Access and is the only one that will save online.
+
 ## Support
 
 If you find this useful, you can buy me a coffee:
