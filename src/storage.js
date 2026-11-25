@@ -58,6 +58,13 @@ function effectiveBudget(loanId){
   return getBudgetTotal()*(alloc[String(loanId)]||0)/100;
 }
 
+// Date of the last export. Kept under its own key, outside the lt_/confirmed_ data keys, so it is never
+// written into a backup file and an import does not overwrite it. It stays in this browser only.
+const LS_LAST_BACKUP='loantracker_last_backup';
+function getLastBackup(){try{return localStorage.getItem(LS_LAST_BACKUP);}catch(e){return null;}}
+function setLastBackup(iso){try{localStorage.setItem(LS_LAST_BACKUP,iso);}catch(e){}}
+function clearLastBackup(){try{localStorage.removeItem(LS_LAST_BACKUP);}catch(e){}}
+
 // Collapsible panel open/closed preference (default: folded). key e.g. 'chart','settlement','dashChart'
 function getPanelOpen(key){try{return localStorage.getItem('lt_panel_'+key)==='1';}catch(e){return false;}}
 function setPanelOpen(key,open){try{localStorage.setItem('lt_panel_'+key,open?'1':'0');}catch(e){}}

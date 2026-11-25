@@ -162,6 +162,8 @@ table.txn tr:hover td{background:#fafbff}
 .hdr-menu button{display:block;width:100%;text-align:left;background:none;border:none;padding:9px 10px;border-radius:6px;font-size:.85rem;cursor:pointer;color:var(--ink);font-family:inherit}
 .hdr-menu button:hover,.hdr-menu button:focus-visible{background:#f1f5f9;outline:none}
 .hdr-menu .menu-danger{color:#dc2626}
+.menu-info{font-size:.74rem;color:#64748b;padding:0 10px 6px 32px}
+.menu-info.stale{color:var(--amber);font-weight:600}
 .menu-sep{height:1px;background:#e2e8f0;margin:5px 4px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 .first-run-banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:.82rem;color:#92400e;display:none}

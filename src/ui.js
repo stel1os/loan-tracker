@@ -191,6 +191,8 @@ function exportData(){
   a.download='loan-tracker-'+state._exported+'.json';
   a.click();
   URL.revokeObjectURL(a.href);
+  setLastBackup(new Date().toISOString());
+  renderLastBackup();
 }
 
 function toggleFixedPeriod(){
@@ -215,6 +217,7 @@ function resetApp(){
   Object.keys(localStorage)
     .filter(k=>k.startsWith('lt_')||k.startsWith('confirmed_'))
     .forEach(k=>localStorage.removeItem(k));
+  clearLastBackup(); // the backup date belonged to the data just deleted
   closeSetup();
   initApp();
 }
@@ -1307,7 +1310,25 @@ function toggleMenu(e){
   const m=document.getElementById('hdr-menu');
   if(m.hidden)openMenu();else closeMenu();
 }
+// "Last backup: today / yesterday / 12 days ago / Never" in the header menu.
+function lastBackupText(iso,now){
+  if(!iso)return 'Never';
+  const d=new Date(iso);if(isNaN(d))return 'Never';
+  const day=x=>Date.UTC(x.getFullYear(),x.getMonth(),x.getDate());
+  const n=Math.round((day(now)-day(d))/86400000);
+  if(n<=0)return 'today';
+  if(n===1)return 'yesterday';
+  return n+' days ago';
+}
+function renderLastBackup(){
+  const el=document.getElementById('menu-last-backup');if(!el)return;
+  const iso=getLastBackup(),txt=lastBackupText(iso,new Date());
+  el.textContent='Last backup: '+txt;
+  el.classList.toggle('stale',!iso||txt.endsWith('days ago')&&parseInt(txt,10)>30);
+  if(iso)el.title=new Date(iso).toLocaleString('en-GB');else el.removeAttribute('title');
+}
 function openMenu(){
+  renderLastBackup();
   const m=document.getElementById('hdr-menu'),b=document.getElementById('menu-btn');
   m.hidden=false;b.setAttribute('aria-expanded','true');
   const first=m.querySelector('button');if(first)first.focus();
