@@ -787,6 +787,17 @@ function rateSummary(mS,today){
   return{text:pct(rate)+' variable · '+term,title:'Variable rate '+parts};
 }
 
+// "Jul 2039: instalment changes from €512,00 to €526,40" on fixed loans with a later rate.
+function renderRateChange(mS){
+  const el=document.getElementById('m-rate-change');if(!el)return;
+  const rc=computeRateChange(mSchedule,mS);
+  if(!rc){el.style.display='none';el.textContent='';return;}
+  const eur=n=>'&euro;'+n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const verb=rc.month<todayKey()?'changed':'changes';
+  el.innerHTML='<strong>'+MN[+rc.month.slice(5,7)-1]+' '+rc.month.slice(0,4)+':</strong> instalment '+verb+' from '+eur(rc.before)+' to '+eur(rc.after);
+  el.style.display='';
+}
+
 function computePlanStats(mRows,mS){
   const LOAN_RATE=(mS.annualRate+mS.levy)/100/12;
   const postRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
@@ -832,6 +843,7 @@ function computePlanStats(mRows,mS){
   const ipaid=document.getElementById('m-int-paid');
   if(ipaid)ipaid.textContent=fmtE(ps.interestPaid)+' interest paid';
   renderNextBar();
+  renderRateChange(mS);
   return{mBase};
 }
 

@@ -144,6 +144,15 @@ function computeBaselineInterest(bal,startMonthStr,rate,endYear,endMon,fixedPeri
   const{sched}=genProj(0,bal,startMonthStr,rate,endYear,endMon,{},1,{},false,'reduce-installment',false,0,fixedPeriodMonths||0,postFixedRate||0);
   return sched.reduce((a,s)=>a+s.interest,0);
 }
+// Instalment just before and just after a fixed rate ends. The engine switches rate after
+// fixedPeriodMonths schedule rows, so the last fixed month is row fixedPeriodMonths-1.
+// Returns null unless the loan is fixed with a later rate set and both months are in the schedule.
+function computeRateChange(sched,loan){
+  if(!loan||loan.rateType!=='fixed'||!(loan.fixedPeriodMonths>0)||!(loan.postFixedRate>0))return null;
+  const last=sched[loan.fixedPeriodMonths-1],first=sched[loan.fixedPeriodMonths];
+  if(!last||!first)return null;
+  return{month:last.month,before:last.inst,after:first.inst};
+}
 // Returns the unconfirmed rows whose month has fully ended. todayKey is 'YYYY-MM'.
 // The schedule stores months, not due dates, so the current month is never overdue.
 function computeOverdue(sched,todayKey){
@@ -172,4 +181,4 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
   return result;
 }
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,computeOverdue,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,computeOverdue,computeRateChange,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
