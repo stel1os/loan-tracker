@@ -57,6 +57,7 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .cmp-lumps{text-align:right;font-size:.7rem;color:var(--muted);margin-top:10px}
 .loan-title{font-size:.92rem;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase}
+.badge-rate{text-transform:none;font-size:.74rem;border-radius:8px;line-height:1.35}
 .badge-blue{background:var(--accent-soft);color:var(--accent)}.badge-amber{background:var(--amber-soft);color:var(--amber)}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat-label{font-size:.68rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em}

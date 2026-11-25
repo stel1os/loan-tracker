@@ -65,6 +65,7 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .cmp-lumps{text-align:right;font-size:.7rem;color:var(--muted);margin-top:10px}
 .loan-title{font-size:.92rem;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase}
+.badge-rate{text-transform:none;font-size:.74rem;border-radius:8px;line-height:1.35}
 .badge-blue{background:var(--accent-soft);color:var(--accent)}.badge-amber{background:var(--amber-soft);color:var(--amber)}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat-label{font-size:.68rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
@@ -261,7 +262,7 @@ table.txn tr:hover td{background:#fafbff}
   </div>
   <div class="loan-card">
     <div class="loan-card-head">
-      <div class="loan-title"><span class="accent-dot"></span><span id="m-loan-title">Loan</span> <span class="badge badge-blue" id="m-badge">&#8230;</span></div>
+      <div class="loan-title"><span class="accent-dot"></span><span id="m-loan-title">Loan</span> <span class="badge badge-blue badge-rate" id="m-badge">&#8230;</span></div>
       <div class="time-left" id="m-time-left">&#8230;</div>
     </div>
     <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%"></div></div>
@@ -1517,6 +1518,29 @@ function confirmNext(){
   if(inp)inp.focus({preventScroll:true});
 }
 
+// Rate line for the loan heading: the rate (levy included), fixed or variable,
+// and when a fixed rate ends. todayKey is 'YYYY-MM'.
+function rateSummary(mS,today){
+  const pct=n=>n.toFixed(2)+'%';
+  const rate=mS.annualRate+mS.levy;
+  const term=Math.round(mS.months/12*10)/10+'-year term';
+  const parts=pct(mS.annualRate)+' + '+pct(mS.levy)+' levy';
+  if(mS.rateType==='fixed'&&mS.fixedPeriodMonths>0){
+    let em=mS.startMonth+mS.fixedPeriodMonths,ey=mS.startYear;
+    while(em>12){em-=12;ey++;}
+    const endKey=ey+'-'+String(em).padStart(2,'0'),endTxt=MN[em-1]+' '+ey;
+    const post=mS.postFixedRate?mS.postFixedRate+mS.levy:0;
+    if(endKey<=today){
+      return{text:(post?pct(post)+' variable':'Variable')+' since '+endTxt+' (fixed '+pct(rate)+' ended) · '+term,
+        title:'Fixed rate '+parts+' until '+endTxt+(post?'; now '+pct(mS.postFixedRate)+' + '+pct(mS.levy)+' levy':'')};
+    }
+    return{text:pct(rate)+' fixed until '+endTxt+(post?', then '+pct(post):', then variable')+' · '+term,
+      title:'Fixed rate '+parts+' until '+endTxt+(post?'; then '+pct(mS.postFixedRate)+' + '+pct(mS.levy)+' levy':'')};
+  }
+  if(mS.rateType==='fixed')return{text:pct(rate)+' fixed · '+term,title:'Fixed rate '+parts};
+  return{text:pct(rate)+' variable · '+term,title:'Variable rate '+parts};
+}
+
 function computePlanStats(mRows,mS){
   const LOAN_RATE=(mS.annualRate+mS.levy)/100/12;
   const postRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
@@ -1549,13 +1573,12 @@ function computePlanStats(mRows,mS){
   document.getElementById('m-int-left').textContent=fmtE(remaining.interestLeft);
   document.getElementById('m-time-left').textContent=timeLeft;
   document.getElementById('m-loan-title').textContent=mS.label||'Loan';
-  document.getElementById('m-badge').textContent=(mS.annualRate+mS.levy).toFixed(2)+'% · '+Math.round(mS.months/12*10)/10+'y';
+  {const rs=rateSummary(mS,todayKey());const b=document.getElementById('m-badge');b.textContent=rs.text;b.title=rs.title;}
   if(typeof activeLoanIdx==='number'){
     document.getElementById('app-subtitle').textContent=(mS.label||'Loan')+' · '+MN[mS.startMonth-1]+' '+mS.startYear;
   }
-  const footerRate=mS.postFixedRate&&mS.fixedPeriodMonths>0?'Rate '+mS.annualRate.toFixed(2)+'% fixed ('+mS.fixedPeriodMonths+' mo) → '+mS.postFixedRate.toFixed(2)+'% + '+mS.levy.toFixed(2)+'% levy':'Rate '+mS.annualRate.toFixed(2)+'% fixed + '+mS.levy.toFixed(2)+'% levy';
   const lumpMons=Array.isArray(mS.lumpMonths)?mS.lumpMonths:[mS.lumpMonth!=null?mS.lumpMonth:8];
-  document.getElementById('app-footer').textContent=footerRate+' · Annual lump in '+lumpMons.map(m=>MN[m-1]).join(', ')+' · Budget drives lump formula dynamically';
+  document.getElementById('app-footer').textContent='Annual lump in '+lumpMons.map(m=>MN[m-1]).join(', ')+' · Budget drives lump formula dynamically';
   const pfill=document.getElementById('m-progress-fill');
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
