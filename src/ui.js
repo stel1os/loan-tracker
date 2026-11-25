@@ -1103,8 +1103,77 @@ function applyPanelState(key,panelId){
     if(key==='dashChart')renderDashboardChart(computeAllLoansData());
   }
 }
-function applyPanelStates(){
-  applyPanelState('settlement','panel-settlement');
+function applyPanelStates(){}
+
+/* Lower-page tabs: Schedule, What if, Interest comparison */
+let lowerTab='schedule';
+function showLowerTab(id){
+  lowerTab=id;
+  ['schedule','whatif','compare'].forEach(t=>{
+    const p=document.getElementById('pane-'+t),b=document.getElementById('ltab-'+t);
+    if(p)p.style.display=t===id?'':'none';
+    if(b){b.classList.toggle('active',t===id);b.setAttribute('aria-selected',t===id?'true':'false');}
+  });
+  if(id==='whatif')updateWhatIf();
+}
+
+/* What if: try a budget or a one-time payment without saving anything. */
+function savedBudget(loanId){return effectiveBudget(loanId)||1000;}
+function isMultiLoan(){return (loadLoans()||[]).length>1;}
+// Runs the projection for this loan with a trial budget and/or a trial payoff threshold. Saves nothing.
+function trialPlan(budget,threshold){
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const rate=(_mS.annualRate+_mS.levy)/100/12;
+  const{ey,em}=projEndMonth(_mS);
+  const postRate=(_mS.postFixedRate&&_mS.fixedPeriodMonths>0)?((_mS.postFixedRate+_mS.levy)/100/12):0;
+  const useB=threshold>0?true:!!_mS.balloonEnabled,thr=threshold>0?threshold:(_mS.balloonThreshold||0);
+  const{rows}=genProj(budget,_mS.balance,projFirstMonth(_mS),rate,ey,em,getManLumps(loanId),_mS.lumpMonths,getActuals(loanId),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',useB,thr,_mS.fixedPeriodMonths||0,postRate);
+  const inst=rows.filter(r=>r.type==='inst');
+  return{payoff:inst.length?inst[inst.length-1].month:null,planInt:inst.reduce((s,r)=>s+r.int,0)};
+}
+function baselineInterest(){
+  const rate=(_mS.annualRate+_mS.levy)/100/12;
+  const{ey,em}=projEndMonth(_mS);
+  const postRate=(_mS.postFixedRate&&_mS.fixedPeriodMonths>0)?((_mS.postFixedRate+_mS.levy)/100/12):0;
+  return computeBaselineInterest(_mS.balance,projFirstMonth(_mS),rate,ey,em,_mS.fixedPeriodMonths||0,postRate);
+}
+// "Payoff 2049 Jul -> 2044 May . interest saved 1.922 -> 9.100 (+7.178)"
+function trialEffectHtml(trial){
+  const fm=m=>m?m.slice(0,4)+' '+MN[+m.slice(5,7)-1]:'&mdash;';
+  const now=trialPlan(savedBudget(typeof activeLoanIdx==='number'?activeLoanIdx:0),0);
+  const base=baselineInterest();
+  const sNow=base-now.planInt,sNew=base-trial.planInt,d=sNew-sNow;
+  const diff=Math.round(d)===0?'':' <span class="'+(d>0?'wi-gain':'wi-loss')+'">('+(d>0?'+':'&minus;')+fmtE(Math.abs(d))+')</span>';
+  return 'Payoff '+fm(now.payoff)+' &rarr; <span class="wi-new">'+fm(trial.payoff)+'</span> &middot; interest saved '+fmtE(sNow)+' &rarr; <span class="wi-new">'+fmtE(sNew)+'</span>'+diff;
+}
+function updateWhatIf(){
+  if(!_mS)return;
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const inp=document.getElementById('loan-budget');if(!inp)return;
+  const saved=savedBudget(loanId),tried=parseFloat(inp.value);
+  const res=document.getElementById('wi-budget-result');
+  const acts=document.getElementById('wi-budget-actions');
+  const multi=isMultiLoan();
+  document.getElementById('wi-budget-multi').style.display=multi?'':'none';
+  if(!(tried>0)||Math.abs(tried-saved)<0.005){
+    res.innerHTML='Current budget: <strong>'+fmtE(saved)+'</strong> a month.';
+    acts.style.display='none';
+    return;
+  }
+  res.innerHTML=trialEffectHtml(trialPlan(tried,0));
+  acts.style.display=multi?'none':'';
+}
+function applyBudget(){
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const v=parseFloat(document.getElementById('loan-budget').value);
+  if(!(v>0)||isMultiLoan())return;
+  localStorage.setItem('lt_budget_'+loanId,v);
+  refreshLoan();
+}
+function resetBudgetTrial(){
+  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  document.getElementById('loan-budget').value=savedBudget(loanId);
+  updateWhatIf();
 }
 
 function applyEarlySettlement(mode){
@@ -1113,7 +1182,7 @@ function applyEarlySettlement(mode){
   if(mode==='month'){
     const targetMonth=document.getElementById('pp-month').value;
     const tIdx=mSchedule.findIndex(r=>r.month===targetMonth);
-    threshold=tIdx>0?mSchedule[tIdx-1].bal:(_mS?_mS.balance:0);
+    threshold=tIdx>=0?mSchedule[tIdx].bal:0;
   } else {
     threshold=parseFloat(document.getElementById('pp-amount').value)||0;
   }
@@ -1128,23 +1197,29 @@ function applyEarlySettlement(mode){
 function updatePayoffPanel(){
   // Mode A: target month -> required lump sum (opening balance of that month)
   const targetMonth=document.getElementById('pp-month').value;
-  if(!targetMonth){document.getElementById('pp-result-month').textContent='—';document.getElementById('pp-result-amount').textContent='—';document.getElementById('pp-apply-month').style.display='none';document.getElementById('pp-apply-amount').style.display='none';return;}
+  if(!targetMonth){document.getElementById('pp-result-month').textContent='—';document.getElementById('pp-result-amount').textContent='—';document.getElementById('pp-apply-month').style.display='none';document.getElementById('pp-apply-amount').style.display='none';document.getElementById('pp-effect-month').innerHTML='';document.getElementById('pp-effect-amount').innerHTML='';return;}
   const tIdx=mSchedule.findIndex(r=>r.month===targetMonth);
-  const openingBal=tIdx>0?mSchedule[tIdx-1].bal:(_mS?_mS.balance:0);
+  // Paid together with that month's instalment: the balance left after it.
+  const openingBal=tIdx>=0?mSchedule[tIdx].bal:0;
   const tmo=+targetMonth.slice(5,7);
   document.getElementById('pp-result-month-when').textContent=MN[tmo-1]+' '+targetMonth.slice(0,4);
   const hasMonResult=openingBal>0;
   document.getElementById('pp-result-month').textContent=hasMonResult?fmtE(openingBal):'—';
   document.getElementById('pp-apply-month').style.display=hasMonResult?'':'none';
+  document.getElementById('pp-effect-month').innerHTML=hasMonResult?trialEffectHtml(trialPlan(savedBudget(typeof activeLoanIdx==='number'?activeLoanIdx:0),openingBal)):'';
   // Mode B: lump sum amount -> earliest payoff month
   const amt=parseFloat(document.getElementById('pp-amount').value)||0;
   if(amt>0){
     const hit=mSchedule.find((r,i)=>!r.confirmed&&!r.payoff&&(i===0?_mS.balance:mSchedule[i-1].bal)<=amt);
-    document.getElementById('pp-result-amount').textContent=hit?(hit.month.slice(0,4)+' '+MN[+hit.month.slice(5,7)-1]):'Balance never reaches this amount';
+    // Show the month Apply would actually give, from the same projection Apply uses.
+    const tp=hit?trialPlan(savedBudget(typeof activeLoanIdx==='number'?activeLoanIdx:0),amt):null;
+    document.getElementById('pp-result-amount').textContent=tp&&tp.payoff?(tp.payoff.slice(0,4)+' '+MN[+tp.payoff.slice(5,7)-1]):'Balance never reaches this amount';
     document.getElementById('pp-apply-amount').style.display=hit?'':'none';
+    document.getElementById('pp-effect-amount').innerHTML=tp?trialEffectHtml(tp):'';
   } else {
     document.getElementById('pp-result-amount').textContent='—';
     document.getElementById('pp-apply-amount').style.display='none';
+    document.getElementById('pp-effect-amount').innerHTML='';
   }
 }
 
@@ -1153,9 +1228,8 @@ function updatePayoffPanel(){
 function refreshLoan(){
   if(!_mS)return;
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
-  const budget=parseFloat(document.getElementById('loan-budget').value)||1000;
-  // single-loan: persist to lt_budget_<id>; multi-loan total is managed via Dashboard
-  localStorage.setItem('lt_budget_'+loanId,budget);
+  // The saved budget drives the plan; the What if tab only tries amounts until Apply.
+  const budget=savedBudget(loanId);
   const rate=(_mS.annualRate+_mS.levy)/100/12;
   const startKey=projFirstMonth(_mS);
   const{ey,em}=projEndMonth(_mS);
@@ -1166,8 +1240,9 @@ function refreshLoan(){
   rebuildChart();
   refreshPayoffPanel();
   const bnEl=document.getElementById('budget-bar-note');
-  if(bnEl)bnEl.textContent=_mS&&_mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
-  applyPanelStates();
+  if(bnEl)bnEl.textContent=_mS&&_mS.lumpEnabled!==false?'The surplus over your instalment is paid once a year as a lump sum.':'The annual lump sum is off, so the budget does not change the plan. Turn it on in Edit.';
+  const bi=document.getElementById('loan-budget');if(bi)bi.value=budget;
+  updateWhatIf();
 }
 
 /* ─────────────────────────────────────────
@@ -1192,7 +1267,7 @@ function initApp(){
   const mStartKey=projFirstMonth(mS);
   const{ey:mEy,em:mEm}=projEndMonth(mS);
 
-  const mB=effectiveBudget(loanId)||parseFloat(localStorage.getItem('lt_budget_'+loanId))||1000;
+  const mB=savedBudget(loanId);
   document.getElementById('loan-budget').value=mB;
 
   const mPostRate=(mS.postFixedRate&&mS.fixedPeriodMonths>0)?((mS.postFixedRate+mS.levy)/100/12):0;
@@ -1204,7 +1279,8 @@ function initApp(){
   refreshPayoffPanel();
   applyPanelStates();
   const bnEl=document.getElementById('budget-bar-note');
-  if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'Accumulates surplus; pays once a year as lump sum':'No lump sum — installments only';
+  if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'The surplus over your instalment is paid once a year as a lump sum.':'The annual lump sum is off, so the budget does not change the plan. Turn it on in Edit.';
+  showLowerTab(lowerTab);
   renderTabBar();
   const loans=loadLoans()||[];
   if(loans.length>1){
