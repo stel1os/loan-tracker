@@ -456,17 +456,16 @@ function computeAllLoansData(){
     const planInt=instRows.reduce((s,r)=>s+r.int,0);
     const intSaved=baseInt-planInt;
     const nextUnconf=sched.find(r=>!r.confirmed&&!r.payoff);
-    return{loan,rows,sched,payoffMonth,intSaved,budget,nextUnconf,loanIdx:i};
+    const basePayoff=computeBaselinePayoff(loan.balance,startKey,rate,ey,em,loan.fixedPeriodMonths||0,postRate);
+    return{loan,rows,sched,payoffMonth,basePayoff,intSaved,budget,nextUnconf,loanIdx:i};
   });
 }
 
 function renderDashboard(){
   const data=computeAllLoansData();
-  renderDashboardStats(data);
-  renderDashboardNextMonth(data);
-  renderDashboardNextLump(data);
-  renderDashboardLoanCards(data);
-  renderDashboardBudget(data);
+  renderDashboardMonth(data);
+  renderDashboardOverdue(data);
+  renderDashboardTable(data);
   renderDashboardChart(data);
   applyPanelState('dashChart','panel-dashchart');
   // keep the annual schedule current when it's open — otherwise it shows stale
@@ -474,137 +473,62 @@ function renderDashboard(){
   if(_annualOpen)renderAnnualSchedule();
 }
 
-function renderDashboardStats(data){
-  const totalBal=data.reduce((s,d)=>s+computeProgressStats(d.sched,d.loan.balance).latestBal,0);
-  const totalSaved=data.reduce((s,d)=>s+d.intSaved,0);
-  const payoffs=data.map(d=>d.payoffMonth).filter(m=>m!=='---').sort();
-  const earliest=payoffs[0]||'---';
-  const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
-  document.getElementById('dash-stats').innerHTML=
-    '<div class="card"><div class="card-label">Total Outstanding</div><div class="card-value">'+fmtE(totalBal)+'</div></div>'+
-    '<div class="card"><div class="card-label">Total Interest Saved</div><div class="card-value green">'+fmtE(totalSaved)+'</div></div>'+
-    '<div class="card"><div class="card-label">Earliest Payoff</div><div class="card-value accent">'+fmtMon(earliest)+'</div></div>';
-}
+const eur2=n=>'&euro;'+n.toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtMonKey=m=>m&&m!=='---'?MN[+m.slice(5,7)-1]+' '+m.slice(0,4):'&mdash;';
+const loanName=(d,i)=>escHtml(d.loan.label||'Loan '+(i+1));
 
-function renderDashboardNextMonth(data){
-  const fmtMon=m=>{if(!m)return '';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
-  const nextMonths=data.map(d=>d.nextUnconf?d.nextUnconf.month:null).filter(Boolean).sort();
-  const nextMon=nextMonths[0]||null;
-  if(!nextMon){document.getElementById('dash-next-month').textContent='';return;}
-  let parts=[];let total=0;
-  data.forEach(d=>{
-    const row=d.sched.find(r=>r.month===nextMon&&!r.confirmed);
-    if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.inst+(row.lump||0)));total+=row.inst+(row.lump||0);}
+// This month's total across loans: what is due (unconfirmed) and what is already paid.
+function renderDashboardMonth(data){
+  const el=document.getElementById('dash-month');if(!el)return;
+  const tk=todayKey();
+  let due=0,paid=0;const parts=[];
+  data.forEach((d,i)=>{
+    const row=d.sched.find(r=>r.month===tk);
+    if(!row)return;
+    const amt=row.inst+(row.lump||0);
+    if(row.confirmed){paid+=amt;parts.push(loanName(d,i)+' '+eur2(amt)+' <span class="paid">paid</span>');}
+    else{due+=amt;parts.push(loanName(d,i)+' '+eur2(amt));}
   });
-  document.getElementById('dash-next-month').innerHTML='<strong>'+fmtMon(nextMon)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
+  const value=!parts.length?'Nothing due':(due>0?eur2(due)+' due':'All paid');
+  el.innerHTML='<div class="dash-month-label">This month &middot; '+fmtMonKey(tk)+'</div>'+
+    '<div class="dash-month-value">'+value+'</div>'+
+    (parts.length?'<div class="dash-month-parts">'+parts.join(' &middot; ')+(paid>0&&due>0?' &middot; '+eur2(paid)+' already paid':'')+'</div>':'');
 }
 
-// Earliest upcoming (unconfirmed) lump month across loans; sums the lumps due that month.
-function renderDashboardNextLump(data){
-  const el=document.getElementById('dash-next-lump');
-  if(!el)return;
-  const fmtMon=m=>{const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
-  const months=data.map(d=>{const nx=d.sched.find(r=>!r.confirmed&&r.lump>0);return nx?nx.month:null;}).filter(Boolean).sort();
-  const month=months[0]||null;
-  if(!month){el.textContent='';return;}
-  let parts=[];let total=0;
-  data.forEach(d=>{
-    const row=d.sched.find(r=>r.month===month&&!r.confirmed&&r.lump>0);
-    if(row){parts.push(escHtml(d.loan.label||'Loan')+'&nbsp;'+fmtE(row.lump));total+=row.lump;}
+// Overdue payments across loans (months that have ended without a confirmed payment).
+function renderDashboardOverdue(data){
+  const el=document.getElementById('dash-overdue');if(!el)return;
+  const tk=todayKey();let total=0;const parts=[];
+  data.forEach((d,i)=>{
+    const od=computeOverdue(d.sched,tk);if(!od.count)return;
+    total+=od.count;
+    const range=od.count===1?fmtMonKey(od.months[0]):fmtMonKey(od.months[0])+' to '+fmtMonKey(od.months[od.count-1]);
+    parts.push(loanName(d,i)+': '+range);
   });
-  el.innerHTML='<strong>Next lump &middot; '+fmtMon(month)+':</strong>&nbsp;&nbsp;'+parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')+'&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Total&nbsp;'+fmtE(total)+'</strong>';
+  if(!total){el.className='dash-overdue none';el.textContent='No overdue payments';return;}
+  el.className='dash-overdue has';
+  el.innerHTML='<strong>'+total+(total===1?' payment':' payments')+' overdue</strong> &middot; '+parts.join(' &middot; ');
 }
 
-// Paid-to-date lines for a dashboard loan card. All figures come from
-// confirmed rows only, so a user who has confirmed nothing sees a zero state.
-function paidHtml(ps){
-  if(ps.principalReduced<=0&&ps.interestPaid<=0){
-    return '<div class="dash-loan-card-paid sub">Nothing confirmed yet</div>';
-  }
-  let h='<div class="dash-loan-card-paid"><span>Principal paid</span><span>'+fmtE(ps.principalReduced)+'</span></div>';
-  if(ps.extrasSoFar>0){
-    h+='<div class="dash-loan-card-paid sub"><span>of which lumps</span><span>'+fmtE(ps.extrasSoFar)+'</span></div>';
-  }
-  h+='<div class="dash-loan-card-paid"><span>Interest paid</span><span>'+fmtE(ps.interestPaid)+'</span></div>';
-  return h;
-}
-
-function renderDashboardLoanCards(data){
-  const fmtMon=m=>{if(m==='---')return '---';const p=m.split('-');return p[0]+' '+MN[+p[1]-1];};
-  let html='';
+// One row per loan, then a total row.
+function renderDashboardTable(data){
+  const el=document.getElementById('dash-table');if(!el)return;
+  let rows='',tOut=0,tSaved=0;
   data.forEach((d,i)=>{
     const color=LOAN_COLORS[i%LOAN_COLORS.length];
-    const ps=computeProgressStats(d.sched,d.loan.balance);
-    const bal=ps.latestBal;
-    html+='<div class="dash-loan-card" onclick="showTab('+d.loanIdx+')" style="border-top:3px solid '+color+'">'+
-      '<div class="dash-loan-card-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</div>'+
-      '<div class="dash-loan-card-balance">'+fmtE(bal)+'</div>'+
-      '<div class="dash-loan-card-payoff">Payoff: '+fmtMon(d.payoffMonth)+'</div>'+
-      paidHtml(ps)+
-      '<div class="progress-track" style="margin:4px 0 0"><div class="progress-fill" style="width:'+ps.progressPct.toFixed(1)+'%;background:'+color+'"></div></div>'+
-      '</div>';
+    const out=computeProgressStats(d.sched,d.loan.balance).latestBal;
+    tOut+=out;tSaved+=d.intSaved;
+    const nx=d.sched.find(r=>!r.confirmed);
+    const next=nx?fmtMonKey(nx.month)+' &middot; '+eur2(nx.inst+(nx.lump||0)):'Fully paid';
+    rows+='<tr onclick="showTab('+d.loanIdx+')" title="Open '+loanName(d,i)+'">'+
+      '<td class="dash-name" style="color:'+color+'">'+loanName(d,i)+'</td>'+
+      '<td>'+fmtE(out)+'</td><td>'+next+'</td>'+
+      '<td>'+fmtMonKey(d.payoffMonth)+'</td><td>'+fmtMonKey(d.basePayoff)+'</td>'+
+      '<td style="color:var(--positive)">'+fmtE(d.intSaved)+'</td></tr>';
   });
-  document.getElementById('dash-loan-cards').innerHTML=html;
-}
-
-function renderDashboardBudget(data){
-  const total=getBudgetTotal()||1000;
-  const alloc=getBudgetAlloc()||{};
-  let html='<div class="dash-budget-title">Monthly Budget</div>'+
-    '<div class="dash-budget-row">'+
-    '<span class="dash-budget-label">Total</span>'+
-    '<input type="number" id="dash-total-budget" value="'+total+'" step="10" min="0" style="width:90px;border:1px solid #cbd5e1;border-radius:4px;padding:3px 6px" onchange="onDashBudgetTotalChange(this.value)">'+
-    '&nbsp;<span style="font-size:.82rem;color:#64748b">€ / month</span></div>';
-  data.forEach((d,i)=>{
-    const color=LOAN_COLORS[i%LOAN_COLORS.length];
-    const pct=alloc[String(i)]||0;
-    const eur=Math.round(total*pct/100);
-    html+='<div class="dash-budget-row">'+
-      '<span class="dash-budget-label" style="color:'+color+'">'+escHtml(d.loan.label||'Loan '+(i+1))+'</span>'+
-      '<input type="range" min="0" max="100" step="5" value="'+pct+'" style="flex:1;accent-color:'+color+'" oninput="onDashAllocChange(\''+String(i)+'\',+this.value,this)">'+
-      '<input type="number" min="0" max="100" value="'+pct+'" class="dash-budget-pct" id="dash-pct-'+String(i)+'" onchange="onDashAllocChange(\''+String(i)+'\',+this.value,null)">'+
-      '<span style="font-size:.78rem;color:#64748b">%&nbsp;=&nbsp;</span>'+
-      '<span class="dash-budget-eur" id="dash-eur-'+String(i)+'">'+fmtE(eur)+'</span>'+
-      '</div>';
-  });
-  html+='<div class="dash-budget-warn" id="dash-budget-warn">⚠ Allocations must sum to 100%</div>';
-  document.getElementById('dash-budget').innerHTML=html;
-  checkBudgetSum();
-}
-
-function onDashBudgetTotalChange(val){
-  const v=parseFloat(val)||0;
-  setBudgetTotal(v);
-  renderDashboard();
-}
-
-function onDashAllocChange(loanId,newPct,sliderEl){
-  newPct=Math.max(0,Math.min(100,Math.round(newPct)));
-  const alloc=getBudgetAlloc()||{};
-  const newAlloc=redistributeBudgetAlloc(alloc,loanId,newPct);
-  setBudgetAlloc(newAlloc);
-  const total=getBudgetTotal()||1000;
-  Object.keys(newAlloc).forEach(id=>{
-    const pctEl=document.getElementById('dash-pct-'+id);
-    const eurEl=document.getElementById('dash-eur-'+id);
-    if(pctEl)pctEl.value=newAlloc[id];
-    if(eurEl)eurEl.textContent=fmtE(Math.round(total*newAlloc[id]/100));
-    if(sliderEl){
-      const rows=document.querySelectorAll('#dash-budget .dash-budget-row input[type=range]');
-      rows.forEach(r=>{
-        const pctSib=r.nextElementSibling;
-        if(pctSib&&pctSib.id==='dash-pct-'+id)r.value=newAlloc[id];
-      });
-    }
-  });
-  checkBudgetSum();
-}
-
-function checkBudgetSum(){
-  const alloc=getBudgetAlloc()||{};
-  const sum=Object.values(alloc).reduce((s,v)=>s+v,0);
-  const warn=document.getElementById('dash-budget-warn');
-  if(warn)warn.style.display=(sum!==100)?'':'none';
+  el.innerHTML='<thead><tr><th>Loan</th><th>Outstanding</th><th>Next payment</th><th>Payoff</th><th>Without extras</th><th>Interest saved</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr><td>Total</td><td>'+fmtE(tOut)+'</td><td></td><td></td><td></td><td style="color:var(--positive)">'+fmtE(tSaved)+'</td></tr></tfoot>';
 }
 
 function renderDashboardChart(data){
@@ -1132,28 +1056,31 @@ function showLowerTab(id){
 /* What if: try a budget or a one-time payment without saving anything. */
 function savedBudget(loanId){return effectiveBudget(loanId)||1000;}
 function isMultiLoan(){return (loadLoans()||[]).length>1;}
-// Runs the projection for this loan with a trial budget and/or a trial payoff threshold. Saves nothing.
-function trialPlan(budget,threshold){
-  const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
-  const rate=(_mS.annualRate+_mS.levy)/100/12;
-  const{ey,em}=projEndMonth(_mS);
-  const postRate=(_mS.postFixedRate&&_mS.fixedPeriodMonths>0)?((_mS.postFixedRate+_mS.levy)/100/12):0;
-  const useB=threshold>0?true:!!_mS.balloonEnabled,thr=threshold>0?threshold:(_mS.balloonThreshold||0);
-  const{rows}=genProj(budget,_mS.balance,projFirstMonth(_mS),rate,ey,em,getManLumps(loanId),_mS.lumpMonths,getActuals(loanId),_mS.lumpEnabled!==false,_mS.lumpEffect||'reduce-installment',useB,thr,_mS.fixedPeriodMonths||0,postRate);
+// Runs the projection for a loan with a trial budget and/or a trial payoff threshold. Saves nothing.
+function trialPlanFor(loanId,loan,budget,threshold){
+  const rate=(loan.annualRate+loan.levy)/100/12;
+  const{ey,em}=projEndMonth(loan);
+  const postRate=(loan.postFixedRate&&loan.fixedPeriodMonths>0)?((loan.postFixedRate+loan.levy)/100/12):0;
+  const useB=threshold>0?true:!!loan.balloonEnabled,thr=threshold>0?threshold:(loan.balloonThreshold||0);
+  const{rows}=genProj(budget,loan.balance,projFirstMonth(loan),rate,ey,em,getManLumps(loanId),loan.lumpMonths,getActuals(loanId),loan.lumpEnabled!==false,loan.lumpEffect||'reduce-installment',useB,thr,loan.fixedPeriodMonths||0,postRate);
   const inst=rows.filter(r=>r.type==='inst');
   return{payoff:inst.length?inst[inst.length-1].month:null,planInt:inst.reduce((s,r)=>s+r.int,0)};
 }
-function baselineInterest(){
-  const rate=(_mS.annualRate+_mS.levy)/100/12;
-  const{ey,em}=projEndMonth(_mS);
-  const postRate=(_mS.postFixedRate&&_mS.fixedPeriodMonths>0)?((_mS.postFixedRate+_mS.levy)/100/12):0;
-  return computeBaselineInterest(_mS.balance,projFirstMonth(_mS),rate,ey,em,_mS.fixedPeriodMonths||0,postRate);
+function trialPlan(budget,threshold){
+  return trialPlanFor(typeof activeLoanIdx==='number'?activeLoanIdx:0,_mS,budget,threshold);
+}
+function baselineInterestFor(loan){
+  const rate=(loan.annualRate+loan.levy)/100/12;
+  const{ey,em}=projEndMonth(loan);
+  const postRate=(loan.postFixedRate&&loan.fixedPeriodMonths>0)?((loan.postFixedRate+loan.levy)/100/12):0;
+  return computeBaselineInterest(loan.balance,projFirstMonth(loan),rate,ey,em,loan.fixedPeriodMonths||0,postRate);
 }
 // "Payoff 2049 Jul -> 2044 May . interest saved 1.922 -> 9.100 (+7.178)"
-function trialEffectHtml(trial){
+function trialEffectHtml(trial,loanId,loan){
+  if(loan===undefined){loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;loan=_mS;}
   const fm=m=>m?m.slice(0,4)+' '+MN[+m.slice(5,7)-1]:'&mdash;';
-  const now=trialPlan(savedBudget(typeof activeLoanIdx==='number'?activeLoanIdx:0),0);
-  const base=baselineInterest();
+  const now=trialPlanFor(loanId,loan,savedBudget(loanId),0);
+  const base=baselineInterestFor(loan);
   const sNow=base-now.planInt,sNew=base-trial.planInt,d=sNew-sNow;
   const diff=Math.round(d)===0?'':' <span class="'+(d>0?'wi-gain':'wi-loss')+'">('+(d>0?'+':'&minus;')+fmtE(Math.abs(d))+')</span>';
   return 'Payoff '+fm(now.payoff)+' &rarr; <span class="wi-new">'+fm(trial.payoff)+'</span> &middot; interest saved '+fmtE(sNow)+' &rarr; <span class="wi-new">'+fmtE(sNew)+'</span>'+diff;
@@ -1161,20 +1088,72 @@ function trialEffectHtml(trial){
 function updateWhatIf(){
   if(!_mS)return;
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
+  const multi=isMultiLoan();
+  document.getElementById('wi-single').style.display=multi?'none':'';
+  document.getElementById('wi-split').style.display=multi?'':'none';
+  document.getElementById('wi-budget-title').textContent=multi?'Monthly budget for all loans':'Monthly budget';
+  document.getElementById('wi-budget-sub').textContent=multi?'Try a different total or split. Nothing is saved until you press Apply.':'Try a different monthly budget. Nothing is saved until you press Apply.';
+  if(multi){if(!splitTrial)initSplitTrial();renderSplitTrial();return;}
   const inp=document.getElementById('loan-budget');if(!inp)return;
   const saved=savedBudget(loanId),tried=parseFloat(inp.value);
   const res=document.getElementById('wi-budget-result');
   const acts=document.getElementById('wi-budget-actions');
-  const multi=isMultiLoan();
-  document.getElementById('wi-budget-multi').style.display=multi?'':'none';
   if(!(tried>0)||Math.abs(tried-saved)<0.005){
     res.innerHTML='Current budget: <strong>'+fmtE(saved)+'</strong> a month.';
     acts.style.display='none';
     return;
   }
   res.innerHTML=trialEffectHtml(trialPlan(tried,0));
-  acts.style.display=multi?'none':'';
+  acts.style.display='';
 }
+
+/* Multi-loan budget: one total split across loans by percentage (moved here from the Dashboard). */
+let splitTrial=null;
+function initSplitTrial(){
+  const loans=loadLoans()||[];
+  const saved=getBudgetAlloc()||{};
+  const alloc={};loans.forEach((_,i)=>{alloc[String(i)]=saved[String(i)]||0;});
+  splitTrial={total:getBudgetTotal()||1000,alloc};
+}
+function splitChanged(){
+  const saved=getBudgetAlloc()||{};
+  if(Math.abs(splitTrial.total-(getBudgetTotal()||1000))>=0.005)return true;
+  return Object.keys(splitTrial.alloc).some(k=>(saved[k]||0)!==splitTrial.alloc[k]);
+}
+function renderSplitTrial(){
+  const loans=loadLoans()||[];
+  const t=document.getElementById('wi-total');
+  if(document.activeElement!==t)t.value=splitTrial.total;
+  let html='';
+  loans.forEach((loan,i)=>{
+    const k=String(i),pct=splitTrial.alloc[k]||0,color=LOAN_COLORS[i%LOAN_COLORS.length];
+    html+='<div class="wi-split-row"><span class="wi-split-name" style="color:'+color+'">'+escHtml(loan.label||'Loan '+(i+1))+'</span>'+
+      '<input type="range" min="0" max="100" step="5" value="'+pct+'" style="accent-color:'+color+'" oninput="onSplitPct(\''+k+'\',+this.value)" aria-label="Share for '+escHtml(loan.label||'Loan '+(i+1))+'">'+
+      '<input type="number" min="0" max="100" value="'+pct+'" onchange="onSplitPct(\''+k+'\',+this.value)"> <span>%</span>'+
+      '<span class="wi-split-eur">= '+fmtE(splitTrial.total*pct/100)+'</span></div>';
+  });
+  document.getElementById('wi-split-rows').innerHTML=html;
+  const changed=splitChanged();
+  document.getElementById('wi-split-actions').style.display=changed?'':'none';
+  if(!changed){
+    document.getElementById('wi-split-result').innerHTML='Current total: <strong>'+fmtE(splitTrial.total)+'</strong> a month.';
+    return;
+  }
+  document.getElementById('wi-split-result').innerHTML=loans.map((loan,i)=>{
+    const b=splitTrial.total*(splitTrial.alloc[String(i)]||0)/100;
+    return '<span class="wi-loanline"><strong>'+escHtml(loan.label||'Loan '+(i+1))+':</strong> '+trialEffectHtml(trialPlanFor(i,loan,b,0),i,loan)+'</span>';
+  }).join('');
+}
+function onSplitTotal(v){splitTrial.total=Math.max(0,parseFloat(v)||0);renderSplitTrial();}
+function onSplitPct(k,v){splitTrial.alloc=redistributeBudgetAlloc(splitTrial.alloc,k,Math.round(v));renderSplitTrial();}
+function applySplit(){
+  if(!splitTrial||!(splitTrial.total>0))return;
+  setBudgetTotal(splitTrial.total);
+  setBudgetAlloc(splitTrial.alloc);
+  splitTrial=null;
+  refreshLoan();
+}
+function resetSplit(){splitTrial=null;updateWhatIf();}
 function applyBudget(){
   const loanId=typeof activeLoanIdx==='number'?activeLoanIdx:0;
   const v=parseFloat(document.getElementById('loan-budget').value);
@@ -1292,6 +1271,7 @@ function initApp(){
   applyPanelStates();
   const bnEl=document.getElementById('budget-bar-note');
   if(bnEl)bnEl.textContent=mS&&mS.lumpEnabled!==false?'The surplus over your instalment is paid once a year as a lump sum.':'The annual lump sum is off, so the budget does not change the plan. Turn it on in Edit.';
+  splitTrial=null;
   showLowerTab(lowerTab);
   renderTabBar();
   const loans=loadLoans()||[];

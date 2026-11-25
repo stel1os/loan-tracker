@@ -159,6 +159,11 @@ function computeOverdue(sched,todayKey){
   const months=sched.filter(s=>!s.confirmed&&s.month<todayKey).map(s=>s.month);
   return{count:months.length,months};
 }
+// Payoff month of the no-extras baseline (regular instalments only), same rate schedule as computeBaselineInterest.
+function computeBaselinePayoff(bal,startMonthStr,rate,endYear,endMon,fixedPeriodMonths,postFixedRate){
+  const{sched}=genProj(0,bal,startMonthStr,rate,endYear,endMon,{},1,{},false,'reduce-installment',false,0,fixedPeriodMonths||0,postFixedRate||0);
+  return sched.length?sched[sched.length-1].month:null;
+}
 function redistributeBudgetAlloc(alloc,changedId,newPct){
   newPct=Math.max(0,Math.min(100,newPct));
   const result={};Object.keys(alloc).forEach(k=>{result[k]=alloc[k];});
@@ -181,4 +186,4 @@ function redistributeBudgetAlloc(alloc,changedId,newPct){
   return result;
 }
 // Export for Node.js test runner; guard keeps browser build unaffected
-if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeProgressStats,computeRemainingStats,computeOverdue,computeRateChange,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};
+if(typeof module!=='undefined')module.exports={genProj,calcPmt,amortizeSimple,computeBaselineInterest,computeBaselinePayoff,computeProgressStats,computeRemainingStats,computeOverdue,computeRateChange,projEndMonth,projFirstMonth,rowsToPlanMap,rowsToLumpMap,redistributeBudgetAlloc};

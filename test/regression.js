@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats, computeRemainingStats, computeOverdue, computeRateChange } = require('../src/engine.js');
+const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats, computeRemainingStats, computeOverdue, computeRateChange, computeBaselinePayoff } = require('../src/engine.js');
 
 const UPDATE = process.argv.includes('--update-snapshots');
 const SAMPLES_DIR = path.join(__dirname, 'fixtures');
@@ -389,4 +389,13 @@ test('computeRateChange: nothing for variable loans, fixed loans without a later
   assert.equal(computeRateChange(sched, loanOf('loan-a-95k', { postFixedRate: 0 })), null);
   assert.equal(computeRateChange(sched, loanOf('loan-a-95k', { fixedPeriodMonths: 0 })), null);
   assert.equal(computeRateChange(sched, loanOf('loan-a-95k', { fixedPeriodMonths: sched.length })), null);
+});
+
+test('computeBaselinePayoff: the no-extras plan for loan-a-95k ends in the last month of its 25-year term', () => {
+  const loan = loanOf('loan-a-95k');
+  const rate = (loan.annualRate + loan.levy) / 100 / 12;
+  const post = (loan.postFixedRate + loan.levy) / 100 / 12;
+  const { ey, em } = projEndMonth(loan);
+  // Starts Jul 2024; first instalment Aug 2024; 300 instalments end Jul 2049.
+  assert.equal(computeBaselinePayoff(loan.balance, projFirstMonth(loan), rate, ey, em, loan.fixedPeriodMonths, post), '2049-07');
 });
