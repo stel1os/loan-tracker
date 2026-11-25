@@ -82,6 +82,9 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .chart-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px}
 .chart-title{font-size:.88rem;font-weight:700;margin-bottom:4px;color:#333}
 .chart-note{font-size:.72rem;color:#999;margin-bottom:12px}
+.loan-chart{border-radius:var(--radius-card);box-shadow:var(--shadow);margin-bottom:16px}
+.chart-box{position:relative;height:240px}
+@media (max-width:560px){.chart-box{height:200px}.loan-chart{padding:14px}}
 .collapsible{background:var(--surface);border-radius:var(--radius-card);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
 .collapsible-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;user-select:none}
 .collapsible-title{font-size:.88rem;font-weight:700;color:var(--ink)}
@@ -275,6 +278,11 @@ table.txn tr:hover td{background:#fafbff}
   </div>
   </div>
   <div class="loan-scroll">
+  <div class="chart-card loan-chart" id="panel-chart">
+    <div class="chart-title">Projection chart</div>
+    <div class="chart-note">Solid = paid so far &middot; Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
+    <div class="chart-box"><canvas id="balanceChart"></canvas></div>
+  </div>
   <div class="loan-card">
     <div class="cmp">
       <div class="cmp-title">Interest: plan vs no extras</div>
@@ -310,19 +318,6 @@ table.txn tr:hover td{background:#fafbff}
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-  <div class="collapsible" id="panel-chart">
-    <div class="collapsible-head" onclick="togglePanel('chart',this)">
-      <span class="collapsible-title">Projection chart</span>
-      <span class="collapsible-toggle">Show &#9660;</span>
-    </div>
-    <div class="collapsible-body" style="display:none">
-      <div class="chart-card">
-        <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
-        <div class="chart-note">Solid = paid so far &middot; Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
-        <canvas id="balanceChart" height="120"></canvas>
       </div>
     </div>
   </div>
@@ -1652,6 +1647,14 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
     const p=lastConfirmed.month.split('-');
     _markers.push({month:lastConfirmed.month,color:'#16a34a',label1:'You are here',label2:MN[+p[1]-1]+' '+p[0]});
   }
+  // Headroom above the highest balance so the marker labels sit clear of the line.
+  const yTop=Math.max(mS.balance,...mP.filter(v=>v!=null),...mBD.filter(v=>v!=null));
+  const yRaw=yTop*1.15,yMag=Math.pow(10,Math.floor(Math.log10(yRaw/5)));
+  const yStep=[1,2,2.5,5,10].map(f=>f*yMag).find(st=>yRaw/st<=5)||10*yMag;
+  const yMax=Math.ceil(yRaw/yStep)*yStep;
+  // About one month label per 80px, so labels never run into each other on narrow screens.
+  const xBox=document.getElementById('balanceChart').parentElement;
+  const xTicks=Math.max(3,Math.min(10,Math.floor((xBox?xBox.clientWidth:900)/80)));
   const fxPlugin=makeMarkersPlugin(_markers);
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
@@ -1659,7 +1662,7 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
     {label:'Loan (plan)',data:mPlan,borderColor:'#4f46e5',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
     {label:'Loan (no extras)',data:mBD,borderColor:'#cbd5e1',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
     {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#d97706',pointRadius:5,pointHoverRadius:7,showLine:false},
-  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')&&(i.text!=='Loan (paid)'||splitIdx>=0)}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label==='Loan (plan)'&&c.dataIndex===splitIdx)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:10,font:{size:10},callback(v){const d=new Date(this.getLabelForValue(v)+'-01');return d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear()}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')&&(i.text!=='Loan (paid)'||splitIdx>=0)}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label==='Loan (plan)'&&c.dataIndex===splitIdx)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{autoSkip:true,autoSkipPadding:12,maxRotation:0,maxTicksLimit:xTicks,font:{size:10},callback(v){const d=new Date(this.getLabelForValue(v)+'-01');return d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear()}},grid:{color:'rgba(0,0,0,.04)'}},y:{min:0,max:yMax,ticks:{stepSize:yStep,font:{size:10},callback:v=>{const k=v/1000;return '€'+(Number.isInteger(k)?k:k.toFixed(1))+'k';}},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
 
@@ -1814,7 +1817,6 @@ function applyPanelState(key,panelId){
   }
 }
 function applyPanelStates(){
-  applyPanelState('chart','panel-chart');
   applyPanelState('settlement','panel-settlement');
 }
 
