@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
-const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats, computeRemainingStats, computeOverdue } = require('../src/engine.js');
+const { genProj, projEndMonth, projFirstMonth, redistributeBudgetAlloc, computeProgressStats, computeRemainingStats, computeOverdue, computeRateChange } = require('../src/engine.js');
 
 const UPDATE = process.argv.includes('--update-snapshots');
 const SAMPLES_DIR = path.join(__dirname, 'fixtures');
@@ -360,4 +360,33 @@ test('computeOverdue: a gap between confirmed months counts, and a year boundary
     { month: '2026-02', confirmed: false },
   ];
   assert.deepStrictEqual(computeOverdue(sched, '2026-02'), { count: 1, months: ['2025-12'] });
+});
+
+// Rate change at the end of a fixed period.
+function loanOf(sampleName, patch) {
+  const sample = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, sampleName + '.json'), 'utf8'));
+  return Object.assign(JSON.parse(sample.lt_loans)[0], patch || {});
+}
+
+test('computeRateChange: loan-a-95k instalment goes from 512.00 in Jul 2039 to 526.40', () => {
+  const rc = computeRateChange(schedFor('loan-a-95k'), loanOf('loan-a-95k'));
+  assert.deepStrictEqual(rc, { month: '2039-07', before: 512, after: 526.4 });
+});
+
+test('computeRateChange: the new instalment is the annuity on the balance left, at the later rate', () => {
+  const loan = loanOf('loan-a-95k');
+  const sched = schedFor('loan-a-95k');
+  const k = loan.fixedPeriodMonths;
+  const post = (loan.postFixedRate + loan.levy) / 100 / 12;
+  const left = sched.length - k;
+  const expected = sched[k - 1].bal * post / (1 - Math.pow(1 + post, -left));
+  assert.equal(computeRateChange(sched, loan).after, +expected.toFixed(2));
+});
+
+test('computeRateChange: nothing for variable loans, fixed loans without a later rate, or a fixed period past the schedule', () => {
+  const sched = schedFor('loan-a-95k');
+  assert.equal(computeRateChange(sched, loanOf('loan-a-95k', { rateType: 'variable' })), null);
+  assert.equal(computeRateChange(sched, loanOf('loan-a-95k', { postFixedRate: 0 })), null);
+  assert.equal(computeRateChange(sched, loanOf('loan-a-95k', { fixedPeriodMonths: 0 })), null);
+  assert.equal(computeRateChange(sched, loanOf('loan-a-95k', { fixedPeriodMonths: sched.length })), null);
 });
