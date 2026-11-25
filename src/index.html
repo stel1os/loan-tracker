@@ -81,6 +81,11 @@
   </div>
   </div>
   <div class="loan-scroll">
+  <div class="chart-card loan-chart" id="panel-chart">
+    <div class="chart-title">Projection chart</div>
+    <div class="chart-note">Solid = paid so far &middot; Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
+    <div class="chart-box"><canvas id="balanceChart"></canvas></div>
+  </div>
   <div class="loan-card">
     <div class="cmp">
       <div class="cmp-title">Interest: plan vs no extras</div>
@@ -116,19 +121,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-  <div class="collapsible" id="panel-chart">
-    <div class="collapsible-head" onclick="togglePanel('chart',this)">
-      <span class="collapsible-title">Projection chart</span>
-      <span class="collapsible-toggle">Show &#9660;</span>
-    </div>
-    <div class="collapsible-body" style="display:none">
-      <div class="chart-card">
-        <div class="chart-title">Budget Plan &middot; Baseline (no extras)</div>
-        <div class="chart-note">Solid = paid so far &middot; Dashed = your plan &middot; Dotted = no extras baseline &middot; Dots = scheduled lump sums</div>
-        <canvas id="balanceChart" height="120"></canvas>
       </div>
     </div>
   </div>

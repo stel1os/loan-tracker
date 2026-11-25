@@ -896,6 +896,14 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
     const p=lastConfirmed.month.split('-');
     _markers.push({month:lastConfirmed.month,color:'#16a34a',label1:'You are here',label2:MN[+p[1]-1]+' '+p[0]});
   }
+  // Headroom above the highest balance so the marker labels sit clear of the line.
+  const yTop=Math.max(mS.balance,...mP.filter(v=>v!=null),...mBD.filter(v=>v!=null));
+  const yRaw=yTop*1.15,yMag=Math.pow(10,Math.floor(Math.log10(yRaw/5)));
+  const yStep=[1,2,2.5,5,10].map(f=>f*yMag).find(st=>yRaw/st<=5)||10*yMag;
+  const yMax=Math.ceil(yRaw/yStep)*yStep;
+  // About one month label per 80px, so labels never run into each other on narrow screens.
+  const xBox=document.getElementById('balanceChart').parentElement;
+  const xTicks=Math.max(3,Math.min(10,Math.floor((xBox?xBox.clientWidth:900)/80)));
   const fxPlugin=makeMarkersPlugin(_markers);
   if(chart)chart.destroy();
   chart=new Chart(document.getElementById('balanceChart').getContext('2d'),{type:'line',plugins:[fxPlugin],data:{labels,datasets:[
@@ -903,7 +911,7 @@ function buildChart(mBase,mPlanMap,mLumpsMap,mS){
     {label:'Loan (plan)',data:mPlan,borderColor:'#4f46e5',tension:.3,pointRadius:0,borderWidth:2,borderDash:[6,3],fill:false},
     {label:'Loan (no extras)',data:mBD,borderColor:'#cbd5e1',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[2,4],fill:false},
     {label:'L lump',data:mLD,borderColor:'transparent',backgroundColor:'#d97706',pointRadius:5,pointHoverRadius:7,showLine:false},
-  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')&&(i.text!=='Loan (paid)'||splitIdx>=0)}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label==='Loan (plan)'&&c.dataIndex===splitIdx)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{maxTicksLimit:10,font:{size:10},callback(v){const d=new Date(this.getLabelForValue(v)+'-01');return d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear()}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10},callback:v=>'€'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,.05)'}}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:12,font:{size:11},filter:i=>!i.text.includes('lump')&&(i.text!=='Loan (paid)'||splitIdx>=0)}},tooltip:{callbacks:{label:c=>{if(c.raw===null)return null;if(c.dataset.label==='Loan (plan)'&&c.dataIndex===splitIdx)return null;if(c.dataset.label.includes('lump')){const lbl=c.label;return 'Lump: '+fmtE(mLumpsMap[lbl]||0);}return c.dataset.label+': '+fmtE(c.raw);}}}},scales:{x:{ticks:{autoSkip:true,autoSkipPadding:12,maxRotation:0,maxTicksLimit:xTicks,font:{size:10},callback(v){const d=new Date(this.getLabelForValue(v)+'-01');return d.toLocaleDateString('en-GB',{month:'short'})+' '+d.getFullYear()}},grid:{color:'rgba(0,0,0,.04)'}},y:{min:0,max:yMax,ticks:{stepSize:yStep,font:{size:10},callback:v=>{const k=v/1000;return '€'+(Number.isInteger(k)?k:k.toFixed(1))+'k';}},grid:{color:'rgba(0,0,0,.05)'}}}}});
 }
 
 
@@ -1058,7 +1066,6 @@ function applyPanelState(key,panelId){
   }
 }
 function applyPanelStates(){
-  applyPanelState('chart','panel-chart');
   applyPanelState('settlement','panel-settlement');
 }
 
