@@ -13,11 +13,18 @@
     <h1>Loan Tracker</h1>
     <p class="subtitle" id="app-subtitle">Loading&hellip;</p>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button class="btn-settings" id="btn-export" onclick="exportData()" title="Download backup">&#8681; Export</button>
-    <button class="btn-settings" onclick="triggerImport()" title="Restore from backup">&#8679; Import</button>
+  <div class="hdr-actions">
     <button class="btn-settings" onclick="openSetup(false)">&#9881; Edit</button>
-    <button class="btn-settings" onclick="openHelp()">? Help</button>
+    <div class="menu-wrap">
+      <button class="btn-settings menu-btn" id="menu-btn" aria-haspopup="true" aria-expanded="false" aria-controls="hdr-menu" title="More" onclick="toggleMenu(event)">&middot;&middot;&middot;<span class="sr-only"> More</span></button>
+      <div class="hdr-menu" id="hdr-menu" role="menu" hidden>
+        <button role="menuitem" id="btn-export" onclick="closeMenu();exportData()">&#8681; Export backup</button>
+        <button role="menuitem" onclick="closeMenu();triggerImport()">&#8679; Import backup</button>
+        <button role="menuitem" onclick="closeMenu();openHelp()">? Help</button>
+        <div class="menu-sep" role="separator"></div>
+        <button role="menuitem" class="menu-danger" onclick="closeMenu();if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button>
+      </div>
+    </div>
   </div>
 </div>
 <div class="first-run-banner" id="first-run-banner">
@@ -163,7 +170,6 @@
   </div>
   </div>
   <p class="footer" id="app-footer">Loading&hellip;</p>
-  <p class="footer" style="margin-top:4px"><button class="btn-link-reset" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()">Reset all data</button></p>
   <p class="footer" style="margin-top:6px">If you find this useful &mdash; <a href="https://ko-fi.com/stel1os" target="_blank" rel="noopener" style="color:#aaa">buy me a coffee</a></p>
   <p class="footer" id="version-line" style="margin-top:4px"></p>
   </div>
@@ -193,7 +199,7 @@
     <p style="font-size:.83rem;color:#444;margin:0 0 4px">The <strong>What if</strong> tab under the chart lets you try a different monthly budget or a one-time payment. As you type, it shows the new payoff date and interest saved. Nothing is saved until you press <strong>Apply</strong>.</p>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">The one-time payment is available in Reduce Instalment mode. Enter a target settlement month to find the prepayment required to clear the outstanding balance, or enter a prepayment amount to find the earliest possible settlement month. Click <strong>Apply</strong> to insert it into the schedule.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Backup and restore</h3>
-    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Click <strong>Export</strong> to download a JSON backup of your loan configuration, confirmed actuals, budget, and manual prepayments. Click <strong>Import</strong> to restore from a backup on any browser or device. All data stays in your browser&rsquo;s local storage &mdash; nothing is sent to any server.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Open the <strong>&middot;&middot;&middot;</strong> menu at the top right and click <strong>Export backup</strong> to download a JSON backup of your loan configuration, confirmed actuals, budget, and manual prepayments. Click <strong>Import backup</strong> to restore from a backup on any browser or device. <strong>Reset all data</strong> is in the same menu and asks before deleting anything. All data stays in your browser&rsquo;s local storage &mdash; nothing is sent to any server.</p>
     <div class="modal-actions">
       <button class="btn-primary" onclick="closeHelp()">Close</button>
     </div>
@@ -333,7 +339,7 @@
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn-danger" onclick="resetApp()" style="margin-right:auto" id="setup-reset-btn">Reset all data</button>
+      <button class="btn-danger" onclick="if(window.confirm('Reset all data? This cannot be undone.'))resetApp()" style="margin-right:auto" id="setup-reset-btn">Reset all data</button>
       <button class="btn-link-reset" id="setup-import-btn" onclick="triggerImport()" style="display:none;margin-right:auto;font-size:.82rem">Import from backup</button>
       <button class="btn-link-reset" onclick="loadExample()" style="font-size:.82rem;margin-right:8px">Load example</button>
       <button class="btn-link-reset" id="btn-add-loan" onclick="startAddLoan()" style="font-size:.82rem;margin-right:8px;display:none">+ Add loan</button>

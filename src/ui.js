@@ -1301,6 +1301,25 @@ function loadExample(){
   toggleFixedPeriod();toggleLumpOptions();toggleBalloonOptions();
 }
 
+/* Header "..." menu: Export, Import, Help, Reset */
+function toggleMenu(e){
+  if(e)e.stopPropagation();
+  const m=document.getElementById('hdr-menu');
+  if(m.hidden)openMenu();else closeMenu();
+}
+function openMenu(){
+  const m=document.getElementById('hdr-menu'),b=document.getElementById('menu-btn');
+  m.hidden=false;b.setAttribute('aria-expanded','true');
+  const first=m.querySelector('button');if(first)first.focus();
+}
+function closeMenu(){
+  const m=document.getElementById('hdr-menu'),b=document.getElementById('menu-btn');
+  if(!m||m.hidden)return;
+  m.hidden=true;b.setAttribute('aria-expanded','false');
+}
+document.addEventListener('click',e=>{const w=document.querySelector('.menu-wrap');if(w&&!w.contains(e.target))closeMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('hdr-menu');if(m&&!m.hidden){closeMenu();document.getElementById('menu-btn').focus();}}});
+
 function openHelp(){document.getElementById('help-modal').classList.add('open');}
 function closeHelp(){document.getElementById('help-modal').classList.remove('open');}
 function setVersion(){const v=document.getElementById('version-line');if(v)v.textContent='Loan Tracker '+APP_VERSION;}
