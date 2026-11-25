@@ -235,3 +235,59 @@ table.txn tr:hover td{background:#fafbff}
 .wi-loanline{display:block}
 .dash-annual-wrap{margin-top:8px}
 .dash-annual-toggle{font-size:.84rem;color:#64748b;margin-bottom:8px}
+
+/* Phones (ASTRO-102): the page scrolls normally, the schedule shows fewer columns and a tapped row
+   opens to show the rest, the dashboard table becomes one card per loan, and tap targets are bigger. */
+@media (max-width:560px){
+  body{height:auto;min-height:100vh;overflow:visible;padding:12px}
+  #loan-view{display:block}
+  .loan-scroll,#dashboard-view{overflow:visible}
+  h1{font-size:1.2rem}
+  .subtitle{margin-bottom:10px}
+  .summary-row,.loan-pinned .summary-row{gap:6px}
+  .loan-pinned .card{padding:8px 10px}
+  .card-label{font-size:.58rem;letter-spacing:.03em}
+  .loan-pinned .card-value{font-size:1.02rem}
+  .card-sub{font-size:.66rem}
+  .loan-pinned .loan-card{padding:10px 12px}
+  .metric-grid{gap:8px}
+  .metric-val{font-size:.9rem}
+  .next-bar .btn-primary{width:100%;padding:10px}
+  .txn-section{padding:10px 8px}
+  table.txn th,table.txn td{padding:8px 6px}
+  table.txn .c-opt{display:none}
+  .tr-sep td{top:0}
+  table.txn tbody tr[id]{cursor:pointer}
+  table.txn,table.txn thead,table.txn tbody{display:block}
+  table.txn tr{display:grid;grid-template-columns:66px minmax(0,1fr) 78px 90px;align-items:center;border-bottom:1px solid var(--hairline)}
+  table.txn tr.tr-confirmed{background:#f6fdf9}
+  table.txn tr.tr-lump{background:#fefce8}
+  table.txn tr.tr-payoff{background:#fdf2ff}
+  table.txn tr td{background:none}
+  table.txn td,table.txn th{border-bottom:none}
+  table.txn td,table.txn th.num{white-space:nowrap}
+  table.txn tr.tr-sep{display:block}
+  table.txn tr.tr-sep td{display:block}
+  table.txn tr.open{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:8px 6px;background:#f8fafc}
+  table.txn tr.open td{display:block;text-align:left;border:none;padding:2px 0;background:none;white-space:normal;min-width:0}
+  table.txn tr.open td.c-opt{display:block}
+  table.txn tr.open td[data-label]::before{content:attr(data-label);display:block;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:2px}
+  table.txn tr.open .act-input{width:100%;font-size:.95rem;padding:7px 8px}
+  table.txn tr.open .btn-save{padding:8px 16px;font-size:.85rem;margin-top:6px}
+  table.txn tr.open .btn-cancel{padding:8px 10px;font-size:.85rem}
+  .confirm-dot{width:24px;height:24px}
+  .lock-ic{font-size:1.1rem;padding:2px 4px;display:inline-block}
+  .lump-add{display:inline-block;padding:4px 14px;font-size:1.05rem}
+  .lump-pill{padding:4px 10px;font-size:.8rem}
+  .dash-table-card{padding:4px 8px}
+  .dash-table thead{display:none}
+  .dash-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:10px 4px;border-top:1px solid var(--hairline)}
+  .dash-table td{display:block;text-align:left;border:none;padding:0;white-space:normal}
+  .dash-table td:first-child{grid-column:1/-1;font-size:.95rem}
+  .dash-table td[data-label]::before{content:attr(data-label);display:block;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:1px}
+  .dash-table td.dash-empty{display:none}
+  .dash-table tfoot td{border-top:none}
+  .dash-table tfoot tr{border-top:2px solid #e2e8f0}
+  .wi-split-row{flex-wrap:wrap}
+  .wi-split-row .wi-split-name{min-width:0;flex-basis:100%}
+}
