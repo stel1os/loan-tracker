@@ -525,13 +525,13 @@ function renderDashboardTable(data){
     const next=nx?fmtMonKey(nx.month)+' &middot; '+eur2(nx.inst+(nx.lump||0)):'Fully paid';
     rows+='<tr onclick="showTab('+d.loanIdx+')" title="Open '+loanName(d,i)+'">'+
       '<td class="dash-name" style="color:'+color+'">'+loanName(d,i)+'</td>'+
-      '<td>'+fmtE(out)+'</td><td>'+next+'</td>'+
-      '<td>'+fmtMonKey(d.payoffMonth)+'</td><td>'+fmtMonKey(d.basePayoff)+'</td>'+
-      '<td style="color:var(--positive)">'+fmtE(d.intSaved)+'</td></tr>';
+      '<td data-label="Outstanding">'+fmtE(out)+'</td><td data-label="Next payment">'+next+'</td>'+
+      '<td data-label="Payoff">'+fmtMonKey(d.payoffMonth)+'</td><td data-label="Without extras">'+fmtMonKey(d.basePayoff)+'</td>'+
+      '<td data-label="Interest saved" style="color:var(--positive)">'+fmtE(d.intSaved)+'</td></tr>';
   });
   el.innerHTML='<thead><tr><th>Loan</th><th>Outstanding</th><th>Next payment</th><th>Payoff</th><th>Without extras</th><th>Interest saved</th></tr></thead>'+
     '<tbody>'+rows+'</tbody>'+
-    '<tfoot><tr><td>Total</td><td>'+fmtE(tOut)+'</td><td></td><td></td><td></td><td style="color:var(--positive)">'+fmtE(tSaved)+'</td></tr></tfoot>';
+    '<tfoot><tr><td>Total</td><td data-label="Outstanding">'+fmtE(tOut)+'</td><td class="dash-empty"></td><td class="dash-empty"></td><td class="dash-empty"></td><td data-label="Interest saved" style="color:var(--positive)">'+fmtE(tSaved)+'</td></tr></tfoot>';
 }
 
 function renderDashboardChart(data){
@@ -916,7 +916,7 @@ function renderProj(tbodyId,loanIdx){
     // balloon payoff + lump same month: emit a separate lump row before the payoff row
     if(row.payoff&&lump>0){
       const balPost=+(row.payoffAmt+inst-interest).toFixed(2);
-      html+=`<tr class="tr-lump"${hide}><td style="color:#bbb;font-size:.7rem">${n}</td><td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num" style="color:#15803d">${f2x(lump)}</td><td class="bal-owed">${f2x(balPost)}</td></tr>`;
+      html+=`<tr class="tr-lump"${hide} onclick="rowTap(event,this)"><td style="color:#bbb;font-size:.7rem">${n}</td><td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td><td class="num c-opt" data-label="Principal">&mdash;</td><td class="num c-opt" data-label="Interest">&mdash;</td><td class="num" data-label="Instalment">&mdash;</td><td class="num c-opt" data-label="Lump sum" style="color:#15803d">${f2x(lump)}</td><td class="bal-owed" data-label="Balance">${f2x(balPost)}</td></tr>`;
       n++;
     }
     const rowCls=locked?'tr-confirmed':row.payoff?'tr-payoff':row.autoLump?'tr-lump':'';
@@ -926,23 +926,23 @@ function renderProj(tbodyId,loanIdx){
     let lumpCell;
     const manL=locked?0:(row.manualLump||0);
     if(row.payoff&&row.payoffAmt>0){
-      lumpCell=`<td class="num" style="color:#7c3aed;font-weight:700" id="pl-${loanIdx}-${idx}" title="Balloon payoff">Payoff ${f2x(row.payoffAmt)}</td>`;
+      lumpCell=`<td class="num c-opt" data-label="Lump sum" style="color:#7c3aed;font-weight:700" id="pl-${loanIdx}-${idx}" title="Balloon payoff">Payoff ${f2x(row.payoffAmt)}</td>`;
     } else if(lump>0&&!locked){
       const isMan=manL>0;
       const t=isMan?`Manual lump €${f2x(manL)} (click to edit)`:'Scheduled annual lump · click to add a manual one-off';
-      lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill ${isMan?'lump-manual':'lump-auto'}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
+      lumpCell=`<td class="num c-opt" data-label="Lump sum" id="pl-${loanIdx}-${idx}"><span class="lump-pill ${isMan?'lump-manual':'lump-auto'}" title="${t}" onclick="addLump(${loanIdx},${idx},'${row.month}')">${f2x(lump)}</span></td>`;
     }
-    else if(lump>0){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-pill lump-done">${f2x(lump)}</span></td>`;}
-    else if(!locked){lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
-    else{lumpCell=`<td class="num" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
-    html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}"${hide}>
+    else if(lump>0){lumpCell=`<td class="num c-opt" data-label="Lump sum" id="pl-${loanIdx}-${idx}"><span class="lump-pill lump-done">${f2x(lump)}</span></td>`;}
+    else if(!locked){lumpCell=`<td class="num c-opt" data-label="Lump sum" id="pl-${loanIdx}-${idx}"><span class="lump-add" title="Add manual lump sum" onclick="addLump(${loanIdx},${idx},'${row.month}')">+</span></td>`;}
+    else{lumpCell=`<td class="num c-opt" data-label="Lump sum" id="pl-${loanIdx}-${idx}">&mdash;</td>`;}
+    html+=`<tr class="${rowCls}" id="prow-${loanIdx}-${idx}"${hide} onclick="rowTap(event,this)">
       ${numCol}
       <td>${row.month.slice(0,4)+' '+MN[+row.month.slice(5,7)-1]}</td>
-      <td class="num" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
-      <td class="num" style="color:var(--muted)" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
-      <td class="num" id="pi-${loanIdx}-${idx}">${f2x(inst)}</td>
+      <td class="num c-opt" data-label="Principal" id="pp-${loanIdx}-${idx}">${f2x(principal)}</td>
+      <td class="num c-opt" data-label="Interest" style="color:var(--muted)" id="pn-${loanIdx}-${idx}">${f2x(interest)}</td>
+      <td class="num" data-label="Instalment" id="pi-${loanIdx}-${idx}">${f2x(inst)}</td>
       ${lumpCell}
-      <td class="bal-owed">${f2x(bal)}</td></tr>`;
+      <td class="bal-owed" data-label="Balance">${f2x(bal)}</td></tr>`;
   });
   tbody.innerHTML=html;
 }
@@ -950,8 +950,18 @@ function renderProj(tbodyId,loanIdx){
 /* unlock / mark-as-paid → inline edit (principal / interest / installment / lump)
    Pre-fills with the row's current figures (projected for new rows, or the
    previously-saved actuals for an already-confirmed row). */
+// Phones show fewer schedule columns; tapping a row opens it to show the rest.
+const isPhone=()=>window.matchMedia('(max-width:560px)').matches;
+function rowTap(e,tr){
+  if(!isPhone())return;
+  if(e.target.closest('input,button,select,.confirm-dot,.lock-ic,.lump-add,.lump-pill'))return;
+  tr.classList.toggle('open');
+}
+function openRow(loanIdx,idx){const tr=document.getElementById(`prow-${loanIdx}-${idx}`);if(tr)tr.classList.add('open');}
+
 function unlockRow(loanIdx,idx){
   const row=mSchedule[idx];if(!row)return;
+  openRow(loanIdx,idx);
   const p=row.principal,it=row.interest,ins=row.inst,lm=row.lump||0;
   document.getElementById(`pp-${loanIdx}-${idx}`).innerHTML=`<span class="act-input" style="display:inline-block;color:#aaa" title="Derived: instalment − interest">${(+Math.max(0,ins-it)).toFixed(2)}</span>`;
   document.getElementById(`pn-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="an-${loanIdx}-${idx}" type="number" value="${(+it).toFixed(2)}" step="0.01">`;
@@ -962,6 +972,7 @@ function unlockRow(loanIdx,idx){
 /* future row: inline manual lump sum entry */
 function addLump(loanIdx,idx,month){
   const cur=getManLumps(loanIdx)[month]||0;
+  openRow(loanIdx,idx);
   document.getElementById(`pl-${loanIdx}-${idx}`).innerHTML=`<input class="act-input" id="al-${loanIdx}-${idx}" type="number" value="${cur||''}" placeholder="0.00" step="0.01" onkeydown="if(event.key==='Enter'){saveLumpEntry(${loanIdx},${idx},'${month}')}else if(event.key==='Escape'){renderProj('m-proj-tbody',${loanIdx})}"> <button class="btn-save" onclick="saveLumpEntry(${loanIdx},${idx},'${month}')">Save</button><button class="btn-cancel" onclick="renderProj('m-proj-tbody',${loanIdx})">Cancel</button>`;
   const inp=document.getElementById(`al-${loanIdx}-${idx}`);if(inp)inp.focus();
 }
