@@ -781,19 +781,16 @@ function computePlanStats(mRows,mS){
   document.getElementById('m-plan-int').textContent=fmtE(mPI);
   document.getElementById('m-base-int').textContent=fmtE(mBI);
   {const pb=document.getElementById('m-plan-bar');if(pb)pb.style.width=(mBI>0?Math.min(100,mPI/mBI*100):0).toFixed(1)+'%';}
-  document.getElementById('m-int-saved').textContent=fmtE(mSv);
   document.getElementById('m-lumps-total').textContent=remaining.lumpCount+' · '+fmtE(remaining.lumpTotal);
-  document.getElementById('m-payoff-cap').textContent=fmtMon(mPayoff)+' payoff';
   const mTimeSaved=mBase.length-mInst.length;
   document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
   document.getElementById('m-next-lump').textContent=(()=>{const nx=mSchedule.find(r=>!r.confirmed&&r.lump>0);return nx?fmtMon(nx.month)+' · '+fmtE(nx.lump):'None';})();
   document.getElementById('card-saved').textContent=fmtE(mSv);
-  document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' vs no extras';
+  document.getElementById('card-saved-sub').textContent='vs no extras';
   document.getElementById('card-payoff').textContent=fmtMon(mPayoff);
   document.getElementById('card-payoff-sub').textContent='';
   document.getElementById('card-total-debt').textContent=fmtE(ps.latestBal);
   document.getElementById('card-total-sub').textContent='of '+fmtE(mS.balance)+' borrowed';
-  document.getElementById('m-borrowed').textContent=fmtE(mS.balance);
   document.getElementById('m-int-left').textContent=fmtE(remaining.interestLeft);
   document.getElementById('m-time-left').textContent=timeLeft;
   document.getElementById('m-loan-title').textContent=mS.label||'Loan';
@@ -807,7 +804,9 @@ function computePlanStats(mRows,mS){
   const pfill=document.getElementById('m-progress-fill');
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
-  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
+  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' principal paid';
+  const ipaid=document.getElementById('m-int-paid');
+  if(ipaid)ipaid.textContent=fmtE(ps.interestPaid)+' interest paid';
   renderNextBar();
   return{mBase};
 }

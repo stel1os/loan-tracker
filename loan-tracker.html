@@ -52,7 +52,7 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .accent-dot{width:9px;height:9px;border-radius:99px;background:var(--accent);display:inline-block;flex-shrink:0}
 .time-left{font-size:.78rem;color:#475569;font-weight:600;white-space:nowrap}
 .progress-cap{display:flex;justify-content:space-between;gap:10px;font-size:.72rem;color:var(--muted);margin-top:6px}
-.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin:14px 0}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px 0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin:14px 0}
 .metric-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 .metric-val{font-size:1rem;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
 .cmp-title{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#64748b;margin-bottom:10px}
@@ -62,8 +62,7 @@ h1{font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--ink);letter-sp
 .cmp-fill{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:.65rem;font-weight:600;box-sizing:border-box;white-space:nowrap}
 .cmp-base{background:#cbd5e1;color:#475569}
 .cmp-plan{background:var(--accent);color:#fff}
-.cmp-saved{text-align:right;font-size:.74rem;color:var(--positive);font-weight:600;margin-top:10px}
-.cmp-lumps{text-align:right;font-size:.7rem;color:var(--muted);margin-top:3px}
+.cmp-lumps{text-align:right;font-size:.7rem;color:var(--muted);margin-top:10px}
 .loan-title{font-size:.92rem;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;text-transform:uppercase}
 .badge-blue{background:var(--accent-soft);color:var(--accent)}.badge-amber{background:var(--amber-soft);color:var(--amber)}
@@ -266,9 +265,8 @@ table.txn tr:hover td{background:#fafbff}
       <div class="time-left" id="m-time-left">&#8230;</div>
     </div>
     <div class="progress-track"><div id="m-progress-fill" class="progress-fill" style="width:0%"></div></div>
-    <div class="progress-cap"><span id="m-so-far-stats">&#8212;</span><span id="m-payoff-cap">&#8230;</span></div>
+    <div class="progress-cap"><span id="m-so-far-stats">&#8212;</span><span id="m-int-paid">&#8230;</span></div>
     <div class="metric-grid">
-      <div class="metric"><div class="metric-label">Borrowed</div><div class="metric-val" id="m-borrowed">&#8230;</div></div>
       <div class="metric"><div class="metric-label">Interest left</div><div class="metric-val" id="m-int-left">&#8230;</div></div>
       <div class="metric"><div class="metric-label">Next lump</div><div class="metric-val" id="m-next-lump">&#8230;</div></div>
       <div class="metric"><div class="metric-label">Time saved</div><div class="metric-val green" id="m-time-saved">&#8230;</div></div>
@@ -281,7 +279,6 @@ table.txn tr:hover td{background:#fafbff}
       <div class="cmp-title">Interest: plan vs no extras</div>
       <div class="cmp-row"><span class="cmp-name">No extras</span><div class="cmp-track"><div class="cmp-fill cmp-base" style="width:100%"><span id="m-base-int">&#8230;</span></div></div></div>
       <div class="cmp-row"><span class="cmp-name">Your plan</span><div class="cmp-track"><div class="cmp-fill cmp-plan" id="m-plan-bar" style="width:0%"><span id="m-plan-int">&#8230;</span></div></div></div>
-      <div class="cmp-saved">You save <strong id="m-int-saved">&#8230;</strong> in interest</div>
       <div class="cmp-lumps">Future lumps: <strong id="m-lumps-total">&#8230;</strong></div>
     </div>
   </div>
@@ -1539,19 +1536,16 @@ function computePlanStats(mRows,mS){
   document.getElementById('m-plan-int').textContent=fmtE(mPI);
   document.getElementById('m-base-int').textContent=fmtE(mBI);
   {const pb=document.getElementById('m-plan-bar');if(pb)pb.style.width=(mBI>0?Math.min(100,mPI/mBI*100):0).toFixed(1)+'%';}
-  document.getElementById('m-int-saved').textContent=fmtE(mSv);
   document.getElementById('m-lumps-total').textContent=remaining.lumpCount+' · '+fmtE(remaining.lumpTotal);
-  document.getElementById('m-payoff-cap').textContent=fmtMon(mPayoff)+' payoff';
   const mTimeSaved=mBase.length-mInst.length;
   document.getElementById('m-time-saved').textContent=mTimeSaved>0?'~'+(Math.round(mTimeSaved/12*10)/10)+' yrs':'--';
   document.getElementById('m-next-lump').textContent=(()=>{const nx=mSchedule.find(r=>!r.confirmed&&r.lump>0);return nx?fmtMon(nx.month)+' · '+fmtE(nx.lump):'None';})();
   document.getElementById('card-saved').textContent=fmtE(mSv);
-  document.getElementById('card-saved-sub').textContent=fmtE(mSv)+' vs no extras';
+  document.getElementById('card-saved-sub').textContent='vs no extras';
   document.getElementById('card-payoff').textContent=fmtMon(mPayoff);
   document.getElementById('card-payoff-sub').textContent='';
   document.getElementById('card-total-debt').textContent=fmtE(ps.latestBal);
   document.getElementById('card-total-sub').textContent='of '+fmtE(mS.balance)+' borrowed';
-  document.getElementById('m-borrowed').textContent=fmtE(mS.balance);
   document.getElementById('m-int-left').textContent=fmtE(remaining.interestLeft);
   document.getElementById('m-time-left').textContent=timeLeft;
   document.getElementById('m-loan-title').textContent=mS.label||'Loan';
@@ -1565,7 +1559,9 @@ function computePlanStats(mRows,mS){
   const pfill=document.getElementById('m-progress-fill');
   if(pfill)pfill.style.width=ps.progressPct.toFixed(2)+'%';
   const pstat=document.getElementById('m-so-far-stats');
-  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' paid of '+fmtE(mS.balance)+' borrowed';
+  if(pstat)pstat.textContent=fmtE(ps.principalReduced)+' principal paid';
+  const ipaid=document.getElementById('m-int-paid');
+  if(ipaid)ipaid.textContent=fmtE(ps.interestPaid)+' interest paid';
   renderNextBar();
   return{mBase};
 }
