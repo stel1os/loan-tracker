@@ -170,6 +170,8 @@ table.txn tr:hover td{background:#fafbff}
 .hdr-menu button{display:block;width:100%;text-align:left;background:none;border:none;padding:9px 10px;border-radius:6px;font-size:.85rem;cursor:pointer;color:var(--ink);font-family:inherit}
 .hdr-menu button:hover,.hdr-menu button:focus-visible{background:#f1f5f9;outline:none}
 .hdr-menu .menu-danger{color:#dc2626}
+.menu-info{font-size:.74rem;color:#64748b;padding:0 10px 6px 32px}
+.menu-info.stale{color:var(--amber);font-weight:600}
 .menu-sep{height:1px;background:#e2e8f0;margin:5px 4px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 .first-run-banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:.82rem;color:#92400e;display:none}
@@ -255,6 +257,7 @@ table.txn tr:hover td{background:#fafbff}
       <button class="btn-settings menu-btn" id="menu-btn" aria-haspopup="true" aria-expanded="false" aria-controls="hdr-menu" title="More" onclick="toggleMenu(event)">&middot;&middot;&middot;<span class="sr-only"> More</span></button>
       <div class="hdr-menu" id="hdr-menu" role="menu" hidden>
         <button role="menuitem" id="btn-export" onclick="closeMenu();exportData()">&#8681; Export backup</button>
+        <div class="menu-info" id="menu-last-backup">Last backup: Never</div>
         <button role="menuitem" onclick="closeMenu();triggerImport()">&#8679; Import backup</button>
         <button role="menuitem" onclick="closeMenu();openHelp()">? Help</button>
         <div class="menu-sep" role="separator"></div>
@@ -435,7 +438,7 @@ table.txn tr:hover td{background:#fafbff}
     <p style="font-size:.83rem;color:#444;margin:0 0 4px">The <strong>What if</strong> tab under the chart lets you try a different monthly budget or a one-time payment. As you type, it shows the new payoff date and interest saved. Nothing is saved until you press <strong>Apply</strong>.</p>
     <p style="font-size:.83rem;color:#444;margin:0 0 8px">The one-time payment is available in Reduce Instalment mode. Enter a target settlement month to find the prepayment required to clear the outstanding balance, or enter a prepayment amount to find the earliest possible settlement month. Click <strong>Apply</strong> to insert it into the schedule.</p>
     <h3 style="font-size:.9rem;margin:14px 0 6px">Backup and restore</h3>
-    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Open the <strong>&middot;&middot;&middot;</strong> menu at the top right and click <strong>Export backup</strong> to download a JSON backup of your loan configuration, confirmed actuals, budget, and manual prepayments. Click <strong>Import backup</strong> to restore from a backup on any browser or device. <strong>Reset all data</strong> is in the same menu and asks before deleting anything. All data stays in your browser&rsquo;s local storage &mdash; nothing is sent to any server.</p>
+    <p style="font-size:.83rem;color:#444;margin:0 0 8px">Open the <strong>&middot;&middot;&middot;</strong> menu at the top right and click <strong>Export backup</strong> to download a JSON backup of your loan configuration, confirmed actuals, budget, and manual prepayments. Click <strong>Import backup</strong> to restore from a backup on any browser or device. The menu shows when you last exported (&ldquo;Last backup: 12 days ago&rdquo; or &ldquo;Never&rdquo;); that date is kept in this browser only and is not part of the backup file. <strong>Reset all data</strong> is in the same menu and asks before deleting anything. All data stays in your browser&rsquo;s local storage &mdash; nothing is sent to any server.</p>
     <div class="modal-actions">
       <button class="btn-primary" onclick="closeHelp()">Close</button>
     </div>
@@ -836,6 +839,13 @@ function effectiveBudget(loanId){
   return getBudgetTotal()*(alloc[String(loanId)]||0)/100;
 }
 
+// Date of the last export. Kept under its own key, outside the lt_/confirmed_ data keys, so it is never
+// written into a backup file and an import does not overwrite it. It stays in this browser only.
+const LS_LAST_BACKUP='loantracker_last_backup';
+function getLastBackup(){try{return localStorage.getItem(LS_LAST_BACKUP);}catch(e){return null;}}
+function setLastBackup(iso){try{localStorage.setItem(LS_LAST_BACKUP,iso);}catch(e){}}
+function clearLastBackup(){try{localStorage.removeItem(LS_LAST_BACKUP);}catch(e){}}
+
 // Collapsible panel open/closed preference (default: folded). key e.g. 'chart','settlement','dashChart'
 function getPanelOpen(key){try{return localStorage.getItem('lt_panel_'+key)==='1';}catch(e){return false;}}
 function setPanelOpen(key,open){try{localStorage.setItem('lt_panel_'+key,open?'1':'0');}catch(e){}}
@@ -1032,6 +1042,8 @@ function exportData(){
   a.download='loan-tracker-'+state._exported+'.json';
   a.click();
   URL.revokeObjectURL(a.href);
+  setLastBackup(new Date().toISOString());
+  renderLastBackup();
 }
 
 function toggleFixedPeriod(){
@@ -1056,6 +1068,7 @@ function resetApp(){
   Object.keys(localStorage)
     .filter(k=>k.startsWith('lt_')||k.startsWith('confirmed_'))
     .forEach(k=>localStorage.removeItem(k));
+  clearLastBackup(); // the backup date belonged to the data just deleted
   closeSetup();
   initApp();
 }
@@ -2148,7 +2161,25 @@ function toggleMenu(e){
   const m=document.getElementById('hdr-menu');
   if(m.hidden)openMenu();else closeMenu();
 }
+// "Last backup: today / yesterday / 12 days ago / Never" in the header menu.
+function lastBackupText(iso,now){
+  if(!iso)return 'Never';
+  const d=new Date(iso);if(isNaN(d))return 'Never';
+  const day=x=>Date.UTC(x.getFullYear(),x.getMonth(),x.getDate());
+  const n=Math.round((day(now)-day(d))/86400000);
+  if(n<=0)return 'today';
+  if(n===1)return 'yesterday';
+  return n+' days ago';
+}
+function renderLastBackup(){
+  const el=document.getElementById('menu-last-backup');if(!el)return;
+  const iso=getLastBackup(),txt=lastBackupText(iso,new Date());
+  el.textContent='Last backup: '+txt;
+  el.classList.toggle('stale',!iso||txt.endsWith('days ago')&&parseInt(txt,10)>30);
+  if(iso)el.title=new Date(iso).toLocaleString('en-GB');else el.removeAttribute('title');
+}
 function openMenu(){
+  renderLastBackup();
   const m=document.getElementById('hdr-menu'),b=document.getElementById('menu-btn');
   m.hidden=false;b.setAttribute('aria-expanded','true');
   const first=m.querySelector('button');if(first)first.focus();
